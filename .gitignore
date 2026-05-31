@@ -20,12 +20,11 @@ service-account*.json
 **/.gradle/
 build/
 **/build/
-!gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/*.jar
 out/
 **/out/
 *.class
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.ear
 *.nar
