@@ -1,4 +1,8 @@
 spring:
+  profiles:
+    active: test
+  config:
+    import: []
   devtools:
     add-properties: false
   main:

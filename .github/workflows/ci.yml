@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      SPRING_PROFILES_ACTIVE: test
 
     steps:
       - name: Checkout repository
@@ -85,6 +87,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      SPRING_PROFILES_ACTIVE: test
 
     steps:
       - name: Checkout repository
