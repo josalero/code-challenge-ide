@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useEffect,
   useMemo,
@@ -9,21 +8,11 @@ import {
 import { apiFetch } from "../api/client";
 import type { AuthResponse, MeResponse } from "../api/types";
 import { clearAccessToken, getAccessToken, setAccessToken } from "./authStorage";
-
-export type AuthContextValue = {
-  token: string | null;
-  user: MeResponse | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-};
-
-export const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext, type AuthContextValue } from "./authContext";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => getAccessToken());
-  const [user, setUser] = useState<MeResponse | null>(null);
+  const [user, setUser] = useState<AuthContextValue["user"]>(null);
   const [loading, setLoading] = useState(Boolean(getAccessToken()));
 
   const loadUser = useCallback(async () => {
