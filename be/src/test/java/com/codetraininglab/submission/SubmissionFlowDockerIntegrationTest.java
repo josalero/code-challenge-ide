@@ -56,6 +56,11 @@ class SubmissionFlowDockerIntegrationTest extends IntegrationTestBase {
             .getContentAsString();
     String token = jsonMapper.readTree(authJson).get("accessToken").asText();
 
+    mockMvc
+        .perform(
+            get("/api/v1/challenges/reverse-string").header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk());
+
     String solution =
         """
         package com.challenge;
@@ -101,7 +106,11 @@ class SubmissionFlowDockerIntegrationTest extends IntegrationTestBase {
                       .getResponse()
                       .getContentAsString();
               JsonNode node = jsonMapper.readTree(statusJson);
-              assertThat(node.get("status").asText()).isEqualTo("COMPLETED");
+              String status = node.get("status").asText();
+              assertThat(status)
+                  .withFailMessage("submission %s ended as %s", submissionId, status)
+                  .isEqualTo("COMPLETED");
+              assertThat(node.get("reportId").isNull()).isFalse();
             });
   }
 }

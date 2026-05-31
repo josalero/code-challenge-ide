@@ -108,7 +108,7 @@ jobs:
       - name: Run Docker submission flow test
         env:
           CTL_INTEGRATION_DOCKER: 'true'
-        run: ./gradlew :be:test --tests com.codetraininglab.submission.SubmissionFlowDockerIntegrationTest --no-daemon
+        run: ./gradlew :be:test --tests com.codetraininglab.submission.application.SubmissionFlowDockerIntegrationTest --no-daemon
 
   ci-gate:
     name: ci-gate

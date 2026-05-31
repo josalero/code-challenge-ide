@@ -111,6 +111,15 @@ Contributors run tests on the host with **JDK 26** + Node (`java -version` shoul
 cd fe && npm run lint && npm run build
 ```
 
-See [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — `backend-quality` and `frontend-quality` on pull requests.
+See [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — `backend-quality`, `frontend-quality`, and `backend-docker-e2e` on pull requests.
+
+Optional local Docker E2E (requires Docker, runner image from `make runners`):
+
+```bash
+docker build -f runners/java/Dockerfile --build-arg JAVA_MAJOR=26 \
+  -t code-challenge-ide-runner-java-26:local runners/java
+CTL_INTEGRATION_DOCKER=true ./gradlew :be:test \
+  --tests com.codetraininglab.submission.application.SubmissionFlowDockerIntegrationTest
+```
 
 Coverage thresholds: [`config/quality-gates.properties`](config/quality-gates.properties).
