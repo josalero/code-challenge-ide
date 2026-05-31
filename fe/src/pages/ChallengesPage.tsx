@@ -35,7 +35,7 @@ export default function ChallengesPage() {
     [progressQuery.data],
   );
 
-  const challenges = data?.content ?? [];
+  const challenges = useMemo(() => data?.content ?? [], [data?.content]);
   const filteredChallenges = useMemo(
     () =>
       challenges.filter((c) =>

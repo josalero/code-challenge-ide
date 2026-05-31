@@ -53,11 +53,19 @@ management:
       probes:
         enabled: true
       show-details: when_authorized
+  info:
+    env:
+      enabled: true
   health:
     livenessstate:
       enabled: true
     readinessstate:
       enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    description: Multi-language code challenge platform
 
 ctl:
   registration-enabled: ${REGISTRATION_ENABLED:false}

@@ -104,7 +104,7 @@ export default function ChallengeWorkspacePage() {
       return;
     }
     setCustomTestsCode(customTestsQuery.data.code);
-  }, [slug, customTestsQuery.data?.code]);
+  }, [slug, customTestsQuery.data]);
 
   const scrollToCoach = useCallback(() => {
     coachRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
