@@ -1,0 +1,14 @@
+{
+  "name": "code-training-lab",
+  "version": "0.0.1-SNAPSHOT",
+  "private": true,
+  "description": "Root tooling (git hooks). App code lives in be/ and fe/.",
+  "scripts": {
+    "prepare": "husky",
+    "lint:staged": "lint-staged"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3"
+  }
+}

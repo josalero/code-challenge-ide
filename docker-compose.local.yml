@@ -1,0 +1,53 @@
+# Local development — infrastructure only (Postgres, RabbitMQ).
+# Runner images + Maven cache volume (compose build; API still uses `docker run` per submission):
+#
+#   make runners
+#   # or: docker compose -f docker-compose.local.yml -f docker-compose.runners.yml build
+#
+# Then run API and UI on the host:
+#
+#   docker compose -f docker-compose.local.yml up -d
+#   ./gradlew :be:bootRun
+#   cd fe && npm ci && npm run dev    # http://localhost:5173
+#
+# Full stack in Docker (no host JDK/Node): use docker-compose.yml + compose-up.sh
+
+name: code-training-lab-local
+
+services:
+  postgres:
+    container_name: ctl-postgres-local
+    image: postgres:17
+    restart: unless-stopped
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?Set PG_PASSWORD in .env}
+      POSTGRES_DB: ${PG_DB:-code_training_lab}
+    volumes:
+      - ctl-postgres-data-local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DB:-code_training_lab}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    container_name: ctl-rabbitmq-local
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    ports:
+      - "${RMQ_PORT:-5672}:5672"
+      - "${RMQ_MGMT_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RMQ_PASSWORD:?Set RMQ_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ctl-postgres-data-local:

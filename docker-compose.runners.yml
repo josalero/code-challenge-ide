@@ -1,0 +1,93 @@
+# Runner images + shared Maven cache (speeds repeated `docker run` from the API).
+#
+# Build images (does not start long-lived services):
+#   docker compose -f docker-compose.local.yml -f docker-compose.runners.yml build
+#
+# Pre-warm Maven cache volume (recommended once after build):
+#   docker compose -f docker-compose.local.yml -f docker-compose.runners.yml run --rm runner-m2-warm
+#
+# Or: make runners
+
+volumes:
+  ctl-runner-m2-cache:
+    name: ctl-runner-m2-cache
+
+x-runner-build-only: &runner-build-only
+  restart: "no"
+  entrypoint: ["/bin/true"]
+  networks: []
+
+services:
+  runner-java-17:
+    <<: *runner-build-only
+    build:
+      context: ./runners/java
+      dockerfile: Dockerfile
+      args:
+        JAVA_MAJOR: "17"
+    image: ${RUNNER_JAVA_17_IMAGE:-code-challenge-ide-runner-java-17:local}
+
+  runner-java-21:
+    <<: *runner-build-only
+    build:
+      context: ./runners/java
+      dockerfile: Dockerfile
+      args:
+        JAVA_MAJOR: "21"
+    image: ${RUNNER_JAVA_21_IMAGE:-code-challenge-ide-runner-java-21:local}
+
+  runner-java-25:
+    <<: *runner-build-only
+    build:
+      context: ./runners/java
+      dockerfile: Dockerfile
+      args:
+        JAVA_MAJOR: "25"
+    image: ${RUNNER_JAVA_25_IMAGE:-code-challenge-ide-runner-java-25:local}
+
+  runner-java-26:
+    <<: *runner-build-only
+    build:
+      context: ./runners/java
+      dockerfile: Dockerfile
+      args:
+        JAVA_MAJOR: "26"
+    image: ${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}
+
+  runner-python-312:
+    <<: *runner-build-only
+    build:
+      context: ./runners/python
+      dockerfile: Dockerfile
+    image: ${RUNNER_PYTHON_312_IMAGE:-code-challenge-ide-runner-python-312:local}
+
+  runner-lsp-java:
+    <<: *runner-build-only
+    build:
+      context: ./runners/lsp-java
+      dockerfile: Dockerfile
+    image: ${LSP_JAVA_IMAGE:-code-challenge-ide-lsp-java:local}
+
+  # One-shot: copy baked /opt/m2 into the shared volume (API mounts this on each submission).
+  runner-m2-warm:
+    image: ${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}
+    user: "0:0"
+    volumes:
+      - ctl-runner-m2-cache:/tmp/home/.m2
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -euo pipefail
+        mkdir -p /tmp/home/.m2/repository
+        if [ ! -f /tmp/home/.m2/repository/.warm ]; then
+          cp -a /opt/m2/repository/. /tmp/home/.m2/repository/
+          touch /tmp/home/.m2/repository/.warm
+          echo "Maven cache volume warmed."
+        else
+          echo "Maven cache volume already warm."
+        fi
+    restart: "no"
+    depends_on:
+      runner-java-26:
+        condition: service_completed_successfully

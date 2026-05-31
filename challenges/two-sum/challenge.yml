@@ -1,0 +1,15 @@
+slug: two-sum
+title: Two Sum
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Given an integer array `nums` and an integer `target`, implement `Solution.twoSum(int[] nums, int target)`.
+
+  Return the **0-based indices** of the two distinct elements that sum to `target`. Exactly one valid pair exists; return indices in ascending order.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution

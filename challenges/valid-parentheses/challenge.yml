@@ -1,0 +1,15 @@
+slug: valid-parentheses
+title: Valid Parentheses
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Implement `Solution.isValid(String s)` to determine whether a string containing only `()`, `{}`, and `[]` is properly balanced and nested.
+
+  An empty string is valid.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution

@@ -1,0 +1,19 @@
+---
+description: Run Checkstyle, SpotBugs, PMD on all code updates (Gradle)
+globs: "**/*.java"
+---
+
+# Quality gates on code updates (Gradle)
+
+- **Tests and JaCoCo coverage** are enforced via `./gradlew :be:check` against thresholds in `config/quality-gates.properties`.
+- **Checkstyle, SpotBugs, PMD** must be run on every code change when those plugins are attached to the `check` lifecycle (recommended).
+- Before submitting or pushing, run either `./gradlew check` or explicit tasks (`checkstyleMain`, `spotbugsMain`, `pmdMain`, etc.) per project conventions.
+- **Sonar**: In CI only, with credentials from env — never commit secrets.
+- Fix Checkstyle (line length 100, Javadoc where required), SpotBugs, and PMD violations before considering the change done.
+
+From `be/`:
+
+```bash
+jenv shell 26
+./gradlew check
+```

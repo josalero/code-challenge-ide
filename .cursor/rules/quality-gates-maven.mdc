@@ -1,0 +1,16 @@
+---
+description: Run Checkstyle, SpotBugs, PMD on all code updates (Maven)
+globs: "**/*.java"
+---
+
+# Quality gates on code updates (Maven)
+
+- Run **`mvn verify`** on every backend code change when the project uses Maven.
+- Fix Checkstyle, SpotBugs, and PMD violations before considering the change done.
+
+From `be/`:
+
+```bash
+jenv shell 26
+mvn verify
+```

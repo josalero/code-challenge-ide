@@ -1,0 +1,19 @@
+# Production / GHCR — pull pre-built API and FE images instead of building locally.
+#
+# Runner images are pulled separately (not compose services):
+#   ./scripts/pull-runner-images.sh
+#
+#   cp .env.example .env
+#   # Set CTL_IMAGE_OWNER to your GitHub username (lowercase)
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   ./scripts/pull-runner-images.sh
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  api:
+    build: !reset null
+    image: ${CTL_IMAGE_REGISTRY:-ghcr.io}/${CTL_IMAGE_OWNER}/code-challenge-ide-be:${CTL_IMAGE_TAG:-latest}
+
+  fe:
+    build: !reset null
+    image: ${CTL_IMAGE_REGISTRY:-ghcr.io}/${CTL_IMAGE_OWNER}/code-challenge-ide-fe:${CTL_IMAGE_TAG:-latest}

@@ -1,0 +1,36 @@
+---
+description: Semantic HTML and accessibility rules
+globs:
+  - "**/*.html"
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.svelte"
+alwaysApply: false
+---
+
+# HTML and Accessibility Rules
+
+Use semantic HTML first.
+
+Prefer:
+- `header`, `main`, `section`, `article`, `aside`, `footer`
+- `button` for actions
+- `a` for navigation
+- `label` connected to form controls
+- Proper heading hierarchy: one `h1`, then logical `h2`, `h3`
+- Alt text for meaningful images
+- Empty alt text for decorative images
+- Keyboard-accessible interactions
+- Visible focus states
+- ARIA only when native HTML is not enough
+
+Avoid:
+- Clickable `div`s
+- Buttons without accessible labels
+- Placeholder-only form labels
+- Skipping heading levels for visual size
+- Removing outlines without replacing focus styles
+- Using ARIA to fix bad HTML when semantic HTML would solve it
+
+Every modal, dropdown, popover, and menu must be keyboard-friendly.

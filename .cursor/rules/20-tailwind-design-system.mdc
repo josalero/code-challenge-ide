@@ -1,0 +1,46 @@
+---
+description: Tailwind CSS design system rules
+globs:
+  - "**/*.html"
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.svelte"
+  - "**/*.css"
+alwaysApply: false
+---
+
+# Tailwind Design System Rules
+
+Use Tailwind utilities consistently.
+
+Prefer:
+- Mobile-first classes
+- Consistent spacing scale
+- Consistent radius scale
+- Consistent shadow usage
+- Design tokens or CSS variables for brand colors
+- Reusable component variants for repeated patterns
+
+Default visual style:
+- Clean layout
+- Generous whitespace
+- Clear typography hierarchy
+- Rounded corners, but not everywhere
+- Subtle shadows
+- Neutral backgrounds
+- Strong contrast for primary actions
+
+Avoid:
+- Random colors or arbitrary values without reason
+- Too many different font sizes
+- Too many different border radii
+- Mixing custom CSS with Tailwind without reason
+- Overusing `!important`
+- Huge unreadable class strings without extracting components
+- Repeating the same long Tailwind class group everywhere
+
+When a Tailwind class list becomes too complex:
+- Extract a reusable component.
+- Use a variant helper.
+- Use `@apply` only for stable, repeated design primitives.

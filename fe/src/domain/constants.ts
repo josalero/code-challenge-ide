@@ -1,0 +1,85 @@
+/** Mirrors backend enums — use these instead of string literals in UI code. */
+
+export const SubmissionStatus = {
+  PENDING: "PENDING",
+  RUNNING: "RUNNING",
+  COMPLETED: "COMPLETED",
+  FAILED: "FAILED",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type SubmissionStatusValue =
+  (typeof SubmissionStatus)[keyof typeof SubmissionStatus];
+
+export const ProgressState = {
+  NOT_STARTED: "NOT_STARTED",
+  ATTEMPTED: "ATTEMPTED",
+  PASSED: "PASSED",
+  FAILED: "FAILED",
+} as const;
+
+export type ProgressStateValue = (typeof ProgressState)[keyof typeof ProgressState];
+
+export const TestOutcomeStatus = {
+  PASS: "PASS",
+  FAIL: "FAIL",
+  SKIP: "SKIP",
+} as const;
+
+export type TestOutcomeStatusValue =
+  (typeof TestOutcomeStatus)[keyof typeof TestOutcomeStatus];
+
+export const FeedbackCategory = {
+  CORRECTNESS: "CORRECTNESS",
+  COVERAGE: "COVERAGE",
+  STYLE: "STYLE",
+  SECURITY: "SECURITY",
+  READABILITY: "READABILITY",
+} as const;
+
+export type FeedbackCategoryValue =
+  (typeof FeedbackCategory)[keyof typeof FeedbackCategory];
+
+export const FeedbackStatus = {
+  pass: "pass",
+  warn: "warn",
+  fail: "fail",
+} as const;
+
+export const SubmissionEventType = {
+  STATUS: "status",
+  TEST_RESULT: "test_result",
+  DONE: "done",
+  ERROR: "error",
+} as const;
+
+/** SSE JSON payload field names (mirror backend SsePayloadKeys). */
+export const SsePayloadKeys = {
+  STATUS: "status",
+  SUBMISSION_ID: "submission_id",
+  REPORT_ID: "report_id",
+  MESSAGE: "message",
+  STDOUT: "stdout",
+  STDERR: "stderr",
+} as const;
+
+export const ApiPaths = {
+  CHALLENGES: "/api/v1/challenges",
+  ME_PROGRESS: "/api/v1/me/progress",
+  SUBMISSIONS: "/api/v1/submissions",
+  LSP_JAVA: "/api/v1/lsp/java",
+  OPS_DEAD_LETTER_SUBMISSIONS: "/api/v1/ops/dead-letter-submissions",
+  OPS_DEAD_LETTER_REPLAY: "/api/v1/ops/dead-letter-submissions/replay",
+  challenge: (slug: string) => `/api/v1/challenges/${slug}`,
+  challengeCustomTests: (slug: string) => `/api/v1/challenges/${slug}/custom-tests`,
+  challengeAlternatives: (slug: string) => `/api/v1/challenges/${slug}/alternatives`,
+  submission: (id: string) => `/api/v1/submissions/${id}`,
+  submissionEvents: (id: string) => `/api/v1/submissions/${id}/events`,
+  report: (id: string) => `/api/v1/reports/${id}`,
+  feedbackExplain: (itemId: string) => `/api/v1/feedback/${itemId}/explain`,
+} as const;
+
+export const JavaRuntimeVersion = {
+  DEFAULT: "26",
+  SUPPORTED: ["17", "21", "25", "26"] as const,
+} as const;

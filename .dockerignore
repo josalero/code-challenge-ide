@@ -1,0 +1,16 @@
+.git
+.github
+.cursor
+.gradle
+**/build
+**/node_modules
+**/dist
+**/.gradle
+*.md
+docs/
+scripts/
+.env
+.env.*
+!/.env.example
+# Keep Gradle wrapper jar for API image build
+!gradle/wrapper/gradle-wrapper.jar

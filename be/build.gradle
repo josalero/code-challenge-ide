@@ -1,0 +1,161 @@
+plugins {
+    id 'java'
+    id 'jacoco'
+    id 'org.springframework.boot' version '4.0.6'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+springBoot {
+    buildInfo()
+}
+
+def qualityGatesFile = rootProject.file('config/quality-gates.properties')
+def qualityGates = new Properties()
+if (qualityGatesFile.exists()) {
+    qualityGatesFile.withInputStream { qualityGates.load(it) }
+} else {
+    throw new GradleException("Missing ${qualityGatesFile} — quality gates must be defined for CI.")
+}
+
+def lineMinimum = qualityGates.getProperty('lineCoverageMinimum', '0.80').toBigDecimal()
+def branchMinimum = qualityGates.getProperty('branchCoverageMinimum', '0.80').toBigDecimal()
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(26)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.testcontainers:testcontainers-bom:1.20.6'
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-jackson'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    implementation 'org.postgresql:postgresql'
+    implementation 'org.yaml:snakeyaml'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:rabbitmq'
+    testImplementation 'org.awaitility:awaitility'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = '0.8.14'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+    classDirectories.setFrom(
+        files(sourceSets.main.output.classesDirs).collect {
+            fileTree(
+                dir: it,
+                exclude: [
+                    '**/CodeTrainingLabApplication.class',
+                    '**/persistence/*Entity.class',
+                    '**/DockerRunnerClient.class',
+                    '**/*Request.class',
+                    '**/*Response.class',
+                    '**/domain/**',
+                    '**/SubmissionJobMessage.class',
+                    '**/*Controller.class',
+                    '**/config/**',
+                    '**/security/SecurityConfig.class',
+                    '**/lsp/**'
+                ])
+        }
+    )
+}
+
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+    classDirectories.setFrom(jacocoTestReport.classDirectories)
+    sourceDirectories.setFrom(jacocoTestReport.sourceDirectories)
+    violationRules {
+        rule {
+            element = 'BUNDLE'
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = lineMinimum
+            }
+        }
+        rule {
+            element = 'BUNDLE'
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = branchMinimum
+            }
+        }
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
+
+tasks.named('bootJar') {
+    archiveBaseName = 'be'
+}
+
+// Load repo-root .env into bootRun (Spring Boot does not read .env by itself).
+tasks.named('bootRun') {
+    def envFile = rootProject.file('.env')
+    if (envFile.exists()) {
+        envFile.readLines().each { line ->
+            String trimmed = line.trim()
+            if (trimmed.isEmpty() || trimmed.startsWith('#')) {
+                return
+            }
+            int eq = trimmed.indexOf('=')
+            if (eq > 0) {
+                String key = trimmed.substring(0, eq).trim()
+                String value = trimmed.substring(eq + 1).trim()
+                int comment = value.indexOf('#')
+                if (comment >= 0) {
+                    value = value.substring(0, comment).trim()
+                }
+                if (value.startsWith('"') && value.endsWith('"')) {
+                    value = value.substring(1, value.length() - 1)
+                }
+                environment key, value
+            }
+        }
+    }
+    environment 'CTL_CHALLENGES_PATH', rootProject.file('challenges').absolutePath
+}

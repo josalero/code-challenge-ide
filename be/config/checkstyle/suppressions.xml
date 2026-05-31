@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<!--
+    TrailPulse Checkstyle Suppressions
+    Suppresses checks for specific files or patterns
+-->
+<suppressions>
+    <!-- Suppress all checks for generated files -->
+    <suppress files=".*[\\/]generated[\\/].*" checks=".*"/>
+    <suppress files=".*[\\/]build[\\/].*" checks=".*"/>
+    
+    <!-- Suppress line length for package-info files -->
+    <suppress files="package-info\.java" checks="LineLength"/>
+    
+    <!-- Suppress Javadoc checks for DTOs and Models (Lombok generates them) -->
+    <suppress files=".*[\\/]dto[\\/].*\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*[\\/]model[\\/].*\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*[\\/]dto[\\/].*\.java" checks="MissingJavadocType"/>
+    <suppress files=".*[\\/]model[\\/].*\.java" checks="MissingJavadocType"/>
+    
+    <!-- Static star imports (Assertions, Mockito) are common in tests -->
+    <suppress files=".*[\\/]src[\\/]test[\\/].*\.java" checks="AvoidStarImport"/>
+
+    <!-- Test methods use descriptive snake_case / Given_When_Then names -->
+    <suppress files=".*[\\/]src[\\/]test[\\/].*\.java" checks="MethodName"/>
+
+    <!-- Service classes: public methods often mirror controllers; full Javadoc is optional here -->
+    <suppress files=".*[\\/]service[\\/][A-Za-z0-9_]+\.java" checks="MissingJavadocMethod"/>
+
+    <!-- Suppress Javadoc for test files -->
+    <suppress files=".*Test\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*Test\.java" checks="MissingJavadocType"/>
+    <suppress files=".*Tests\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*Tests\.java" checks="MissingJavadocType"/>
+    
+    <!-- Suppress file length for service classes with complex logic -->
+    <suppress files=".*Service\.java" checks="FileLength"/>
+    
+    <!-- Suppress magic numbers in test files -->
+    <suppress files=".*Test\.java" checks="MagicNumber"/>
+    <suppress files=".*Tests\.java" checks="MagicNumber"/>
+    
+    <!-- Suppress member name check for constants in DTOs -->
+    <suppress files=".*[\\/]dto[\\/].*\.java" checks="MemberName"/>
+    
+    <!-- Suppress checks for Application main class -->
+    <suppress files=".*Application\.java" checks="HideUtilityClassConstructor"/>
+    <suppress files=".*Application\.java" checks="MissingJavadocType"/>
+    
+    <suppress files=".*Handler\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*Handler\.java" checks="MissingJavadocType"/>
+
+    <!-- Suppress checks for configuration classes -->
+    <suppress files=".*Config\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*Config\.java" checks="MissingJavadocType"/>
+    <suppress files=".*Configuration\.java" checks="MissingJavadocMethod"/>
+</suppressions>
+

@@ -1,0 +1,36 @@
+---
+description: Form design and validation rules
+globs:
+  - "**/*.html"
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.svelte"
+alwaysApply: false
+---
+
+# Forms and Validation Rules
+
+Forms must be clear, accessible, and forgiving.
+
+Prefer:
+- Visible labels
+- Helpful descriptions
+- Clear validation messages
+- Required fields clearly marked
+- Proper input types
+- Autocomplete attributes where appropriate
+- Disabled and loading states for submit buttons
+- Error summaries for large forms
+
+Avoid:
+- Placeholder-only labels
+- Vague errors like "Invalid input"
+- Losing user input after validation fails
+- Tiny click targets
+- Hidden required fields
+- Submitting twice because loading state is missing
+
+Validation messages should explain:
+- What is wrong
+- How to fix it

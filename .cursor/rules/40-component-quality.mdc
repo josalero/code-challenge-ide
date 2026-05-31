@@ -1,0 +1,37 @@
+---
+description: Component design quality rules
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.svelte"
+alwaysApply: false
+---
+
+# Component Quality Rules
+
+Build components that are reusable but not over-abstracted.
+
+Prefer:
+- Clear props
+- Small focused components
+- Composition over large config objects
+- Consistent naming
+- Loading, empty, error, and success states
+- Accessible default behavior
+- Reusable Button, Input, Card, Badge, Modal, Toast patterns
+
+Avoid:
+- Massive components with mixed responsibilities
+- Boolean prop explosion
+- Styling duplicated across many components
+- Business logic inside presentational components
+- Components that only work for one hardcoded page unless intentional
+
+For every data-driven component, consider:
+- Loading state
+- Empty state
+- Error state
+- Permission/disabled state
+- Long text behavior
+- Mobile layout

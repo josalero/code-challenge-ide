@@ -1,0 +1,44 @@
+---
+description: Responsive layout rules
+globs:
+  - "**/*.html"
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.svelte"
+alwaysApply: false
+---
+
+# Responsive Layout Rules
+
+Design mobile-first.
+
+Use Tailwind breakpoints:
+- Base: mobile
+- `sm:` small screens
+- `md:` tablets
+- `lg:` laptops/desktops
+- `xl:` large desktops
+- `2xl:` very large screens
+
+Prefer:
+- `flex` for simple one-dimensional layouts
+- `grid` for two-dimensional layouts
+- `max-w-*` for readable content width
+- `mx-auto` for centered containers
+- `gap-*` instead of margin hacks
+- `min-h-screen` only when full viewport layout is intended
+- Responsive typography and spacing
+
+Avoid:
+- Fixed pixel widths
+- Horizontal scrolling by accident
+- Absolute positioning for normal layout
+- Desktop-first layouts patched for mobile later
+- Text blocks that are too wide
+- Cards that stretch awkwardly on large screens
+
+Every page should look good at:
+- Mobile width
+- Tablet width
+- Desktop width

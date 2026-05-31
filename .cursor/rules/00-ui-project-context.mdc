@@ -1,0 +1,30 @@
+---
+description: General UI project context (TrailPulse `fe/`)
+globs:
+  - "fe/**"
+alwaysApply: false
+---
+
+# UI Project Context
+
+This project uses modern HTML, Tailwind CSS, and component-based frontend design.
+
+Default priorities:
+1. Semantic HTML
+2. Accessibility
+3. Responsive design
+4. Reusable components
+5. Visual consistency
+6. Performance
+7. Maintainability
+
+Do not generate random visual styles.
+
+Before creating UI:
+- Check existing components.
+- Reuse existing spacing, colors, typography, and layout patterns.
+- Prefer small reusable components.
+- Avoid inline styles unless absolutely necessary.
+- Avoid hardcoded magic values when Tailwind utilities or design tokens exist.
+
+Use clean, modern, minimal UI by default.

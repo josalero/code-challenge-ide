@@ -1,0 +1,39 @@
+---
+description: UI performance and maintainability rules
+globs:
+  - "**/*.html"
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.svelte"
+  - "**/*.css"
+alwaysApply: false
+---
+
+# UI Performance Rules
+
+Keep UI fast and maintainable.
+
+Prefer:
+- Optimized images
+- Lazy loading below-the-fold images
+- Proper image dimensions
+- Minimal layout shift
+- CSS-first interactions when possible
+- Simple DOM structure
+- Reusable components
+- Tree-shakeable imports
+
+Avoid:
+- Huge client-side bundles
+- Large unused component libraries
+- Loading all icons from an icon package
+- Unoptimized hero images
+- Excessive animations
+- JavaScript for things CSS can do
+- Layouts that shift after loading
+
+Animations:
+- Keep them subtle.
+- Respect reduced motion preferences.
+- Do not animate everything.

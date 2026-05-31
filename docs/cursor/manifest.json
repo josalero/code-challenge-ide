@@ -1,0 +1,42 @@
+{
+  "installedAt": "2026-05-31T01:16:04Z",
+  "repositories": {
+    "awesome-cursorrules": {
+      "url": "https://github.com/PatrickJS/awesome-cursorrules",
+      "path": "vendor/cursor/awesome-cursorrules",
+      "commit": "b044f956f021b6e8877f16781bcfc466a6a120e9",
+      "role": "reference-catalog"
+    },
+    "cursor-designer": {
+      "url": "https://github.com/spencergoldade/cursor-designer",
+      "path": "vendor/cursor/cursor-designer",
+      "commit": "30b15ac1d67a7cdc0986f3a20ceb91943e683cec",
+      "role": "active-rules-lean-copied-to-.cursor/rules/vendor/cursor-designer"
+    },
+    "ui-design-brain": {
+      "url": "https://github.com/carmahhawwari/ui-design-brain",
+      "path": ".cursor/skills/ui-design-brain",
+      "commit": "38f04c5a1dee55d99c686a16643cef4e2ce0f7a2",
+      "role": "active-skill"
+    },
+    "awesome-rules": {
+      "url": "https://github.com/continuedev/awesome-rules",
+      "path": "vendor/cursor/awesome-rules",
+      "commit": "c1f1def054393f209f47d4bef2590a0dd3be03d0",
+      "role": "active-rules-react-tailwind-copied-to-.cursor/rules/vendor/continue"
+    },
+    "cursor-skills": {
+      "url": "https://github.com/araguaci/cursor-skills",
+      "path": "vendor/cursor/cursor-skills",
+      "commit": "ab291d36b3318518723981803cec8e54c86f3107",
+      "role": "reference-catalog"
+    },
+    "onlook": {
+      "url": "https://github.com/onlook-dev/onlook",
+      "path": "vendor/cursor/onlook",
+      "commit": "missing",
+      "role": "optional-visual-editor",
+      "installed": false
+    }
+  }
+}

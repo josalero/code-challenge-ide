@@ -1,0 +1,23 @@
+---
+description: Code Training Lab project context — Java 26 and Spring Boot 4
+alwaysApply: true
+---
+
+# Project Context — Code Training Lab
+
+Default assumptions for this repository:
+
+- **Java 26** for the platform backend (`be/`). Confirm in `be/build.gradle` or `be/pom.xml`.
+- **Spring Boot 4.x** and **Spring Framework 7.x**.
+- **Jakarta** namespaces (`jakarta.*`), not `javax.*` for new web/JPA/validation code.
+- Activate JDK before Java/Gradle/Maven commands: `jenv shell 26` (see `.java-version`).
+- Challenge **runners** may target other Java versions (17, 21, 25, 26) per `language_runtimes`; the API service itself stays on Java 26 unless build files say otherwise.
+
+Before changing code:
+
+1. Inspect package structure under `be/` and `fe/`.
+2. Follow existing naming and layering (controller → service → repository).
+3. Use **Gradle Groovy DSL** (`*.gradle`); prefer Maven only if the project already uses Maven.
+4. Do not introduce new frameworks without explaining why.
+
+When uncertain: make the smallest safe change and state the tradeoff.

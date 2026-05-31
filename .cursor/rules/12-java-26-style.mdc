@@ -1,0 +1,36 @@
+---
+description: Java 26 coding style and modern Java usage (verify JDK 26 release notes per project)
+globs:
+  - "**/*.java"
+alwaysApply: false
+---
+
+# Java 26 Style Rules
+
+Use modern Java appropriate for **Java 26**, aligned with team and build settings. **Confirm `release` / toolchain and any preview flags** in `pom.xml` or `build.gradle(.kts)` before using newly finalized or preview language features.
+
+**Source of truth:** build files and the project's policy on previews. When the project targets Java 26, prefer this file over older-version style rules.
+
+Prefer:
+- **Records** as the default for immutable data carriers, request/response DTOs, commands, queries, and value-like types — **use records instead of Lombok** (`@Value`, `@Data` on boilerplate POJOs, etc.) unless Lombok is genuinely necessary.
+- Sealed classes/interfaces when modeling a closed hierarchy.
+- Pattern matching (including `switch` patterns) where it improves readability **if** bytecode/`release` and tooling support it.
+- `var` only for obvious local variables.
+- `Optional` for return values where absence is expected, not for fields or parameters.
+- `java.time` APIs — never legacy `Date` / `Calendar`.
+- Immutable collections with `List.of`, `Set.of`, `Map.of` where appropriate.
+- Constructor injection for dependencies.
+- Clear domain names over generic names.
+- Null-safety annotations (e.g. JSpecify) when the project uses them.
+
+Avoid:
+- **Lombok for types that records can model** — do not add `@Data` / `@Value` / similar on new immutable DTOs; use a `record` instead.
+- **Lombok except when necessary** (e.g. `@Slf4j` where standard, or existing Lombok-heavy areas).
+- Reflection-heavy solutions unless required.
+- Premature abstraction.
+- Returning `null` from service methods unless existing code requires it.
+- Catching `Exception` broadly without a specific reason.
+- Preview language features without explicit project approval and CI/compiler flags.
+
+Concurrency:
+- Virtual threads are appropriate for many blocking I/O workloads when on **Java 21+** (including 26); still respect backpressure, pool limits, and JDBC connection caps.

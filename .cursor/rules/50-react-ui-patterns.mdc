@@ -1,0 +1,37 @@
+---
+description: React UI rules with Tailwind and component libraries
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+alwaysApply: false
+---
+
+# React UI Rules
+
+Use React components cleanly.
+
+Prefer:
+- Functional components
+- TypeScript types for props
+- Server/client component boundaries when using Next.js
+- Controlled components for forms where appropriate
+- Composition over inheritance
+- `children` for flexible layout components
+- Extracted components for repeated UI sections
+
+When using shadcn/ui:
+- Treat shadcn/ui components as owned source code.
+- Customize through variants and composition.
+- Do not heavily modify base components unless needed.
+- Keep component APIs consistent.
+
+When using Tailwind:
+- Use `clsx`, `cn`, or a similar helper for conditional classes.
+- Use class variance utilities for component variants when useful.
+- Avoid deeply nested ternaries in JSX.
+- Avoid unreadable className blocks.
+
+Do not:
+- Put API calls directly inside deeply nested visual components.
+- Mix server data logic with presentational components.
+- Create one giant page component.

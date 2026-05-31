@@ -1,0 +1,28 @@
+---
+description: Context-efficient work for Code Training Lab (repo-local only)
+alwaysApply: true
+---
+
+# Context and token discipline — Code Training Lab
+
+**Goal:** Same outcomes with **fewer tokens** in context and replies, without skipping verification.
+
+## Tools and evidence
+
+- Prefer **narrow discovery** first: search before opening huge files; **read with `offset`/`limit`** when only a section matters.
+- **Batch** independent tool reads/searches in **one turn** when safe.
+- Do **not** re-read unchanged content already in the conversation unless something may have changed.
+
+## Replies and code
+
+- Avoid pasting **large** code or logs when a **short excerpt**, **code reference** (`startLine:endLine:path`), or **summary** is enough.
+- Do not **repeat** long rule lists or the user's message; apply **AGENTS.md** and `.cursor/rules/` silently.
+- Prefer **concise** conclusions; use short sections instead of duplicated paragraphs.
+
+## Repeated constraints
+
+- If the same requirement comes up every session, add or extend it in **this repo**: **`AGENTS.md`**, **`.cursor/rules/`**, or **`.cursor/skills/`**.
+
+## Tradeoffs
+
+- Never skip **required** reads or checks for safety, security, or correctness to save tokens—**narrow** the work, do not **omit** it.

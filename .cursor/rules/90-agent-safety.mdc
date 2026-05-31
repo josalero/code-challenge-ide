@@ -1,0 +1,34 @@
+---
+description: Guardrails for AI agent edits (Code Training Lab)
+alwaysApply: true
+---
+
+# Agent safety — Code Training Lab
+
+Before editing:
+
+- Read the relevant files first.
+- Do not invent APIs, dependencies, or versions.
+- Do not change public contracts without calling it out.
+- Do not remove tests unless replacing them with better tests.
+- Do not delete comments that explain business rules.
+- Do not perform large rewrites when a focused patch is enough.
+
+When adding dependencies:
+
+- **Backend (`be/`):** Use `be/build.gradle` / `be/pom.xml` and Spring Boot dependency management; prefer managed versions.
+- **Frontend (`fe/`):** Use `fe/package.json` and align with existing React/Monaco/Tailwind versions.
+- Explain why the dependency is needed; avoid libraries for trivial code.
+
+When generating code:
+
+- Match **existing** package and naming conventions in `be/` or `fe/`.
+- **Java:** Spring Boot **4**, **Jakarta** (`jakarta.*`), toolchain **Java 26** for the platform.
+- Avoid copy-pasting Spring Boot **2.x** snippets into this codebase.
+- Prefer production-oriented code over demo-style shortcuts.
+- Never log user source code or PII from submissions in production logs.
+
+When finished:
+
+- Summarize what changed.
+- Mention tests or checks to run (e.g. `./gradlew check` from `be/`, or `npm run build` from `fe/`).

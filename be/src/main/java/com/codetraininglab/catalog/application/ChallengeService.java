@@ -1,0 +1,85 @@
+package com.codetraininglab.catalog.application;
+
+import com.codetraininglab.platform.persistence.ChallengeEntity;
+import com.codetraininglab.platform.persistence.ChallengeHiddenTestRepository;
+import com.codetraininglab.platform.persistence.ChallengePublicTestRepository;
+import com.codetraininglab.platform.persistence.ChallengeRepository;
+import com.codetraininglab.platform.persistence.LanguageRuntimeRepository;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+@Service
+public class ChallengeService {
+
+  private final ChallengeRepository challengeRepository;
+  private final ChallengePublicTestRepository publicTestRepository;
+  private final ChallengeHiddenTestRepository hiddenTestRepository;
+  private final LanguageRuntimeRepository runtimeRepository;
+
+  public ChallengeService(
+      ChallengeRepository challengeRepository,
+      ChallengePublicTestRepository publicTestRepository,
+      ChallengeHiddenTestRepository hiddenTestRepository,
+      LanguageRuntimeRepository runtimeRepository) {
+    this.challengeRepository = challengeRepository;
+    this.publicTestRepository = publicTestRepository;
+    this.hiddenTestRepository = hiddenTestRepository;
+    this.runtimeRepository = runtimeRepository;
+  }
+
+  public Page<ChallengeSummary> list(Pageable pageable) {
+    return challengeRepository.findAllByOrderByTitleAsc(pageable).map(this::toSummary);
+  }
+
+  public ChallengeDetail get(String slug) {
+    ChallengeEntity entity =
+        challengeRepository
+            .findBySlug(slug)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    List<String> publicTests =
+        publicTestRepository.findByChallengeIdOrderBySortOrderAsc(entity.getId()).stream()
+            .map(t -> t.getName())
+            .toList();
+    int hiddenCount = hiddenTestRepository.findByChallengeIdOrderBySortOrderAsc(entity.getId()).size();
+    List<RuntimeOption> runtimes =
+        runtimeRepository.findActiveByLanguageName(entity.getLanguage()).stream()
+            .map(r -> new RuntimeOption(r.getVersion(), r.isActive()))
+            .toList();
+    return new ChallengeDetail(
+        entity.getSlug(),
+        entity.getTitle(),
+        entity.getDescriptionMd(),
+        entity.getStarterCode(),
+        entity.getDifficulty(),
+        entity.getLanguage(),
+        entity.getGatingConfig(),
+        publicTests,
+        hiddenCount,
+        runtimes);
+  }
+
+  private ChallengeSummary toSummary(ChallengeEntity entity) {
+    return new ChallengeSummary(entity.getSlug(), entity.getTitle(), entity.getDifficulty());
+  }
+
+  public record ChallengeSummary(String slug, String title, String difficulty) {}
+
+  public record RuntimeOption(String version, boolean active) {}
+
+  public record ChallengeDetail(
+      String slug,
+      String title,
+      String descriptionMd,
+      String starterCode,
+      String difficulty,
+      String language,
+      String gatingConfig,
+      List<String> publicTestNames,
+      int hiddenTestCount,
+      List<RuntimeOption> runtimes) {}
+}

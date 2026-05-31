@@ -1,0 +1,123 @@
+# Full stack — build and run entirely in Docker (no host JDK/Node/Gradle required).
+#
+#   cp .env.example .env
+#   ./scripts/compose-up.sh   # builds runner images, then compose up
+#
+# Runner images: docker-compose.runners.yml (build + shared Maven cache; API still `docker run` per job).
+#   make runners   or   ./scripts/compose-up.sh (builds runners before API)
+#
+# UI:  http://localhost:${FE_PORT:-3000}
+# API: http://localhost:${API_PORT:-8080}  (also proxied via FE at /api/)
+#
+# Requires: Docker Engine with Compose v2. The API orchestrates submission runners via
+# the mounted Docker socket (Docker-out-of-Docker). Set DOCKER_GID in .env if the socket
+# is not accessible (see .env.example).
+
+name: code-training-lab
+
+include:
+  - path: docker-compose.runners.yml
+
+services:
+  postgres:
+    container_name: ctl-postgres
+    image: postgres:17
+    restart: unless-stopped
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?Set PG_PASSWORD in .env}
+      POSTGRES_DB: ${PG_DB:-code_training_lab}
+    volumes:
+      - ctl-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DB:-code_training_lab}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    container_name: ctl-rabbitmq
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    ports:
+      - "${RMQ_PORT:-5672}:5672"
+      - "${RMQ_MGMT_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RMQ_PASSWORD:?Set RMQ_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    container_name: ctl-api
+    build:
+      context: .
+      dockerfile: be/Dockerfile
+    image: ${CTL_API_IMAGE:-code-challenge-ide-be:local}
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-production}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${PG_DB:-code_training_lab}
+      SPRING_DATASOURCE_USERNAME: ${PG_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RMQ_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-true}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      CTL_CHALLENGES_PATH: /challenges
+      CTL_DOCKER_ENABLED: "true"
+      RUNNER_JAVA_26_IMAGE: ${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}
+      RUNNER_MAVEN_CACHE_VOLUME: ${RUNNER_MAVEN_CACHE_VOLUME:-ctl-runner-m2-cache}
+      LSP_JAVA_IMAGE: ${LSP_JAVA_IMAGE:-code-challenge-ide-lsp-java:local}
+      CTL_LSP_ENABLED: ${CTL_LSP_ENABLED:-true}
+      AI_PROVIDER: ${AI_PROVIDER:-openrouter}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./challenges:/challenges:ro
+    group_add:
+      - "${DOCKER_GID:-0}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      runner-m2-warm:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  fe:
+    container_name: ctl-fe
+    build:
+      context: ./fe
+      dockerfile: Dockerfile
+    image: ${CTL_FE_IMAGE:-code-challenge-ide-fe:local}
+    restart: unless-stopped
+    ports:
+      - "${FE_PORT:-3000}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  ctl-postgres-data:

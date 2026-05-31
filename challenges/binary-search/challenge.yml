@@ -1,0 +1,15 @@
+slug: binary-search
+title: Binary Search
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Implement `Solution.binarySearch(int[] nums, int target)` on a **sorted ascending** array.
+
+  Return the 0-based index of `target`, or `-1` if it is not present.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution

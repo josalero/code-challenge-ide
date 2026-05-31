@@ -1,0 +1,15 @@
+slug: anagram-groups
+title: Anagram Groups
+difficulty: medium
+language: java
+default_runtime_version: "26"
+description_md: |
+  Given an array of strings, implement `Solution.groupAnagrams(String[] strs)`.
+
+  Group words that are anagrams of each other. Each input word appears in exactly one group. Order of groups and words within a group does not matter.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution

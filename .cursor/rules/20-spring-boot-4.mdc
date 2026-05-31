@@ -1,0 +1,52 @@
+---
+description: Spring Boot 4 and Spring Framework 7 rules
+globs:
+  - "**/*.java"
+  - "**/build.gradle"
+  - "**/pom.xml"
+  - "**/application*.yml"
+  - "**/application*.properties"
+alwaysApply: false
+---
+
+# Spring Boot 4 Rules
+
+Target Spring Boot 4.x and Spring Framework 7.x.
+
+Use:
+- Jakarta EE packages, never `javax.*`.
+- `jakarta.validation.*`
+- `jakarta.persistence.*`
+- `jakarta.servlet.*`
+- Constructor injection.
+- Configuration properties with validation for externalized config.
+- Problem Details / RFC 9457 style error responses when appropriate.
+- Spring Boot auto-configuration instead of manual bean wiring where possible.
+- Spring-managed transactions at service boundaries.
+
+Avoid:
+- Spring Boot 2.x or old Spring Security patterns.
+- `WebSecurityConfigurerAdapter`.
+- `javax.*` imports.
+- Manually creating ObjectMapper unless required.
+- Hardcoded environment-specific values.
+- Field injection.
+- Business logic in controllers.
+- Entity exposure directly from REST APIs unless the project already follows that style.
+
+REST APIs:
+- Controllers should be thin.
+- Use request/response DTOs.
+- Validate request DTOs.
+- Return meaningful HTTP status codes.
+- Keep pagination explicit.
+- Keep API versioning consistent with existing project style.
+
+Jackson:
+- Be aware that Spring Boot 4/Spring Framework 7 support Jackson 3.
+- Do not use outdated `com.fasterxml.jackson` assumptions without checking dependencies.
+- Check package names and migration impact before changing serialization code.
+
+Testing:
+- Prefer slice tests for controllers/repositories where useful.
+- Prefer integration tests with Testcontainers for database behavior.

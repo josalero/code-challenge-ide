@@ -1,0 +1,18 @@
+slug: fizzbuzz
+title: FizzBuzz
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Implement `Solution.fizzBuzz(int n)` returning the classic FizzBuzz sequence for `1..n` (inclusive).
+
+  - Multiples of 3 → `"Fizz"`
+  - Multiples of 5 → `"Buzz"`
+  - Multiples of both → `"FizzBuzz"`
+  - Otherwise → decimal string of the number
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution

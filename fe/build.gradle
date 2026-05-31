@@ -1,0 +1,44 @@
+import org.gradle.internal.os.OperatingSystem
+
+plugins {
+    id 'base'
+}
+
+def configureNpmExec(ExecSpec spec, String npmScript) {
+    spec.workingDir = project.projectDir
+    String npmPath = System.getenv('NPM_PATH')
+    if (npmPath != null && !npmPath.isBlank()) {
+        spec.commandLine npmPath, 'run', npmScript
+    } else if (OperatingSystem.current().isWindows()) {
+        spec.commandLine 'cmd', '/c', "npm run ${npmScript}"
+    } else {
+        spec.commandLine 'bash', '-lc', "npm run ${npmScript}"
+    }
+}
+
+tasks.register('npmBuild', Exec) {
+    group = 'build'
+    description = 'Production frontend bundle (npm run build)'
+    configureNpmExec(it, 'build')
+    inputs.dir('src').optional()
+    inputs.file('package.json')
+    inputs.file('package-lock.json')
+    outputs.dir('dist')
+}
+
+tasks.register('npmLint', Exec) {
+    group = 'verification'
+    description = 'ESLint (npm run lint)'
+    configureNpmExec(it, 'lint')
+    inputs.dir('src').optional()
+    inputs.file('package.json')
+    inputs.file('eslint.config.js')
+}
+
+tasks.named('assemble') {
+    dependsOn 'npmBuild'
+}
+
+tasks.named('check') {
+    dependsOn 'npmLint', 'npmBuild'
+}
