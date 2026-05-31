@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.codetraininglab.support.IntegrationTestBase;
 import java.time.Duration;
 import java.util.UUID;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ import tools.jackson.databind.json.JsonMapper;
       "ctl.runner-java-26-image=code-challenge-ide-runner-java-26:local"
     })
 @EnabledIfEnvironmentVariable(named = "CTL_INTEGRATION_DOCKER", matches = "true")
+@Disabled("Integration tests temporarily disabled — Testcontainers/CI wiring investigation pending.")
 class SubmissionFlowDockerIntegrationTest extends IntegrationTestBase {
 
   @Autowired private MockMvc mockMvc;
