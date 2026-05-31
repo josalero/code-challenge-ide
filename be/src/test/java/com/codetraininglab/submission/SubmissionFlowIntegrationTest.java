@@ -13,7 +13,6 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import java.time.Duration;
 import java.util.UUID;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -22,7 +21,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 @AutoConfigureMockMvc
-@Disabled("Temporarily disabled — Testcontainers Postgres connection investigation pending in CI.")
 class SubmissionFlowIntegrationTest extends IntegrationTestBase {
 
   @Autowired private MockMvc mockMvc;
