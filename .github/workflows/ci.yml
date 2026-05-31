@@ -2,8 +2,7 @@
 # thresholds in config/quality-gates.properties (enforced by :be:check / JaCoCo).
 #
 # In GitHub: Settings → Branches → Branch protection → Require status checks:
-#   - backend-quality
-#   - frontend-quality
+#   - ci-gate   (or individually: backend-quality, frontend-quality, backend-docker-e2e)
 
 name: CI
 
@@ -110,3 +109,18 @@ jobs:
         env:
           CTL_INTEGRATION_DOCKER: 'true'
         run: ./gradlew :be:test --tests com.codetraininglab.submission.SubmissionFlowDockerIntegrationTest --no-daemon
+
+  ci-gate:
+    name: ci-gate
+    needs: [backend-quality, frontend-quality, backend-docker-e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all CI jobs to succeed
+        run: |
+          echo "backend-quality: ${{ needs.backend-quality.result }}"
+          echo "frontend-quality: ${{ needs.frontend-quality.result }}"
+          echo "backend-docker-e2e: ${{ needs.backend-docker-e2e.result }}"
+          test "${{ needs.backend-quality.result }}" = "success"
+          test "${{ needs.frontend-quality.result }}" = "success"
+          test "${{ needs.backend-docker-e2e.result }}" = "success"
