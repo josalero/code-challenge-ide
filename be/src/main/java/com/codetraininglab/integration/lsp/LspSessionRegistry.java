@@ -1,5 +1,6 @@
 package com.codetraininglab.integration.lsp;
 
+import com.codetraininglab.platform.config.CtlProperties;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,18 +11,23 @@ import org.springframework.web.socket.WebSocketSession;
 @Component
 public class LspSessionRegistry {
 
-  private final Map<String, LspJavaSession> sessions = new ConcurrentHashMap<>();
+  private final CtlProperties properties;
+  private final Map<String, LspDockerSession> sessions = new ConcurrentHashMap<>();
 
-  public void register(WebSocketSession wsSession, LspJavaSession lspSession) {
+  public LspSessionRegistry(CtlProperties properties) {
+    this.properties = properties;
+  }
+
+  public void register(WebSocketSession wsSession, LspDockerSession lspSession) {
     sessions.put(wsSession.getId(), lspSession);
   }
 
-  public LspJavaSession get(WebSocketSession wsSession) {
+  public LspDockerSession get(WebSocketSession wsSession) {
     return sessions.get(wsSession.getId());
   }
 
   public void remove(WebSocketSession wsSession) {
-    LspJavaSession session = sessions.remove(wsSession.getId());
+    LspDockerSession session = sessions.remove(wsSession.getId());
     if (session != null) {
       session.close();
     }
@@ -29,7 +35,7 @@ public class LspSessionRegistry {
 
   @Scheduled(fixedRate = 60_000)
   public void reapIdleSessions() {
-    Duration idleLimit = Duration.ofMinutes(5);
+    Duration idleLimit = Duration.ofMinutes(Math.max(1, properties.lspIdleMinutes()));
     sessions
         .entrySet()
         .removeIf(

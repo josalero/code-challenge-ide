@@ -1,0 +1,17 @@
+slug: valid-parentheses-rust
+title: Valid Parentheses (Rust)
+difficulty: easy
+language: rust
+default_runtime_version: "1.84"
+description_md: |
+  Return whether `()`, `[]`, and `{}` brackets are balanced and properly nested.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "isvalid_should_be_true"
+    description: "isValid(\"()\") should be true"
+  - name: "isvalid_should_be_true"
+    description: "isValid(\"()[]{}\") should be true"

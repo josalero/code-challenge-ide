@@ -73,7 +73,7 @@ def run_pytest(wall_seconds: int) -> tuple[int, str, str]:
         "tests",
         "-q",
         "--tb=short",
-        f"--cov=solution",
+        "--cov=solution",
         "--cov-report=xml:/tmp/workspace/coverage.xml",
         "--junitxml=/tmp/workspace/junit.xml",
     ]
@@ -85,17 +85,6 @@ def run_pytest(wall_seconds: int) -> tuple[int, str, str]:
         timeout=wall_seconds,
     )
     return proc.returncode, proc.stdout, proc.stderr
-
-
-def run_ruff() -> tuple[int, str]:
-    proc = subprocess.run(
-        ["ruff", "check", "solution.py", "tests"],
-        cwd=WORKSPACE,
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    return proc.returncode, proc.stderr + proc.stdout
 
 
 def parse_junit() -> list[dict]:
@@ -137,9 +126,20 @@ def parse_coverage() -> dict:
     }
 
 
-def parse_ruff(stderr_stdout: str) -> dict:
-    errors = len(re.findall(r":\d+:\d+:", stderr_stdout))
-    return {"errors": errors, "warnings": 0, "findings": []}
+def parse_compile_warnings(stderr: str) -> dict:
+    """Surface pytest collection warnings and python SyntaxWarnings from stderr."""
+    messages: list[dict] = []
+    for line in stderr.splitlines():
+        match = re.match(r"^(.+\.py):(\d+):\s*(SyntaxWarning|DeprecationWarning|UserWarning):\s*(.+)$", line)
+        if match and len(messages) < 20:
+            messages.append(
+                {
+                    "file": match.group(1),
+                    "line": int(match.group(2)),
+                    "message": f"{match.group(3)}: {match.group(4)}",
+                }
+            )
+    return {"warnings": len(messages), "messages": messages}
 
 
 def emit(result: dict) -> None:
@@ -152,7 +152,7 @@ def failed(message: str) -> dict:
         "status": "FAILED",
         "tests": [{"name": "runner", "status": "FAIL", "message": message, "duration_ms": 0}],
         "coverage": {"line_percent": 0.0, "branch_percent": 0.0},
-        "checkstyle": {"errors": 0, "warnings": 0},
+        "compile": {"warnings": 0, "messages": []},
     }
 
 
@@ -169,12 +169,11 @@ def main() -> int:
         setup_workspace(job)
         code, stdout_log, stderr_log = run_pytest(wall_seconds)
         tests = parse_junit()
-        ruff_code, ruff_out = run_ruff()
         if not tests and code != 0:
             emit(
                 {
                     **failed("pytest failed: " + truncate(stderr_log or stdout_log)),
-                    "checkstyle": parse_ruff(ruff_out),
+                    "compile": parse_compile_warnings(stderr_log),
                     "logs": {
                         "stdout_truncated": truncate(stdout_log),
                         "stderr_truncated": truncate(stderr_log),
@@ -187,7 +186,7 @@ def main() -> int:
                 "status": "COMPLETED",
                 "tests": tests,
                 "coverage": parse_coverage(),
-                "checkstyle": parse_ruff(ruff_out),
+                "compile": parse_compile_warnings(stderr_log),
                 "logs": {
                     "stdout_truncated": truncate(stdout_log),
                     "stderr_truncated": truncate(stderr_log),

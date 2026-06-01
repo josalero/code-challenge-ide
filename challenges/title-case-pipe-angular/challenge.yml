@@ -1,0 +1,15 @@
+slug: title-case-pipe-angular
+title: Title Case Pipe (Angular)
+difficulty: easy
+language: angular
+default_runtime_version: "19"
+description_md: |
+  Standalone `TitleCasePipe` — capitalizes first letter of each word.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "title_cases"
+    description: "Title cases"

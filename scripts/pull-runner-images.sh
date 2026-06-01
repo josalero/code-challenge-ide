@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pull Java runner images from GHCR (production). Tags must match language_runtimes.docker_image.
+# Pull runner images from GHCR (production). Tags must match language_runtimes.docker_image.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
@@ -14,7 +14,29 @@ set +a
 REGISTRY="${CTL_IMAGE_REGISTRY:-ghcr.io}"
 OWNER="${CTL_IMAGE_OWNER:?Set CTL_IMAGE_OWNER in .env}"
 TAG="${CTL_IMAGE_TAG:-latest}"
-for major in 17 21 25 26; do
-  docker pull "${REGISTRY}/${OWNER}/code-challenge-ide-runner-java-${major}:${TAG}"
+PREFIX="${REGISTRY}/${OWNER}/code-challenge-ide"
+
+COMPONENTS=(
+  runner-java-17
+  runner-java-21
+  runner-java-25
+  runner-java-26
+  runner-python-312
+  runner-go-123
+  runner-node-22
+  runner-dotnet-8
+  runner-typescript-57
+  runner-rust-184
+  runner-cpp-20
+  runner-react-19
+  runner-vue-35
+  runner-angular-19
+  lsp-java
+)
+
+for component in "${COMPONENTS[@]}"; do
+  echo "Pulling ${PREFIX}-${component}:${TAG}…"
+  docker pull "${PREFIX}-${component}:${TAG}"
 done
-docker pull "${REGISTRY}/${OWNER}/code-challenge-ide-lsp-java:${TAG}"
+
+echo "All runner images pulled. Update language_runtimes.docker_image to GHCR tags if not using :local."

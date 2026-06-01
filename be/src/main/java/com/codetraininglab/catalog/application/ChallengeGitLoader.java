@@ -13,8 +13,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -75,17 +78,21 @@ public class ChallengeGitLoader implements ApplicationRunner {
       @SuppressWarnings("unchecked")
       Map<String, Object> meta = yaml.load(Files.readString(yamlFile));
       String slug = stringVal(meta, "slug");
-      if (slug == null || challengeRepository.findBySlug(slug).isPresent()) {
+      if (slug == null) {
+        return;
+      }
+      Optional<ChallengeEntity> existing = challengeRepository.findBySlug(slug);
+      if (existing.isPresent()) {
+        syncPublicTestMetadata(dir, meta, existing.get().getId());
         return;
       }
       String language = stringVal(meta, "language");
       if (language == null || language.isBlank()) {
         language = "java";
       }
-      String starterFile =
-          "python".equalsIgnoreCase(language) ? "starter/solution.py" : "starter/Solution.java";
-      String testExtension = "python".equalsIgnoreCase(language) ? ".py" : ".java";
-      String starter = Files.readString(dir.resolve(starterFile));
+      language = language.toLowerCase();
+      ChallengeLanguageSupport.LanguageFiles files = ChallengeLanguageSupport.filesFor(language);
+      String starter = Files.readString(dir.resolve(files.starterRelativePath()));
       String gatingJson = jsonMapper.writeValueAsString(meta.getOrDefault("gating_config", Map.of()));
       Instant now = clock.instant();
       ChallengeEntity entity =
@@ -98,16 +105,72 @@ public class ChallengeGitLoader implements ApplicationRunner {
               gatingJson,
               "git",
               stringVal(meta, "difficulty"),
-              language.toLowerCase(),
+              language,
               now,
               now);
       challengeRepository.save(entity);
-      seedTests(dir.resolve("public/tests"), entity.getId(), true, testExtension);
-      seedTests(dir.resolve("hidden/tests"), entity.getId(), false, testExtension);
+      seedPublicTests(dir, meta, entity.getId(), files.testFileSuffix());
+      seedTests(dir.resolve("hidden/tests"), entity.getId(), false, files.testFileSuffix());
       log.info("Seeded challenge {}", slug);
     } catch (IOException e) {
       log.error("Failed to load challenge from {}", dir, e);
     }
+  }
+
+  private void syncPublicTestMetadata(Path dir, Map<String, Object> meta, UUID challengeId) {
+    List<PublicTestMeta> metas = readPublicTestsMeta(meta);
+    if (metas.isEmpty()) {
+      return;
+    }
+    List<ChallengePublicTestEntity> existing =
+        publicTestRepository.findByChallengeIdOrderBySortOrderAsc(challengeId);
+    boolean fullyDescribed =
+        existing.size() == metas.size()
+            && existing.stream().noneMatch(row -> row.getDescription().isBlank());
+    if (fullyDescribed) {
+      return;
+    }
+    publicTestRepository.deleteAll(existing);
+    int order = 0;
+    for (PublicTestMeta entry : metas) {
+      publicTestRepository.save(
+          new ChallengePublicTestEntity(
+              UUID.randomUUID(), challengeId, entry.name(), entry.description(), order++));
+    }
+    log.info("Synced {} public test description(s) for challenge {}", metas.size(), challengeId);
+  }
+
+  private void seedPublicTests(
+      Path dir, Map<String, Object> meta, UUID challengeId, String extension) throws IOException {
+    List<PublicTestMeta> metas = readPublicTestsMeta(meta);
+    if (!metas.isEmpty()) {
+      int order = 0;
+      for (PublicTestMeta entry : metas) {
+        publicTestRepository.save(
+            new ChallengePublicTestEntity(
+                UUID.randomUUID(), challengeId, entry.name(), entry.description(), order++));
+      }
+      return;
+    }
+    seedTests(dir.resolve("public/tests"), challengeId, true, extension);
+  }
+
+  private List<PublicTestMeta> readPublicTestsMeta(Map<String, Object> meta) {
+    Object raw = meta.get("public_tests_meta");
+    if (!(raw instanceof List<?> list)) {
+      return List.of();
+    }
+    List<PublicTestMeta> result = new ArrayList<>();
+    for (Object item : list) {
+      if (item instanceof Map<?, ?> map) {
+        String name = stringVal(map, "name");
+        String description = stringVal(map, "description");
+        if (name != null && !name.isBlank()) {
+          result.add(new PublicTestMeta(name, description == null ? "" : description));
+        }
+      }
+    }
+    return result;
   }
 
   private void seedTests(Path testsDir, UUID challengeId, boolean isPublic, String extension)
@@ -122,7 +185,8 @@ public class ChallengeGitLoader implements ApplicationRunner {
         String name = file.getFileName().toString().replace(extension, "");
         if (isPublic) {
           publicTestRepository.save(
-              new ChallengePublicTestEntity(UUID.randomUUID(), challengeId, name, order++));
+              new ChallengePublicTestEntity(
+                  UUID.randomUUID(), challengeId, name, "", order++));
         } else {
           hiddenTestRepository.save(
               new ChallengeHiddenTestEntity(
@@ -132,8 +196,10 @@ public class ChallengeGitLoader implements ApplicationRunner {
     }
   }
 
-  private static String stringVal(Map<String, Object> meta, String key) {
+  private static String stringVal(Map<?, ?> meta, String key) {
     Object value = meta.get(key);
     return value == null ? null : value.toString();
   }
+
+  private record PublicTestMeta(String name, String description) {}
 }

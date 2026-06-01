@@ -1,0 +1,18 @@
+slug: single-number
+title: Single Number
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Every element appears twice except one. Implement `Solution.singleNumber(int[] nums)`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_singlenumber_new_int_2_2_1_to_equal_1"
+    description: "Expect singleNumber(new int[] {2,2,1}) to equal 1"
+  - name: "expect_singlenumber_new_int_4_1_2_1_2_to_equal_4"
+    description: "Expect singleNumber(new int[] {4,1,2,1,2}) to equal 4"

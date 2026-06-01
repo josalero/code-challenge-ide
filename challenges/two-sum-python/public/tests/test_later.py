@@ -1,0 +1,5 @@
+from solution import *
+
+def test_later() -> None:
+    assert two_sum([3, 2, 4], 6) == [1, 2]
+

@@ -31,6 +31,9 @@ spring:
     password: ${SPRING_RABBITMQ_PASSWORD:${RMQ_PASSWORD:guest}}
     listener:
       simple:
+        concurrency: ${RMQ_LISTENER_CONCURRENCY:4}
+        max-concurrency: ${RMQ_LISTENER_MAX_CONCURRENCY:8}
+        prefetch: ${RMQ_LISTENER_PREFETCH:4}
         retry:
           enabled: true
           max-attempts: 3
@@ -75,7 +78,20 @@ ctl:
   challenges-path: ${CTL_CHALLENGES_PATH:challenges}
   runner-java-26-image: ${RUNNER_JAVA_26_IMAGE:code-challenge-ide-runner-java-26:latest}
   runner-maven-cache-volume: ${RUNNER_MAVEN_CACHE_VOLUME:ctl-runner-m2-cache}
-  lsp-java-image: ${LSP_JAVA_IMAGE:code-challenge-ide-lsp-java:latest}
+  runner-pool-enabled: ${RUNNER_POOL_ENABLED:true}
+  runner-pool-idle-minutes: ${RUNNER_POOL_IDLE_MINUTES:60}
+  lsp-images:
+    java: ${LSP_JAVA_IMAGE:code-challenge-ide-lsp-java:local}
+    python: ${LSP_PYTHON_IMAGE:code-challenge-ide-lsp-python:local}
+    go: ${LSP_GO_IMAGE:code-challenge-ide-lsp-go:local}
+    node: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-lsp-typescript:local}
+    typescript: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-lsp-typescript:local}
+    react: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-lsp-typescript:local}
+    vue: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-lsp-typescript:local}
+    angular: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-lsp-typescript:local}
+    csharp: ${LSP_DOTNET_IMAGE:code-challenge-ide-lsp-dotnet:local}
+    rust: ${LSP_RUST_IMAGE:code-challenge-ide-lsp-rust:local}
+    cpp: ${LSP_CPP_IMAGE:code-challenge-ide-lsp-cpp:local}
   lsp-idle-minutes: 5
   idempotency-ttl-hours: 24
   ai-provider: ${AI_PROVIDER:openrouter}
@@ -85,6 +101,7 @@ ctl:
   ollama-model: ${OLLAMA_MODEL:qwen2.5-coder}
   docker-enabled: ${CTL_DOCKER_ENABLED:true}
   lsp-enabled: ${CTL_LSP_ENABLED:true}
+  repo-root: ${CTL_REPO_ROOT:}
 
 springdoc:
   api-docs:

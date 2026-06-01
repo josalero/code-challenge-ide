@@ -3,10 +3,13 @@
 # Build images (does not start long-lived services):
 #   docker compose -f docker-compose.local.yml -f docker-compose.runners.yml build
 #
-# Pre-warm Maven cache volume (recommended once after build):
+# Pre-warm Maven cache volume (optional — Admin Ops or):
 #   docker compose -f docker-compose.local.yml -f docker-compose.runners.yml run --rm runner-m2-warm
 #
-# Or: make runners
+# Pre-warm LSP images (optional — not part of make runners):
+#   make lsp-warm
+#
+# Build only: make runners
 
 volumes:
   ctl-runner-m2-cache:
@@ -61,12 +64,117 @@ services:
       dockerfile: Dockerfile
     image: ${RUNNER_PYTHON_312_IMAGE:-code-challenge-ide-runner-python-312:local}
 
+  runner-go-123:
+    <<: *runner-build-only
+    build:
+      context: ./runners/go
+      dockerfile: Dockerfile
+    image: ${RUNNER_GO_123_IMAGE:-code-challenge-ide-runner-go-123:local}
+
+  runner-node-22:
+    <<: *runner-build-only
+    build:
+      context: ./runners/node
+      dockerfile: Dockerfile
+    image: ${RUNNER_NODE_22_IMAGE:-code-challenge-ide-runner-node-22:local}
+
+  runner-dotnet-8:
+    <<: *runner-build-only
+    build:
+      context: ./runners/dotnet
+      dockerfile: Dockerfile
+    image: ${RUNNER_DOTNET_8_IMAGE:-code-challenge-ide-runner-dotnet-8:local}
+
+  runner-typescript-57:
+    <<: *runner-build-only
+    build:
+      context: ./runners/typescript
+      dockerfile: Dockerfile
+    image: ${RUNNER_TYPESCRIPT_57_IMAGE:-code-challenge-ide-runner-typescript-57:local}
+
+  runner-rust-184:
+    <<: *runner-build-only
+    build:
+      context: ./runners/rust
+      dockerfile: Dockerfile
+    image: ${RUNNER_RUST_184_IMAGE:-code-challenge-ide-runner-rust-184:local}
+
+  runner-cpp-20:
+    <<: *runner-build-only
+    build:
+      context: ./runners/cpp
+      dockerfile: Dockerfile
+    image: ${RUNNER_CPP_20_IMAGE:-code-challenge-ide-runner-cpp-20:local}
+
+  runner-react-19:
+    <<: *runner-build-only
+    build:
+      context: ./runners/react
+      dockerfile: Dockerfile
+    image: ${RUNNER_REACT_19_IMAGE:-code-challenge-ide-runner-react-19:local}
+
+  runner-vue-35:
+    <<: *runner-build-only
+    build:
+      context: ./runners/vue
+      dockerfile: Dockerfile
+    image: ${RUNNER_VUE_35_IMAGE:-code-challenge-ide-runner-vue-35:local}
+
+  runner-angular-19:
+    <<: *runner-build-only
+    build:
+      context: ./runners/angular
+      dockerfile: Dockerfile
+    image: ${RUNNER_ANGULAR_19_IMAGE:-code-challenge-ide-runner-angular-19:local}
+
   runner-lsp-java:
     <<: *runner-build-only
     build:
       context: ./runners/lsp-java
       dockerfile: Dockerfile
     image: ${LSP_JAVA_IMAGE:-code-challenge-ide-lsp-java:local}
+
+  runner-lsp-python:
+    <<: *runner-build-only
+    build:
+      context: ./runners/lsp-python
+      dockerfile: Dockerfile
+    image: ${LSP_PYTHON_IMAGE:-code-challenge-ide-lsp-python:local}
+
+  runner-lsp-go:
+    <<: *runner-build-only
+    build:
+      context: ./runners/lsp-go
+      dockerfile: Dockerfile
+    image: ${LSP_GO_IMAGE:-code-challenge-ide-lsp-go:local}
+
+  runner-lsp-typescript:
+    <<: *runner-build-only
+    build:
+      context: ./runners/lsp-typescript
+      dockerfile: Dockerfile
+    image: ${LSP_TYPESCRIPT_IMAGE:-code-challenge-ide-lsp-typescript:local}
+
+  runner-lsp-dotnet:
+    <<: *runner-build-only
+    build:
+      context: ./runners/lsp-dotnet
+      dockerfile: Dockerfile
+    image: ${LSP_DOTNET_IMAGE:-code-challenge-ide-lsp-dotnet:local}
+
+  runner-lsp-rust:
+    <<: *runner-build-only
+    build:
+      context: ./runners/lsp-rust
+      dockerfile: Dockerfile
+    image: ${LSP_RUST_IMAGE:-code-challenge-ide-lsp-rust:local}
+
+  runner-lsp-cpp:
+    <<: *runner-build-only
+    build:
+      context: ./runners/lsp-cpp
+      dockerfile: Dockerfile
+    image: ${LSP_CPP_IMAGE:-code-challenge-ide-lsp-cpp:local}
 
   # One-shot: copy baked /opt/m2 into the shared volume (API mounts this on each submission).
   runner-m2-warm:

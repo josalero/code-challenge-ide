@@ -1,0 +1,17 @@
+slug: binary-search-typescript
+title: Binary Search (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Return index of `target` in sorted `nums`, or -1 if absent.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "binarysearch_1_3_5_7_9_3_should_return_index_1"
+    description: "binarySearch([1, 3, 5, 7, 9], 3) should return index 1"
+  - name: "binarysearch_1_3_5_7_9_4_should_return_index_1"
+    description: "binarySearch([1, 3, 5, 7, 9], 4) should return index -1"

@@ -1,0 +1,17 @@
+slug: best-time-stock-rust
+title: Best Time to Buy and Sell Stock (Rust)
+difficulty: easy
+language: rust
+default_runtime_version: "1.84"
+description_md: |
+  Return maximum profit from one buy and one sell; 0 if no profit possible.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "maxprofit_7_1_5_3_6_4_should_equal_5"
+    description: "maxProfit([7, 1, 5, 3, 6, 4]) should equal 5"
+  - name: "maxprofit_7_6_4_3_1_should_equal_0"
+    description: "maxProfit([7, 6, 4, 3, 1]) should equal 0"

@@ -1,9 +1,12 @@
 package com.codetraininglab.coach.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.codetraininglab.platform.config.CtlProperties;
+import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
 import com.codetraininglab.domain.FeedbackCategory;
 import com.codetraininglab.domain.FeedbackStatus;
 import com.codetraininglab.platform.persistence.ChallengeRepository;
@@ -23,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class AiCoachServiceTest {
@@ -36,23 +40,7 @@ class AiCoachServiceTest {
 
   @BeforeEach
   void setUp() {
-    CtlProperties properties =
-        new CtlProperties(
-            true,
-            "test-jwt-secret-must-be-at-least-32-characters-long",
-            24,
-            "http://localhost:5173",
-            "challenges",
-            "runner",
-            "",
-            "lsp",
-            5,
-            24,
-            "openrouter",
-            "",
-            "model",
-            "http://localhost:11434",
-            "ollama", false, false);
+    var properties = CtlPropertiesTestFixtures.defaults();
     service =
         new AiCoachService(
             feedbackItemRepository,
@@ -68,6 +56,7 @@ class AiCoachServiceTest {
     UUID reportId = UUID.randomUUID();
     UUID itemId = UUID.randomUUID();
     UUID submissionId = UUID.randomUUID();
+    UUID challengeId = UUID.randomUUID();
     FeedbackItemEntity item =
         new FeedbackItemEntity(
             itemId,
@@ -89,6 +78,119 @@ class AiCoachServiceTest {
                 new SubmissionEntity(
                     submissionId,
                     userId,
+                    challengeId,
+                    UUID.randomUUID(),
+                    SubmissionStatus.COMPLETED,
+                    "c",
+                    null,
+                    null,
+                    Instant.EPOCH,
+                    Instant.EPOCH)));
+    when(challengeRepository.findById(challengeId))
+        .thenReturn(
+            Optional.of(
+                new com.codetraininglab.platform.persistence.ChallengeEntity(
+                    challengeId,
+                    "slug",
+                    "Title",
+                    "desc",
+                    "starter",
+                    "{}",
+                    "git",
+                    "easy",
+                    "java",
+                    Instant.EPOCH,
+                    Instant.EPOCH)));
+
+    var response = service.explain(userId, itemId);
+    assertThat(response.explanation()).contains("not configured");
+  }
+
+  @Test
+  void explainReturnsCachedExplanationWithoutCallingProvider() {
+    UUID userId = UUID.randomUUID();
+    UUID reportId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    UUID submissionId = UUID.randomUUID();
+    UUID challengeId = UUID.randomUUID();
+    FeedbackItemEntity item =
+        new FeedbackItemEntity(
+            itemId,
+            reportId,
+            FeedbackCategory.CORRECTNESS,
+            FeedbackStatus.fail,
+            "error",
+            "failed",
+            "id",
+            Instant.EPOCH);
+    item.setAiExplanation("Cached explanation");
+    when(feedbackItemRepository.findById(itemId)).thenReturn(Optional.of(item));
+    when(reportRepository.findById(reportId))
+        .thenReturn(
+            Optional.of(
+                new SubmissionReportEntity(reportId, submissionId, 1, "{}", true, Instant.EPOCH)));
+    when(submissionRepository.findById(submissionId))
+        .thenReturn(
+            Optional.of(
+                new SubmissionEntity(
+                    submissionId,
+                    userId,
+                    challengeId,
+                    UUID.randomUUID(),
+                    SubmissionStatus.COMPLETED,
+                    "c",
+                    null,
+                    null,
+                    Instant.EPOCH,
+                    Instant.EPOCH)));
+    when(challengeRepository.findById(challengeId))
+        .thenReturn(
+            Optional.of(
+                new com.codetraininglab.platform.persistence.ChallengeEntity(
+                    challengeId,
+                    "slug",
+                    "Title",
+                    "desc",
+                    "starter",
+                    "{}",
+                    "git",
+                    "easy",
+                    "java",
+                    Instant.EPOCH,
+                    Instant.EPOCH)));
+
+    var response = service.explain(userId, itemId);
+
+    assertThat(response.explanation()).isEqualTo("Cached explanation");
+    verify(feedbackItemRepository).findById(itemId);
+  }
+
+  @Test
+  void explainRejectsForeignSubmission() {
+    UUID itemId = UUID.randomUUID();
+    UUID reportId = UUID.randomUUID();
+    UUID submissionId = UUID.randomUUID();
+    FeedbackItemEntity item =
+        new FeedbackItemEntity(
+            itemId,
+            reportId,
+            FeedbackCategory.CORRECTNESS,
+            FeedbackStatus.fail,
+            "error",
+            "failed",
+            "id",
+            Instant.EPOCH);
+    when(feedbackItemRepository.findById(itemId)).thenReturn(Optional.of(item));
+    when(reportRepository.findById(reportId))
+        .thenReturn(
+            Optional.of(
+                new SubmissionReportEntity(reportId, submissionId, 1, "{}", true, Instant.EPOCH)));
+    when(submissionRepository.findById(submissionId))
+        .thenReturn(
+            Optional.of(
+                new SubmissionEntity(
+                    submissionId,
+                    UUID.randomUUID(),
                     UUID.randomUUID(),
                     UUID.randomUUID(),
                     SubmissionStatus.COMPLETED,
@@ -98,7 +200,159 @@ class AiCoachServiceTest {
                     Instant.EPOCH,
                     Instant.EPOCH)));
 
-    var response = service.explain(userId, itemId);
-    assertThat(response.explanation()).contains("not configured");
+    assertThatThrownBy(() -> service.explain(UUID.randomUUID(), itemId))
+        .isInstanceOf(ResponseStatusException.class);
+  }
+
+  @Test
+  void alternativesUsesOllamaProviderWhenConfigured() {
+    CtlProperties ollamaProperties =
+        new CtlProperties(
+            true,
+            CtlPropertiesTestFixtures.defaults().jwtSecret(),
+            24,
+            "http://localhost:5173",
+            "challenges",
+            "runner",
+            "",
+            true,
+            60,
+            CtlPropertiesTestFixtures.TEST_LSP_IMAGES,
+            5,
+            24,
+            "ollama",
+            "",
+            "model",
+            "http://127.0.0.1:1",
+            "qwen",
+            false,
+            false);
+    AiCoachService ollamaService =
+        new AiCoachService(
+            feedbackItemRepository,
+            reportRepository,
+            submissionRepository,
+            challengeRepository,
+            ollamaProperties);
+    UUID userId = UUID.randomUUID();
+    UUID challengeId = UUID.randomUUID();
+    UUID submissionId = UUID.randomUUID();
+    when(challengeRepository.findBySlug("slug"))
+        .thenReturn(
+            Optional.of(
+                new com.codetraininglab.platform.persistence.ChallengeEntity(
+                    challengeId,
+                    "slug",
+                    "Title",
+                    "desc",
+                    "starter",
+                    "{}",
+                    "git",
+                    "easy",
+                    "python",
+                    Instant.EPOCH,
+                    Instant.EPOCH)));
+    when(submissionRepository.findAll())
+        .thenReturn(
+            List.of(
+                new SubmissionEntity(
+                    submissionId,
+                    userId,
+                    challengeId,
+                    UUID.randomUUID(),
+                    SubmissionStatus.COMPLETED,
+                    "code",
+                    null,
+                    null,
+                    Instant.EPOCH,
+                    Instant.EPOCH)));
+    when(reportRepository.findBySubmissionId(submissionId))
+        .thenReturn(
+            Optional.of(
+                new SubmissionReportEntity(
+                    UUID.randomUUID(), submissionId, 1, "{}", false, Instant.EPOCH)));
+
+    var response = ollamaService.alternatives(userId, "slug");
+
+    assertThat(response.alternatives()).contains("AI request failed");
+  }
+
+  @Test
+  void reviewSubmissionReturnsCoachTextEvenWithoutPassingSubmission() {
+    UUID submissionId = UUID.randomUUID();
+    UUID challengeId = UUID.randomUUID();
+    when(submissionRepository.findById(submissionId))
+        .thenReturn(
+            Optional.of(
+                new SubmissionEntity(
+                    submissionId,
+                    UUID.randomUUID(),
+                    challengeId,
+                    UUID.randomUUID(),
+                    SubmissionStatus.COMPLETED,
+                    "class Solution {}",
+                    null,
+                    null,
+                    Instant.EPOCH,
+                    Instant.EPOCH)));
+    when(challengeRepository.findById(challengeId))
+        .thenReturn(
+            Optional.of(
+                new com.codetraininglab.platform.persistence.ChallengeEntity(
+                    challengeId,
+                    "reverse-string",
+                    "Reverse String",
+                    "desc",
+                    "starter",
+                    "{}",
+                    "git",
+                    "easy",
+                    "java",
+                    Instant.EPOCH,
+                    Instant.EPOCH)));
+
+    String review = service.reviewSubmission(submissionId);
+
+    assertThat(review).contains("not configured");
+  }
+
+  @Test
+  void reviewSubmissionThrowsWhenSubmissionMissing() {
+    UUID submissionId = UUID.randomUUID();
+    when(submissionRepository.findById(submissionId)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.reviewSubmission(submissionId))
+        .isInstanceOf(ResponseStatusException.class);
+  }
+
+  @Test
+  void coachPromptFormatsLanguageLabels() {
+    var challenge =
+        new com.codetraininglab.platform.persistence.ChallengeEntity(
+            UUID.randomUUID(),
+            "slug",
+            "Title",
+            "desc",
+            "starter",
+            "{}",
+            "git",
+            "easy",
+            "cpp",
+            Instant.EPOCH,
+            Instant.EPOCH);
+    var item =
+        new FeedbackItemEntity(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            FeedbackCategory.CORRECTNESS,
+            FeedbackStatus.fail,
+            "error",
+            "failed",
+            "id",
+            Instant.EPOCH);
+
+    String prompt = AiCoachService.coachPrompt(item, challenge);
+
+    assertThat(prompt).contains("C++").contains("slug");
   }
 }

@@ -22,12 +22,17 @@ public class ChallengePublicTestEntity {
   @Column(name = "sort_order", nullable = false)
   private int sortOrder;
 
+  @Column(nullable = false)
+  private String description;
+
   protected ChallengePublicTestEntity() {}
 
-  public ChallengePublicTestEntity(UUID id, UUID challengeId, String name, int sortOrder) {
+  public ChallengePublicTestEntity(
+      UUID id, UUID challengeId, String name, String description, int sortOrder) {
     this.id = id;
     this.challengeId = challengeId;
     this.name = name;
+    this.description = description == null ? "" : description;
     this.sortOrder = sortOrder;
   }
 
@@ -37,5 +42,13 @@ public class ChallengePublicTestEntity {
 
   public String getName() {
     return name;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description == null ? "" : description;
   }
 }

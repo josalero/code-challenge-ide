@@ -2,9 +2,27 @@
 
 | Doc | Purpose |
 | --- | --- |
+| [runner-ops.md](./runner-ops.md) | **Run tests** pooling, Maven/LSP warm, Admin Ops, env vars |
 | [code_training_lab_mvp_specification.md](./code_training_lab_mvp_specification.md) | Product scope, roadmap, architecture |
-| [contracts.md](./contracts.md) | Runner/submission/SSE contracts (code is source of truth) |
+| [contracts.md](./contracts.md) | Runner, submission, SSE, challenge on-disk contract |
+| [adding-challenges.md](./adding-challenges.md) | **How to add challenges** (seed, admin, manual, future) |
+| [challenge-catalog-backlog.md](./challenge-catalog-backlog.md) | Catalog counts, recent additions, backlog |
+| [challenge-catalog-sources.md](./challenge-catalog-sources.md) | Inspiration repos per language |
+| [frontend.md](./frontend.md) | React workspace UI, shadcn, routes, skills |
 | [coolify.md](./coolify.md) | Self-hosted deploy (Coolify / VPS) |
-| [cursor/README.md](./cursor/README.md) | Optional third-party Cursor rules/skills |
+| [cursor/README.md](./cursor/README.md) | Optional Cursor rules/skills vendors |
 | [../be/ARCHITECTURE.md](../be/ARCHITECTURE.md) | Backend package layout |
 | [../README.md](../README.md) | Run locally, Docker, CI |
+| [../AGENTS.md](../AGENTS.md) | Agent entry point |
+
+## Quick links
+
+| I want to… | Start here |
+| --- | --- |
+| Run the app locally | [../README.md](../README.md) |
+| Add a new code challenge | [adding-challenges.md](./adding-challenges.md) |
+| Bulk-seed from catalog | [adding-challenges.md#method-1--seed-catalog-bulk](./adding-challenges.md) + `scripts/seed-challenges/` |
+| Create one challenge (admin) | [adding-challenges.md#method-2--admin-ui](./adding-challenges.md) |
+| Change the workspace UI | [frontend.md](./frontend.md) |
+| Warm runners / fix slow tests | [runner-ops.md](./runner-ops.md) |
+| Understand runner JSON | [contracts.md](./contracts.md) |

@@ -1,0 +1,17 @@
+slug: counter-vue
+title: Counter (Vue)
+difficulty: easy
+language: vue
+default_runtime_version: "3.5"
+description_md: |
+  Implement a Vue SFC `Counter` with prop `initial` (default 0) and a button that increments.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "shows_initial"
+    description: "Shows initial"
+  - name: "increments"
+    description: "Increments"

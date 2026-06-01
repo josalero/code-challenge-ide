@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "skills": {
+    "accessibility": {
+      "source": "addyosmani/web-quality-skills",
+      "sourceType": "github",
+      "skillPath": "skills/accessibility/SKILL.md",
+      "computedHash": "10e83284d3395ab5ec2f2db602b663480a37a4ff404d16510eefe86b034fcc1a"
+    },
+    "best-practices": {
+      "source": "addyosmani/web-quality-skills",
+      "sourceType": "github",
+      "skillPath": "skills/best-practices/SKILL.md",
+      "computedHash": "2de17c9838c439f6ed12b9963d303e058cd46f1ba0c2700814fe4762e0e307b9"
+    },
+    "ckm:banner-design": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/banner-design/SKILL.md",
+      "computedHash": "7bbf0f48704f5c40436e3466d7ef9bcbafe35a84eb8c3e9d0ab76408a57bac5c"
+    },
+    "ckm:brand": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/brand/SKILL.md",
+      "computedHash": "89c8579d232e6e14152a8b898d49eb94f59aa7288ed8ca103cd3b38cb082e00a"
+    },
+    "ckm:design": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/design/SKILL.md",
+      "computedHash": "2020e511bb6fbc1dbc233d1da335ec7e8cb553d6e321d34cec4555efcc9ec8f1"
+    },
+    "ckm:design-system": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/design-system/SKILL.md",
+      "computedHash": "49b8308dc428c66b0983f4b3d102c522c495f62538121064d1e82a040b1afd2c"
+    },
+    "ckm:slides": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/slides/SKILL.md",
+      "computedHash": "6d753831914ed6703b7222153f2710efc2f195f0ab24fd2119c76c2b6d1a6ba1"
+    },
+    "ckm:ui-styling": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/ui-styling/SKILL.md",
+      "computedHash": "9ae38e4e201f338b6150e462b98a2db0f2ae7c180c77e8cfb1d33eba9d33bf33"
+    },
+    "core-web-vitals": {
+      "source": "addyosmani/web-quality-skills",
+      "sourceType": "github",
+      "skillPath": "skills/core-web-vitals/SKILL.md",
+      "computedHash": "8e55888cc177e994e2cbfa0ee0a277e1273c6d43c8cf7649165f9e2f39489a48"
+    },
+    "frontend-ui-engineering": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-ui-engineering/SKILL.md",
+      "computedHash": "917f6cf8c3d694c2b145463799ee492a2b88d7bf22ff479e08111d3ea5501e65"
+    },
+    "performance": {
+      "source": "addyosmani/web-quality-skills",
+      "sourceType": "github",
+      "skillPath": "skills/performance/SKILL.md",
+      "computedHash": "38e9a28b0a5ce04a9e3bd6e9cfb2e52e4012f0e93d763eb863b15218a7abccd6"
+    },
+    "playwright-best-practices": {
+      "source": "currents-dev/playwright-best-practices-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "320eaf861e3a0a923bfaad0726cb311a3fe30093378f8d26c89b9c5ae5c42b35"
+    },
+    "seo": {
+      "source": "addyosmani/web-quality-skills",
+      "sourceType": "github",
+      "skillPath": "skills/seo/SKILL.md",
+      "computedHash": "1f1551c898c17a88a976b4f4aa84e17886f115f3887b62d1c4f8a1c040e4d1ef"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "8f8bcc9024aa068245fac646d654a18c80280e4b06112ccd3e691a8c96cd66bd"
+    },
+    "shadcn-component-discovery": {
+      "source": "mattbx/shadcn-skills",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn-component-discovery/SKILL.md",
+      "computedHash": "c0cb08dad86f68b1e993360c93f4c71295c6ae1a9effc4497f61923d7dd2de28"
+    },
+    "shadcn-component-review": {
+      "source": "mattbx/shadcn-skills",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn-component-review/SKILL.md",
+      "computedHash": "f44334fae042003e35b19a497be9451a24727007643c3aedb4f4e4dd10e177b1"
+    },
+    "ui-audit": {
+      "source": "mblode/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ui-audit/SKILL.md",
+      "computedHash": "add7d93aebb6b177c38981df3c7597cd5f06d6a38e082c788f7581c48762f3e1"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
+      "computedHash": "0a413bf988d06481f69bb81df2070741c3ba12dd9f1be2706d57f259c905992d"
+    },
+    "ux-audit": {
+      "source": "mblode/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ux-audit/SKILL.md",
+      "computedHash": "112094b1b42a13ceff01056aaf77bfe37e4ea8cbe7919373395da8a09ca67037"
+    },
+    "web-quality-audit": {
+      "source": "addyosmani/web-quality-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-quality-audit/SKILL.md",
+      "computedHash": "48e90790e9269d46c6471bbc61d109db05bdc2ef834734dff21c039880934e9b"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+slug: is-prime-typescript
+title: Prime Check (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Return true if n >= 2 is prime.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "public_1"
+    description: "isPrime(1) should be false"
+  - name: "public_2"
+    description: "isPrime(2) should be true"
+  - name: "public_3"
+    description: "isPrime(17) should be true"

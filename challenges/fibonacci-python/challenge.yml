@@ -1,0 +1,17 @@
+slug: fibonacci-python
+title: Fibonacci (Python)
+difficulty: easy
+language: python
+default_runtime_version: "3.12"
+description_md: |
+  Return the n-th Fibonacci number (`fib(0)=0`, `fib(1)=1`).
+gating_config:
+  line_coverage_percent: 80
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_fib_zero"
+    description: "Checks that fib zero"
+  - name: "test_fib_five"
+    description: "Checks that fib five"

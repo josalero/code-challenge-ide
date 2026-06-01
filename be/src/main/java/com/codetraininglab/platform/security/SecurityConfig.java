@@ -6,6 +6,7 @@ import jakarta.servlet.DispatcherType;
 import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -20,6 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
   @Bean
@@ -44,6 +46,8 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, ApiPaths.AUTH_LOGIN)
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, ApiPaths.AUTH_REGISTER)
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, ApiPaths.AUTH_REGISTRATION_INFO)
                     .permitAll()
                     .requestMatchers(
                         "/actuator/health",

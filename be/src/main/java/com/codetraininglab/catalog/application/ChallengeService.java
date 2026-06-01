@@ -1,5 +1,6 @@
 package com.codetraininglab.catalog.application;
 
+import com.codetraininglab.catalog.api.CreateChallengeRequest;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.ChallengeHiddenTestRepository;
 import com.codetraininglab.platform.persistence.ChallengePublicTestRepository;
@@ -20,16 +21,23 @@ public class ChallengeService {
   private final ChallengePublicTestRepository publicTestRepository;
   private final ChallengeHiddenTestRepository hiddenTestRepository;
   private final LanguageRuntimeRepository runtimeRepository;
+  private final ChallengePublisher challengePublisher;
 
   public ChallengeService(
       ChallengeRepository challengeRepository,
       ChallengePublicTestRepository publicTestRepository,
       ChallengeHiddenTestRepository hiddenTestRepository,
-      LanguageRuntimeRepository runtimeRepository) {
+      LanguageRuntimeRepository runtimeRepository,
+      ChallengePublisher challengePublisher) {
     this.challengeRepository = challengeRepository;
     this.publicTestRepository = publicTestRepository;
     this.hiddenTestRepository = hiddenTestRepository;
     this.runtimeRepository = runtimeRepository;
+    this.challengePublisher = challengePublisher;
+  }
+
+  public ChallengeSummary create(CreateChallengeRequest request) {
+    return challengePublisher.create(request);
   }
 
   public Page<ChallengeSummary> list(Pageable pageable) {
@@ -41,9 +49,9 @@ public class ChallengeService {
         challengeRepository
             .findBySlug(slug)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    List<String> publicTests =
+    List<PublicTestInfo> publicTests =
         publicTestRepository.findByChallengeIdOrderBySortOrderAsc(entity.getId()).stream()
-            .map(t -> t.getName())
+            .map(t -> new PublicTestInfo(t.getName(), t.getDescription()))
             .toList();
     int hiddenCount = hiddenTestRepository.findByChallengeIdOrderBySortOrderAsc(entity.getId()).size();
     List<RuntimeOption> runtimes =
@@ -64,12 +72,15 @@ public class ChallengeService {
   }
 
   private ChallengeSummary toSummary(ChallengeEntity entity) {
-    return new ChallengeSummary(entity.getSlug(), entity.getTitle(), entity.getDifficulty());
+    return new ChallengeSummary(
+        entity.getSlug(), entity.getTitle(), entity.getDifficulty(), entity.getLanguage());
   }
 
-  public record ChallengeSummary(String slug, String title, String difficulty) {}
+  public record ChallengeSummary(String slug, String title, String difficulty, String language) {}
 
   public record RuntimeOption(String version, boolean active) {}
+
+  public record PublicTestInfo(String name, String description) {}
 
   public record ChallengeDetail(
       String slug,
@@ -79,7 +90,7 @@ public class ChallengeService {
       String difficulty,
       String language,
       String gatingConfig,
-      List<String> publicTestNames,
+      List<PublicTestInfo> publicTests,
       int hiddenTestCount,
       List<RuntimeOption> runtimes) {}
 }

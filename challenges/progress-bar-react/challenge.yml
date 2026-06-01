@@ -1,0 +1,15 @@
+slug: progress-bar-react
+title: Progress Bar (React)
+difficulty: easy
+language: react
+default_runtime_version: "19"
+description_md: |
+  Implement `ProgressBar` — `percent` prop (0–100) sets inner bar width as `percent%`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "sets_width_from_percent"
+    description: "Sets width from percent"

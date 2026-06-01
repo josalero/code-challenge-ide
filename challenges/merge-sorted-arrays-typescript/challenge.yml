@@ -1,0 +1,17 @@
+slug: merge-sorted-arrays-typescript
+title: Merge Sorted Arrays (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Merge two sorted integer arrays into one sorted array.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "mergesorted_1_2_3_2_5_6_should_return_1_2_2_3_5_"
+    description: "mergeSorted([1, 2, 3], [2, 5, 6]) should return [1, 2, 2, 3, 5, 6]"
+  - name: "mergesorted_1_should_return_1"
+    description: "mergeSorted([], [1]) should return [1]"

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.when;
 
 import com.codetraininglab.platform.config.CtlProperties;
+import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
 import com.codetraininglab.domain.SubmissionStatus;
 import com.codetraininglab.platform.persistence.ChallengeHiddenTestEntity;
 import com.codetraininglab.platform.persistence.LanguageEntity;
@@ -16,10 +17,13 @@ import com.codetraininglab.platform.persistence.SubmissionEntity;
 import java.util.Optional;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,31 +68,42 @@ class DockerRunnerClientIntegrationTest {
     assumeTrue(imageBuilt, "Failed to build runner image");
   }
 
+  @AfterAll
+  static void cleanupPoolContainer() throws Exception {
+    String containerName =
+        DockerRunnerCommands.poolContainerName(IMAGE);
+    Runtime.getRuntime().exec(new String[] {"docker", "rm", "-f", containerName}).waitFor(30, TimeUnit.SECONDS);
+  }
+
   @Test
-  void runsReverseStringChallengeInContainer() throws Exception {
+  void runsReverseStringChallengeInPooledContainer() throws Exception {
+    var base = CtlPropertiesTestFixtures.defaults(repoRoot().resolve("challenges").toString());
     CtlProperties properties =
         new CtlProperties(
-            true,
-            "test-jwt-secret-must-be-at-least-32-characters-long",
-            24,
-            "http://localhost:5173",
-            repoRoot().resolve("challenges").toString(),
+            base.registrationEnabled(),
+            base.jwtSecret(),
+            base.jwtExpirationHours(),
+            base.corsAllowedOrigins(),
+            base.challengesPath(),
             IMAGE,
-            "",
-            "lsp",
-            5,
-            24,
-            "openrouter",
-            "",
-            "model",
-            "http://localhost:11434",
-            "ollama",
+            base.runnerMavenCacheVolume(),
             true,
-
-            false);
+            60,
+            CtlPropertiesTestFixtures.TEST_LSP_IMAGES,
+            base.lspIdleMinutes(),
+            base.idempotencyTtlHours(),
+            base.aiProvider(),
+            base.openrouterApiKey(),
+            base.openrouterModel(),
+            base.ollamaBaseUrl(),
+            base.ollamaModel(),
+            true,
+            base.lspEnabled());
+    RunnerContainerPool pool =
+        new RunnerContainerPool(properties, JsonMapper.builder().build(), Clock.systemUTC());
     DockerRunnerClient client =
         new DockerRunnerClient(
-            properties, JsonMapper.builder().build(), runtimeRepository, languageRepository);
+            properties, JsonMapper.builder().build(), runtimeRepository, languageRepository, pool);
 
     String solution =
         Files.readString(

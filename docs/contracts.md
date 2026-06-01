@@ -9,10 +9,41 @@ When this doc disagrees with code, **trust the code**.
 
 One JSON job line in, one JSON result line out.
 
+### Execution on the API host
+
+By default the API uses **pooled runner containers** (`RunnerContainerPool`) — one long-lived container per runner Docker image, with a line-oriented **daemon** on stdin (Java: `runners/java/daemon.py`). Set `RUNNER_POOL_ENABLED=false` for legacy one-shot `docker run --rm` per job.
+
+Operational details, warm vs built, timings: [runner-ops.md](./runner-ops.md).
+
+### Job payload (`RunnerJobPayload`)
+
+| Field | Purpose |
+| --- | --- |
+| `submission_id` | Correlation id |
+| `challenge_slug` | Incremental workspace in pooled mode (same slug → reuse compile cache) |
+| `workspace_layout` | See table below |
+| `solution_code` | User solution source |
+| `custom_tests_code` | Optional custom tests |
+| `hidden_tests` | Server-side test sources |
+| `limits` | CPU/memory/wall clock caps |
+
+Pooled containers receive `CTL_RUNNER_POOLED=1` from the API (not from `.env`).
+
+### Languages
+
 | Language | `workspace_layout` | Implementation |
 | --- | --- | --- |
-| Java | `maven` | `RunnerJobPayload.java`, `runners/java/run.py` |
+| Java | `maven` | `runners/java/run.py` (+ `daemon.py` when pooled) |
 | Python | `pytest` | `runners/python/run.py` |
+| Go | `go-test` | `runners/go/run.py` |
+| Node.js | `node-test` | `runners/node/run.py` |
+| C# | `dotnet` | `runners/dotnet/run.py` |
+| TypeScript | `typescript-test` | `runners/typescript/run.py` |
+| Rust | `cargo-test` | `runners/rust/run.py` |
+| C++ | `cmake-test` | `runners/cpp/run.py` |
+| React | `vitest-react` | `runners/react/run.py` |
+| Vue | `vitest-vue` | `runners/vue/run.py` |
+| Angular | `vitest-angular` | `runners/angular/run.py` |
 
 Result shape: `RunnerResult.java` (`status`, `tests`, `coverage`, `checkstyle`, `logs`).
 
@@ -36,6 +67,8 @@ Event names: `status`, `test_result`, `done`, `error` — see `SubmissionEventTy
 
 `challenge.yml` + `starter/` + `public/tests/` + `hidden/tests/`.  
 `GET /api/v1/challenges/{slug}` exposes public test **names** only; hidden source stays server-side.
+
+**Adding or extending challenges:** [adding-challenges.md](./adding-challenges.md).
 
 ## Feedback
 

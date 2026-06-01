@@ -1,0 +1,17 @@
+slug: binary-search-csharp
+title: Binary Search (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  Return index of `target` in sorted `nums`, or -1 if absent.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "Binarysearch135793ShouldReturnIndex1"
+    description: "binarySearch([1, 3, 5, 7, 9], 3) should return index 1"
+  - name: "Binarysearch135794ShouldReturnIndex1"
+    description: "binarySearch([1, 3, 5, 7, 9], 4) should return index -1"

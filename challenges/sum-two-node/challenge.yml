@@ -1,0 +1,17 @@
+slug: sum-two-node
+title: Sum Two (Node.js)
+difficulty: easy
+language: node
+default_runtime_version: "22"
+description_md: |
+  Export `sum(a, b)` from `solution.js` returning the sum of two integers.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "adds_small_numbers"
+    description: "Adds small numbers"
+  - name: "adds_negatives"
+    description: "Adds negatives"

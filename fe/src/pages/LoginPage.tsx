@@ -1,9 +1,12 @@
 import { Alert, Button, Form, Input } from "antd";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { ApiError } from "../api/client";
+import { apiFetch, ApiError } from "../api/client";
+import type { RegistrationInfoResponse } from "../api/types";
 import { useAuth } from "../auth/useAuth";
 import AuthShell from "../components/ui/AuthShell";
+import { ApiPaths } from "../domain/constants";
 
 type LoginForm = {
   email: string;
@@ -17,7 +20,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const registrationQuery = useQuery({
+    queryKey: ["registration-info"],
+    queryFn: () => apiFetch<RegistrationInfoResponse>(ApiPaths.AUTH_REGISTRATION_INFO),
+  });
+
   const from = (location.state as { from?: string } | null)?.from ?? "/challenges";
+  const registrationOpen = registrationQuery.data?.registrationOpen ?? false;
 
   if (token) {
     return <Navigate to={from} replace />;
@@ -66,12 +75,25 @@ export default function LoginPage() {
           Sign in
         </Button>
       </Form>
-      <p className="mb-0 mt-6 text-center text-sm text-slate-400">
-        No account?{" "}
-        <Link to="/register" className="text-emerald-400 hover:text-emerald-300">
-          Create one
-        </Link>
-      </p>
+      {registrationOpen && (
+        <p className="mb-0 mt-6 text-center text-sm text-slate-400">
+          {registrationQuery.data?.bootstrap ? (
+            <>
+              First time here?{" "}
+              <Link to="/register" className="text-emerald-400 hover:text-emerald-300">
+                Set up admin account
+              </Link>
+            </>
+          ) : (
+            <>
+              No account?{" "}
+              <Link to="/register" className="text-emerald-400 hover:text-emerald-300">
+                Create one
+              </Link>
+            </>
+          )}
+        </p>
+      )}
     </AuthShell>
   );
 }

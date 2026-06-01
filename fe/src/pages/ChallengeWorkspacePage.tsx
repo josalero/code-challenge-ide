@@ -1,9 +1,7 @@
-import Editor from "@monaco-editor/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Alert, Breadcrumb, Spin, Tabs, Typography } from "antd";
-import CtlCard from "../components/ui/CtlCard";
+import { App } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { apiFetch, ApiError } from "../api/client";
 import type {
   ChallengeDetail,
@@ -12,16 +10,11 @@ import type {
   RunnerLogs,
   SubmissionResponse,
 } from "../api/types";
-import AiCoachPanel from "../components/AiCoachPanel";
 import AppLayout from "../components/AppLayout";
-import ChallengeBriefCard from "../components/ChallengeBriefCard";
-import JavaLspEditor from "../components/JavaLspEditor";
-import RunProgressPanel, {
-  type ActivityEntry,
-  type TrackedTest,
-} from "../components/RunProgressPanel";
-import RunResultBanner from "../components/RunResultBanner";
-import WorkspaceToolbar from "../components/WorkspaceToolbar";
+import WorkspaceShell from "../components/workspace/WorkspaceShell";
+import type { BottomPanelTab } from "../components/workspace/WorkspaceBottomPanel";
+import type { AttemptRecord } from "../components/workspace/AttemptHistoryTab";
+import type { ActivityEntry, TrackedTest } from "../domain/runProgressTypes";
 import {
   ApiPaths,
   JavaRuntimeVersion,
@@ -29,6 +22,10 @@ import {
   SubmissionStatus,
 } from "../domain/constants";
 import type { SubmissionStatusValue } from "../domain/constants";
+import {
+  deriveWorkspaceRunPhase,
+} from "../domain/workspaceRunState";
+import { useAutosaveDraft } from "../hooks/useAutosaveDraft";
 import { useRunTestsShortcut } from "../hooks/useRunTestsShortcut";
 import { useSubmissionEvents } from "../hooks/useSubmissionEvents";
 import {
@@ -45,6 +42,7 @@ export default function ChallengeWorkspacePage() {
   const [customTestsCode, setCustomTestsCode] = useState("");
   const [runtimeVersion, setRuntimeVersion] = useState<string>(JavaRuntimeVersion.DEFAULT);
   const [workspaceTab, setWorkspaceTab] = useState<"solution" | "custom">("solution");
+  const [bottomTab, setBottomTab] = useState<BottomPanelTab>("tests");
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
   const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatusValue | null>(
     null,
@@ -61,7 +59,7 @@ export default function ChallengeWorkspacePage() {
   const [streamConnected, setStreamConnected] = useState(false);
   const [streamReconnecting, setStreamReconnecting] = useState(false);
   const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
-  const lspEnabled = true;
+  const [attempts, setAttempts] = useState<AttemptRecord[]>([]);
 
   const appendActivity = useCallback((msg: string) => {
     setActivityLog((prev) => [
@@ -83,21 +81,38 @@ export default function ChallengeWorkspacePage() {
     enabled: Boolean(slug),
   });
 
+  const { status: autosaveStatus, loadDraft } = useAutosaveDraft(
+    slug,
+    solutionCode,
+    Boolean(slug) && Boolean(challengeQuery.data),
+  );
+
   useEffect(() => {
-    if (!challengeQuery.data || initializedSlug.current === slug) {
+    return () => {
+      initializedSlug.current = null;
+    };
+  }, [slug]);
+
+  useEffect(() => {
+    const detail = challengeQuery.data;
+    if (!detail || detail.slug !== slug) {
+      return;
+    }
+    if (initializedSlug.current === slug) {
       return;
     }
     initializedSlug.current = slug;
-    setSolutionCode(challengeQuery.data.starterCode);
+    const draft = loadDraft();
+    setSolutionCode(draft ?? detail.starterCode);
     const defaultRuntime =
-      challengeQuery.data.runtimes.find((r) => r.active)?.version
-        ?? JavaRuntimeVersion.DEFAULT;
+      detail.runtimes.find((r) => r.active)?.version ?? JavaRuntimeVersion.DEFAULT;
     setRuntimeVersion(defaultRuntime);
     setReport(null);
     setSubmissionStatus(null);
     setSubmitError(null);
+    setAttempts([]);
     lastToastReportId.current = null;
-  }, [slug, challengeQuery.data]);
+  }, [slug, challengeQuery.data, loadDraft]);
 
   useEffect(() => {
     if (!customTestsQuery.data) {
@@ -107,6 +122,7 @@ export default function ChallengeWorkspacePage() {
   }, [slug, customTestsQuery.data]);
 
   const scrollToCoach = useCallback(() => {
+    setBottomTab("feedback");
     coachRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
@@ -125,11 +141,8 @@ export default function ChallengeWorkspacePage() {
   });
 
   const submitMutation = useMutation({
-    mutationFn: async () => {
-      if (customTestsCode.trim()) {
-        await saveCustomTests.mutateAsync(customTestsCode);
-      }
-      return apiFetch<SubmissionResponse>(ApiPaths.SUBMISSIONS, {
+    mutationFn: async () =>
+      apiFetch<SubmissionResponse>(ApiPaths.SUBMISSIONS, {
         method: "POST",
         headers: { "Idempotency-Key": crypto.randomUUID() },
         body: JSON.stringify({
@@ -138,8 +151,7 @@ export default function ChallengeWorkspacePage() {
           solutionCode,
           customTestsCode: customTestsCode.trim() || null,
         }),
-      });
-    },
+      }),
     onMutate: () => {
       setSubmitError(null);
       setReport(null);
@@ -149,17 +161,26 @@ export default function ChallengeWorkspacePage() {
       setStreamConnected(false);
       setStreamReconnecting(false);
       setRunStartedAt(Date.now());
+      setBottomTab("tests");
       if (challengeQuery.data) {
         setTrackedTests(buildInitialTrackedTests(challengeQuery.data));
       }
       setSubmissionStatus(SubmissionStatus.PENDING);
       appendActivity("Submitting solution to the API…");
-      message.info("Run started — sandbox is preparing");
     },
     onSuccess: (submission) => {
       setActiveSubmissionId(submission.id);
       setSubmissionStatus(submission.status as SubmissionStatusValue);
       appendActivity("Submission created — connecting live stream…");
+      setAttempts((prev) => [
+        {
+          id: submission.id,
+          status: submission.status as SubmissionStatusValue,
+          createdAt: submission.createdAt,
+          passed: null,
+        },
+        ...prev,
+      ]);
     },
     onError: (e) => {
       const msg = e instanceof ApiError ? e.message : "Submit failed";
@@ -176,6 +197,17 @@ export default function ChallengeWorkspacePage() {
       try {
         const loaded = await apiFetch<ReportResponse>(ApiPaths.report(reportId));
         setReport(loaded);
+        setAttempts((prev) =>
+          prev.map((a) =>
+            a.id === loaded.submissionId
+              ? {
+                  ...a,
+                  passed: !loaded.blocked,
+                  summary: loaded.summary,
+                }
+              : a,
+          ),
+        );
       } catch (e) {
         const msg =
           e instanceof ApiError ? e.message : "Could not load coach report";
@@ -291,26 +323,20 @@ export default function ChallengeWorkspacePage() {
   });
 
   useEffect(() => {
-    if (!activeSubmissionId) {
+    if (!activeSubmissionId || streamConnected) {
       return;
     }
     const interval = window.setInterval(() => {
       void pollSubmission(activeSubmissionId);
-    }, 1000);
+    }, 3000);
     return () => window.clearInterval(interval);
-  }, [activeSubmissionId, pollSubmission]);
+  }, [activeSubmissionId, pollSubmission, streamConnected]);
 
   useEffect(() => {
     if (report?.runnerLogs) {
       setRunnerLogs(report.runnerLogs);
     }
   }, [report]);
-
-  useEffect(() => {
-    if (report) {
-      scrollToCoach();
-    }
-  }, [report, scrollToCoach]);
 
   const cancelMutation = useMutation({
     mutationFn: (submissionId: string) =>
@@ -347,213 +373,135 @@ export default function ChallengeWorkspacePage() {
     || submissionStatus === SubmissionStatus.FAILED
     || submissionStatus === SubmissionStatus.CANCELLED;
 
-  return (
-    <AppLayout>
-      <Breadcrumb
-        className="ctl-breadcrumb mb-4"
-        items={[
-          { title: <Link to="/challenges">Challenges</Link> },
-          { title: challenge?.title ?? slug },
-        ]}
-      />
+  const runPhase = deriveWorkspaceRunPhase({
+    challengeLoading: challengeQuery.isLoading,
+    isRunning,
+    submissionStatus,
+    submitError,
+    report,
+    trackedTests,
+    runnerLogs,
+  });
 
-      {challengeQuery.isLoading && (
-        <div className="flex justify-center py-16">
-          <Spin size="large" />
-        </div>
-      )}
+  return (
+    <AppLayout variant="workspace">
+      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       {challengeQuery.error && (
-        <Alert
-          type="error"
-          showIcon
+        <div
+          className="shrink-0 border-b border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-red-200"
           role="alert"
-          message={(challengeQuery.error as Error).message}
-        />
+        >
+          {(challengeQuery.error as Error).message}
+        </div>
       )}
 
       {challenge && (
-        <>
-          <WorkspaceToolbar
+        <div ref={coachRef} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <WorkspaceShell
+            slug={slug}
             challenge={challenge}
             runtimeVersion={runtimeVersion}
             onRuntimeChange={setRuntimeVersion}
+            solutionCode={solutionCode}
+            customTestsCode={customTestsCode}
+            onSolutionChange={setSolutionCode}
+            onCustomTestsChange={setCustomTestsCode}
+            workspaceTab={workspaceTab}
+            onWorkspaceTabChange={setWorkspaceTab}
             isRunning={isRunning}
+            runPhase={runPhase}
+            autosaveStatus={autosaveStatus}
             onRunTests={runTests}
-            showCancel={
-              Boolean(activeSubmissionId)
-              && (submissionStatus === SubmissionStatus.PENDING
-                || submissionStatus === SubmissionStatus.RUNNING)
-            }
+            onSubmit={runTests}
             onCancel={
               activeSubmissionId
                 ? () => cancelMutation.mutate(activeSubmissionId)
                 : undefined
             }
             cancelLoading={cancelMutation.isPending}
+            showCancel={
+              Boolean(activeSubmissionId)
+              && (submissionStatus === SubmissionStatus.PENDING
+                || submissionStatus === SubmissionStatus.RUNNING)
+            }
             onResetStarter={() => setSolutionCode(challenge.starterCode)}
             onSaveCustomTests={() => saveCustomTests.mutate(customTestsCode)}
             saveCustomTestsLoading={saveCustomTests.isPending}
-            activeTab={workspaceTab}
+            bottomTab={bottomTab}
+            onBottomTabChange={setBottomTab}
+            submissionStatus={submissionStatus}
+            isSubmitting={submitMutation.isPending}
+            streamConnected={streamConnected}
+            streamReconnecting={streamReconnecting}
+            activityLog={activityLog}
+            trackedTests={trackedTests}
+            runStartedAt={runStartedAt}
+            runnerLogs={runnerLogs}
+            report={report}
+            reportLoading={reportLoading}
+            onReportUpdate={setReport}
+            onScrollToCoach={scrollToCoach}
+            attempts={attempts}
+            showLiveRun={showLiveRun}
+            isTerminal={isTerminal}
+            submitError={submitError}
+            loading={challengeQuery.isLoading}
           />
-
-          <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-            <div className="space-y-4">
-              <ChallengeBriefCard
-                challenge={challenge}
-                runtimeVersion={runtimeVersion}
-              />
-
-              <CtlCard
-                title="Workspace"
-                extra={
-                  <Typography.Text className="!text-slate-500 text-xs">
-                    {workspaceTab === "solution" ? "Main solution" : "Optional JUnit tests"}
-                  </Typography.Text>
-                }
-              >
-                <Tabs
-                  activeKey={workspaceTab}
-                  onChange={(key) => setWorkspaceTab(key as "solution" | "custom")}
-                  items={[
-                    {
-                      key: "solution",
-                      label: "Solution",
-                      children: (
-                        <div className="ctl-editor-frame h-[min(520px,60vh)]">
-                          <JavaLspEditor
-                            height="100%"
-                            value={solutionCode}
-                            onChange={setSolutionCode}
-                            lspEnabled={lspEnabled}
-                          />
-                        </div>
-                      ),
-                    },
-                    {
-                      key: "custom",
-                      label: "Custom tests",
-                      children: (
-                        <div className="ctl-editor-frame h-[min(480px,55vh)]">
-                          <Editor
-                            height="100%"
-                            language="java"
-                            theme="vs-dark"
-                            value={customTestsCode}
-                            onChange={(v) => setCustomTestsCode(v ?? "")}
-                            options={{
-                              minimap: { enabled: false },
-                              fontSize: 14,
-                              automaticLayout: true,
-                            }}
-                          />
-                        </div>
-                      ),
-                    },
-                  ]}
-                />
-              </CtlCard>
-            </div>
-
-            <aside
-              className="space-y-4 lg:sticky lg:top-[4.5rem] lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:self-start"
-              aria-label="Run status and logs"
-            >
-              {submitError && (
-                <Alert type="error" showIcon role="alert" message={submitError} />
-              )}
-              {runnerLogs &&
-                (runnerLogs.stdoutTruncated || runnerLogs.stderrTruncated) && (
-                  <CtlCard title="Runner logs">
-                    {runnerLogs.stderrTruncated && (
-                      <pre className="mb-2 max-h-40 overflow-auto whitespace-pre-wrap text-xs text-red-300">
-                        {runnerLogs.stderrTruncated}
-                      </pre>
-                    )}
-                    {runnerLogs.stdoutTruncated && (
-                      <pre className="max-h-40 overflow-auto whitespace-pre-wrap text-xs text-slate-300">
-                        {runnerLogs.stdoutTruncated}
-                      </pre>
-                    )}
-                  </CtlCard>
-                )}
-              {showLiveRun && (
-                <RunProgressPanel
-                  submissionStatus={submissionStatus}
-                  isSubmitting={submitMutation.isPending}
-                  streamConnected={streamConnected}
-                  streamReconnecting={streamReconnecting}
-                  activityLog={activityLog}
-                  trackedTests={trackedTests}
-                  hiddenTestCount={challenge.hiddenTestCount}
-                  runtimeVersion={runtimeVersion}
-                  runStartedAt={runStartedAt}
-                />
-              )}
-
-              {!showLiveRun && !isTerminal && !submissionStatus && (
-                <CtlCard title="Ready to run">
-                  <Typography.Text className="!text-slate-400">
-                    Press <strong>Run tests</strong> or <strong>⌘/Ctrl + Enter</strong>.
-                    Live progress appears here; feedback loads at the bottom when the run
-                    finishes.
-                  </Typography.Text>
-                </CtlCard>
-              )}
-
-              {isTerminal && !showLiveRun && report && (
-                <CtlCard title="Last run">
-                  <Typography.Text className="!text-slate-400 text-sm">
-                    Run finished. Scroll down for the summary and AI coach, then refine
-                    your solution and run again.
-                  </Typography.Text>
-                </CtlCard>
-              )}
-            </aside>
-          </div>
-
-          <section
-            ref={coachRef}
-            className="mt-6 space-y-4 border-t border-slate-800/80 pt-6"
-            aria-label="Run feedback and AI coach"
-          >
-            {report && (
-              <RunResultBanner report={report} onScrollToCoach={scrollToCoach} />
-            )}
-
-            {reportLoading && !report && (
-              <CtlCard>
-                <div className="flex items-center gap-3 py-4" role="status" aria-live="polite">
-                  <Spin />
-                  <Typography.Text className="!text-slate-300">
-                    Loading AI coach report…
-                  </Typography.Text>
-                </div>
-              </CtlCard>
-            )}
-
-            {report && (
-              <AiCoachPanel
-                report={report}
-                challengeSlug={slug}
-                onReportUpdate={setReport}
-              />
-            )}
-
-            {isTerminal && !report && !reportLoading && (
-              <Alert
-                type="info"
-                showIcon
-                message="AI coach not available yet"
-                description={
-                  submissionStatus === SubmissionStatus.FAILED
-                    ? "This run failed before a report was created. Check runner logs on the right, fix the issue, and run tests again."
-                    : "Finish a successful test run to unlock feedback and Ask AI coach below."
-                }
-              />
-            )}
-          </section>
-        </>
+        </div>
       )}
+
+      {!challenge && challengeQuery.isLoading && (
+        <WorkspaceShell
+          slug={slug}
+          challenge={{
+            slug,
+            title: "Loading…",
+            descriptionMd: "",
+            starterCode: "",
+            difficulty: "",
+            language: "java",
+            gatingConfig: "",
+            publicTests: [],
+            hiddenTestCount: 0,
+            runtimes: [{ version: JavaRuntimeVersion.DEFAULT, active: true }],
+          }}
+          runtimeVersion={runtimeVersion}
+          onRuntimeChange={setRuntimeVersion}
+          solutionCode=""
+          customTestsCode=""
+          onSolutionChange={() => {}}
+          onCustomTestsChange={() => {}}
+          workspaceTab="solution"
+          onWorkspaceTabChange={() => {}}
+          isRunning={false}
+          runPhase="loading"
+          autosaveStatus="idle"
+          onRunTests={() => {}}
+          onSubmit={() => {}}
+          showCancel={false}
+          onResetStarter={() => {}}
+          bottomTab="tests"
+          onBottomTabChange={() => {}}
+          submissionStatus={null}
+          isSubmitting={false}
+          streamConnected={false}
+          streamReconnecting={false}
+          activityLog={[]}
+          trackedTests={[]}
+          runStartedAt={null}
+          runnerLogs={null}
+          report={null}
+          reportLoading={false}
+          onReportUpdate={() => {}}
+          onScrollToCoach={() => {}}
+          attempts={[]}
+          showLiveRun={false}
+          isTerminal={false}
+          submitError={null}
+          loading
+        />
+      )}
+      </div>
     </AppLayout>
   );
 }

@@ -13,3 +13,12 @@ gating_config:
 limits:
   per_test_timeout_seconds: 10
 starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "simple_pair_is_valid"
+    description: "Simple Pair Is Valid"
+  - name: "mixed_brackets_are_valid"
+    description: "Mixed Brackets Are Valid"
+  - name: "mismatched_closing_is_invalid"
+    description: "Mismatched Closing Is Invalid"
+  - name: "wrong_order_is_invalid"
+    description: "Wrong Order Is Invalid"

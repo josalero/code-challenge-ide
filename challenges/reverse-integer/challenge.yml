@@ -1,0 +1,18 @@
+slug: reverse-integer
+title: Reverse Integer
+difficulty: medium
+language: java
+default_runtime_version: "26"
+description_md: |
+  Reverse digits of signed 32-bit integer `x`. Return `0` on overflow. `Solution.reverse(int x)`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_reverse_123_to_equal_321"
+    description: "Expect reverse(123) to equal 321"
+  - name: "expect_reverse_123_to_equal_321_2"
+    description: "Expect reverse(-123) to equal -321"

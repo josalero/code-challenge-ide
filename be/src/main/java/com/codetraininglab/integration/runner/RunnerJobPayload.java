@@ -7,6 +7,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record RunnerJobPayload(
     @JsonProperty("submission_id") String submissionId,
+    @JsonProperty("challenge_slug") String challengeSlug,
     @JsonProperty("workspace_layout") String workspaceLayout,
     @JsonProperty("solution_code") String solutionCode,
     @JsonProperty("custom_tests_code") String customTestsCode,

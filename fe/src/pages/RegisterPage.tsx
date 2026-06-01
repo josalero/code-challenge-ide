@@ -1,9 +1,12 @@
-import { Alert, Button, Form, Input } from "antd";
+import { Alert, Button, Form, Input, Spin } from "antd";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { ApiError } from "../api/client";
+import { apiFetch, ApiError } from "../api/client";
+import type { RegistrationInfoResponse } from "../api/types";
 import { useAuth } from "../auth/useAuth";
 import AuthShell from "../components/ui/AuthShell";
+import { ApiPaths } from "../domain/constants";
 
 type RegisterForm = {
   email: string;
@@ -17,8 +20,40 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const registrationQuery = useQuery({
+    queryKey: ["registration-info"],
+    queryFn: () => apiFetch<RegistrationInfoResponse>(ApiPaths.AUTH_REGISTRATION_INFO),
+  });
+
   if (token) {
     return <Navigate to="/challenges" replace />;
+  }
+
+  if (registrationQuery.isLoading) {
+    return (
+      <AuthShell title="Create your account" subtitle="Checking registration status…">
+        <div className="flex justify-center py-10" role="status">
+          <Spin />
+        </div>
+      </AuthShell>
+    );
+  }
+
+  const info = registrationQuery.data;
+  if (!info?.registrationOpen) {
+    return (
+      <AuthShell
+        title="Registration closed"
+        subtitle="New sign-ups are disabled on this instance. Contact an administrator for access."
+      >
+        <Alert type="info" showIcon message="Registration is not available." className="mb-4" />
+        <Link to="/login">
+          <Button type="primary" block>
+            Sign in
+          </Button>
+        </Link>
+      </AuthShell>
+    );
   }
 
   const onFinish = async (values: RegisterForm) => {
@@ -36,9 +71,22 @@ export default function RegisterPage() {
 
   return (
     <AuthShell
-      title="Create your account"
-      subtitle="Password must be at least 8 characters and different from your email."
+      title={info.bootstrap ? "Set up administrator" : "Create your account"}
+      subtitle={
+        info.bootstrap
+          ? "No users exist yet. This account becomes the platform administrator and can publish challenges."
+          : "Password must be at least 8 characters and different from your email."
+      }
     >
+      {info.bootstrap && (
+        <Alert
+          type="info"
+          showIcon
+          className="mb-4"
+          message="First-time setup"
+          description="You are creating the initial admin account for this deployment."
+        />
+      )}
       {error && (
         <Alert type="error" message={error} showIcon className="mb-4" role="alert" />
       )}
@@ -82,7 +130,7 @@ export default function RegisterPage() {
           <Input.Password autoComplete="new-password" placeholder="••••••••" />
         </Form.Item>
         <Button type="primary" htmlType="submit" block loading={submitting}>
-          Create account
+          {info.bootstrap ? "Create admin account" : "Create account"}
         </Button>
       </Form>
       <p className="mb-0 mt-6 text-center text-sm text-slate-400">

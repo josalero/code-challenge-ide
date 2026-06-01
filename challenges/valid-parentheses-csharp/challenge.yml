@@ -1,0 +1,17 @@
+slug: valid-parentheses-csharp
+title: Valid Parentheses (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  Return whether `()`, `[]`, and `{}` brackets are balanced and properly nested.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "IsvalidShouldBeTrue"
+    description: "isValid(\"()\") should be true"
+  - name: "IsvalidShouldBeTrue"
+    description: "isValid(\"()[]{}\") should be true"

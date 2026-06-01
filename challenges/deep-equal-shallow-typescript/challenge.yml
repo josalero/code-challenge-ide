@@ -1,0 +1,12 @@
+slug: deep-equal-shallow-typescript
+title: Deep Equal Shallow (TypeScript)
+difficulty: medium
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Return whether two plain objects have the same own keys and strictly equal values (one level).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10

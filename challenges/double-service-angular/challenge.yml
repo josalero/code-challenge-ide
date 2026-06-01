@@ -1,0 +1,17 @@
+slug: double-service-angular
+title: Double Service (Angular)
+difficulty: easy
+language: angular
+default_runtime_version: "19"
+description_md: |
+  Implement `DoubleService` with method `double(n: number): number`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "doubles"
+    description: "Doubles"
+  - name: "zero"
+    description: "Zero"

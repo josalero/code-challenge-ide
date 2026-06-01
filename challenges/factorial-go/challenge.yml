@@ -1,0 +1,19 @@
+slug: factorial-go
+title: Factorial (Go)
+difficulty: easy
+language: go
+default_runtime_version: "1.23"
+description_md: |
+  Return n! for n >= 0 (0! = 1).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "public_1"
+    description: "factorial(0) should equal 1"
+  - name: "public_2"
+    description: "factorial(5) should equal 120"
+  - name: "public_3"
+    description: "factorial(1) should equal 1"

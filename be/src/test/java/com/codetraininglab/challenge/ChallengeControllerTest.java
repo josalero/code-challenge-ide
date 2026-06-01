@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import com.codetraininglab.catalog.application.ChallengeService;
 import com.codetraininglab.catalog.application.ChallengeService.ChallengeDetail;
 import com.codetraininglab.catalog.application.ChallengeService.ChallengeSummary;
+import com.codetraininglab.catalog.application.ChallengeService.PublicTestInfo;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +27,7 @@ class ChallengeControllerTest {
   @Test
   void listsChallenges() {
     when(challengeService.list(any(Pageable.class)))
-        .thenReturn(new PageImpl<>(List.of(new ChallengeSummary("slug", "Title", "easy"))));
+        .thenReturn(new PageImpl<>(List.of(new ChallengeSummary("slug", "Title", "easy", "java"))));
     assertThat(controller.list(Pageable.ofSize(20)).getContent()).hasSize(1);
   }
 
@@ -35,7 +36,16 @@ class ChallengeControllerTest {
     when(challengeService.get("slug"))
         .thenReturn(
             new ChallengeDetail(
-                "slug", "Title", "desc", "starter", "easy", "java", "{}", List.of("T1"), 2, List.of()));
+                "slug",
+                "Title",
+                "desc",
+                "starter",
+                "easy",
+                "java",
+                "{}",
+                List.of(new PublicTestInfo("T1", "")),
+                2,
+                List.of()));
     assertThat(controller.get("slug").hiddenTestCount()).isEqualTo(2);
   }
 }

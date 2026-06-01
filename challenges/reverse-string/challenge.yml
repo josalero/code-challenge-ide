@@ -16,3 +16,10 @@ gating_config:
 limits:
   per_test_timeout_seconds: 10
 starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_reverse_hello_to_equal_olleh"
+    description: "Expect reverse(\"hello\") to equal \"olleh\""
+  - name: "expect_reverse_to_equal"
+    description: "Expect reverse(\"\") to equal \"\""
+  - name: "expect_reverse_a_to_equal_a"
+    description: "Expect reverse(\"a\") to equal \"a\""

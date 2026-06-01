@@ -1,0 +1,15 @@
+slug: computed-filter-vue
+title: Computed Filter (Vue)
+difficulty: easy
+language: vue
+default_runtime_version: "3.5"
+description_md: |
+  SFC `ItemFilter` — prop `items: string[]`, input filters list case-insensitively (computed pattern).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "filters"
+    description: "Filters"

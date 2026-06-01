@@ -1,0 +1,19 @@
+slug: is-prime-csharp
+title: Prime Check (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  Return true if n >= 2 is prime.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "Isprime1ShouldBeFalse"
+    description: "isPrime(1) should be false"
+  - name: "Isprime2ShouldBeTrue"
+    description: "isPrime(2) should be true"
+  - name: "Isprime17ShouldBeTrue"
+    description: "isPrime(17) should be true"

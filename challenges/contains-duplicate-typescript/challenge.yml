@@ -1,0 +1,17 @@
+slug: contains-duplicate-typescript
+title: Contains Duplicate (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Return true if any value appears at least twice.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "public_1"
+    description: "containsDuplicate([1, 2, 3, 1]) should be true"
+  - name: "public_2"
+    description: "containsDuplicate([1, 2, 3, 4]) should be false"

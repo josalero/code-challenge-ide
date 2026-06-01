@@ -1,0 +1,17 @@
+slug: find-max-list
+title: Find Maximum in List
+difficulty: easy
+language: python
+default_runtime_version: "3.12"
+description_md: |
+  Return the maximum integer in non-empty list `values`.
+gating_config:
+  line_coverage_percent: 80
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_max_basic"
+    description: "Checks that max basic"
+  - name: "test_max_negative"
+    description: "Checks that max negative"

@@ -5,7 +5,13 @@ public enum LanguageCode {
   PYTHON("python"),
   NODE("node"),
   CSHARP("csharp"),
-  GO("go");
+  GO("go"),
+  TYPESCRIPT("typescript"),
+  RUST("rust"),
+  CPP("cpp"),
+  REACT("react"),
+  VUE("vue"),
+  ANGULAR("angular");
 
   private final String name;
 

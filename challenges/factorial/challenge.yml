@@ -1,0 +1,20 @@
+slug: factorial
+title: Factorial
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Implement `Solution.factorial(int n)` returning `n!` for `n >= 0`. For `n == 0` return `1`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_factorial_0_to_equal_1l"
+    description: "Expect factorial(0) to equal 1L"
+  - name: "expect_factorial_5_to_equal_120l"
+    description: "Expect factorial(5) to equal 120L"
+  - name: "expect_factorial_1_to_equal_1l"
+    description: "Expect factorial(1) to equal 1L"

@@ -40,7 +40,7 @@ class ChallengeServiceTest {
             id, "slug", "Title", "desc", "starter", "{}", "git", "easy", "java", Instant.EPOCH, Instant.EPOCH);
     when(challengeRepository.findBySlug("slug")).thenReturn(Optional.of(entity));
     when(publicTestRepository.findByChallengeIdOrderBySortOrderAsc(id))
-        .thenReturn(List.of(new ChallengePublicTestEntity(UUID.randomUUID(), id, "TestA", 0)));
+        .thenReturn(List.of(new ChallengePublicTestEntity(UUID.randomUUID(), id, "TestA", "", 0)));
     when(hiddenTestRepository.findByChallengeIdOrderBySortOrderAsc(id)).thenReturn(List.of());
     when(runtimeRepository.findActiveByLanguageName("java"))
         .thenReturn(
@@ -49,7 +49,7 @@ class ChallengeServiceTest {
 
     var detail = challengeService.get("slug");
     assertThat(detail.language()).isEqualTo("java");
-    assertThat(detail.publicTestNames()).containsExactly("TestA");
+    assertThat(detail.publicTests()).extracting("name").containsExactly("TestA");
     assertThat(detail.hiddenTestCount()).isZero();
   }
 

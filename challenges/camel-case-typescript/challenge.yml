@@ -1,0 +1,12 @@
+slug: camel-case-typescript
+title: Camel Case (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Convert `kebab-case` or `snake_case` identifiers to `camelCase`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10

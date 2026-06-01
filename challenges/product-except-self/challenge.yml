@@ -1,0 +1,18 @@
+slug: product-except-self
+title: Product of Array Except Self
+difficulty: medium
+language: java
+default_runtime_version: "26"
+description_md: |
+  Return array `answer` where `answer[i]` is product of all elements except `nums[i]` (no division). `Solution.productExceptSelf(int[] nums)`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_productexceptself_new_int_1_2_3_4_to_retu"
+    description: "Expect productExceptSelf(new int[] {1,2,3,4}) to return [24,12,8,6]"
+  - name: "expect_productexceptself_new_int_1_1_0_3_3_to_re"
+    description: "Expect productExceptSelf(new int[] {-1,1,0,-3,3}) to return [0,0,9,0]"

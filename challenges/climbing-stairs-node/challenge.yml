@@ -1,0 +1,17 @@
+slug: climbing-stairs-node
+title: Climbing Stairs (Node.js)
+difficulty: easy
+language: node
+default_runtime_version: "22"
+description_md: |
+  Count ways to climb n steps (1 or 2 at a time).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "public_1"
+    description: "climbStairs(2) should equal 2"
+  - name: "public_2"
+    description: "climbStairs(3) should equal 3"

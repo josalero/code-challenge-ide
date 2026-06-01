@@ -1,0 +1,17 @@
+slug: anagram-check-go
+title: Anagram Check (Go)
+difficulty: easy
+language: go
+default_runtime_version: "1.23"
+description_md: |
+  Return true if `s` and `t` are anagrams (case-sensitive).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "isanagram_anagram_nagaram_should_be_true"
+    description: "isAnagram(\"anagram\", \"nagaram\") should be true"
+  - name: "isanagram_rat_car_should_be_false"
+    description: "isAnagram(\"rat\", \"car\") should be false"

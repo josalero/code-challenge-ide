@@ -1,0 +1,19 @@
+slug: fibonacci-number-typescript
+title: Fibonacci Number (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Return the n-th Fibonacci number (fib(0)=0, fib(1)=1).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "public_1"
+    description: "fibonacci(0) should equal 0"
+  - name: "public_2"
+    description: "fibonacci(1) should equal 1"
+  - name: "public_3"
+    description: "fibonacci(5) should equal 5"

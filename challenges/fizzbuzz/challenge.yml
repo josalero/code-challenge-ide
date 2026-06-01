@@ -16,3 +16,10 @@ gating_config:
 limits:
   per_test_timeout_seconds: 10
 starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_fizzbuzz_1_to_equal_list_of_1"
+    description: "Expect fizzBuzz(1) to equal List.of(\"1\")"
+  - name: "expect_fizzbuzz_5_to_equal_list_of_1_2_fizz_4_bu"
+    description: "Expect fizzBuzz(5) to equal List.of(\"1\", \"2\", \"Fizz\", \"4\", \"Buzz\")"
+  - name: "expect_fizzbuzz_15_at_index_14_to_equal_fizzbuzz"
+    description: "Expect fizzBuzz(15) at index 14 to equal \"FizzBuzz\""

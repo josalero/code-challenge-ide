@@ -15,6 +15,7 @@ class RunnerJobPayloadTest {
     RunnerJobPayload payload =
         new RunnerJobPayload(
             "sub-1",
+            "reverse-string",
             "maven",
             "class Solution {}",
             null,
@@ -24,6 +25,7 @@ class RunnerJobPayloadTest {
     String json = jsonMapper.writeValueAsString(payload);
 
     assertThat(json).contains("\"submission_id\":\"sub-1\"");
+    assertThat(json).contains("\"challenge_slug\":\"reverse-string\"");
     assertThat(json).contains("\"solution_code\"");
     assertThat(json).contains("\"hidden_tests\"");
     assertThat(json).doesNotContain("custom_tests_code");

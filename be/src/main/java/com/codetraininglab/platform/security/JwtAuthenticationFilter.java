@@ -1,5 +1,6 @@
 package com.codetraininglab.platform.security;
 
+import com.codetraininglab.domain.UserRole;
 import com.codetraininglab.platform.web.ApiPaths;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -32,9 +33,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (token != null) {
       try {
         UUID userId = jwtService.parseUserId(token);
+        UserRole role = jwtService.parseRole(token);
         var auth =
             new UsernamePasswordAuthenticationToken(
-                userId, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                userId, null, List.of(new SimpleGrantedAuthority(role.authority())));
         SecurityContextHolder.getContext().setAuthentication(auth);
       } catch (RuntimeException ignored) {
         SecurityContextHolder.clearContext();

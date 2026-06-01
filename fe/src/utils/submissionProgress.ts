@@ -1,12 +1,13 @@
 import type { TestResultEvent } from "../api/types";
 import type { ChallengeDetail } from "../api/types";
-import type { TrackedTest } from "../components/RunProgressPanel";
+import type { TrackedTest } from "../domain/runProgressTypes";
 import { TestOutcomeStatus } from "../domain/constants";
 
 export function buildInitialTrackedTests(challenge: ChallengeDetail): TrackedTest[] {
-  const items: TrackedTest[] = challenge.publicTestNames.map((name) => ({
-    name,
+  const items: TrackedTest[] = challenge.publicTests.map((test) => ({
+    name: test.name,
     status: "pending",
+    message: test.description || undefined,
   }));
   if (challenge.hiddenTestCount > 0) {
     items.push({

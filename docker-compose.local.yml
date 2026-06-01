@@ -6,7 +6,8 @@
 #
 # Then run API and UI on the host:
 #
-#   docker compose -f docker-compose.local.yml up -d
+#   make infra              # start postgres + rabbitmq
+#   make down-infra         # stop infra + wipe volumes (DB reset)
 #   ./gradlew :be:bootRun
 #   cd fe && npm ci && npm run dev    # http://localhost:5173
 #

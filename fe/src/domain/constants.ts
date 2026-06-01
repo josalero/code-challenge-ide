@@ -64,12 +64,22 @@ export const SsePayloadKeys = {
 } as const;
 
 export const ApiPaths = {
+  AUTH_LOGIN: "/api/v1/auth/login",
+  AUTH_REGISTER: "/api/v1/auth/register",
+  AUTH_REGISTRATION_INFO: "/api/v1/auth/registration-info",
   CHALLENGES: "/api/v1/challenges",
+  LANGUAGES: "/api/v1/languages",
+  ME: "/api/v1/me",
   ME_PROGRESS: "/api/v1/me/progress",
   SUBMISSIONS: "/api/v1/submissions",
   LSP_JAVA: "/api/v1/lsp/java",
+  lsp: (language: string) => `/api/v1/lsp/${language}`,
   OPS_DEAD_LETTER_SUBMISSIONS: "/api/v1/ops/dead-letter-submissions",
   OPS_DEAD_LETTER_REPLAY: "/api/v1/ops/dead-letter-submissions/replay",
+  OPS_RUNNERS_STATUS: "/api/v1/ops/runners/status",
+  OPS_RUNNERS_WARM_MAVEN: "/api/v1/ops/runners/warm/maven",
+  OPS_RUNNERS_WARM_LSP: "/api/v1/ops/runners/warm/lsp",
+  opsRunnerJob: (jobId: string) => `/api/v1/ops/runners/jobs/${jobId}`,
   challenge: (slug: string) => `/api/v1/challenges/${slug}`,
   challengeCustomTests: (slug: string) => `/api/v1/challenges/${slug}/custom-tests`,
   challengeAlternatives: (slug: string) => `/api/v1/challenges/${slug}/alternatives`,
@@ -77,6 +87,9 @@ export const ApiPaths = {
   submissionEvents: (id: string) => `/api/v1/submissions/${id}/events`,
   report: (id: string) => `/api/v1/reports/${id}`,
   feedbackExplain: (itemId: string) => `/api/v1/feedback/${itemId}/explain`,
+  submissionFeedbackActions: (submissionId: string) =>
+    `/api/v1/submissions/${submissionId}/feedback-actions`,
+  feedbackAction: (actionId: string) => `/api/v1/feedback-actions/${actionId}`,
 } as const;
 
 export const JavaRuntimeVersion = {

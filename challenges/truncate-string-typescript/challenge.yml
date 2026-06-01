@@ -1,0 +1,12 @@
+slug: truncate-string-typescript
+title: Truncate String (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  If `text` length exceeds `max`, return prefix of length `max - suffix.length` plus `suffix`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10

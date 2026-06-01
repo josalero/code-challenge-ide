@@ -1,0 +1,18 @@
+slug: plus-one
+title: Plus One
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Increment a large integer represented as digit array (MSD first). Modify and return `digits`. `Solution.plusOne(int[] digits)`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_plusone_new_int_1_2_3_to_return_1_2_4"
+    description: "Expect plusOne(new int[] {1,2,3}) to return [1,2,4]"
+  - name: "expect_plusone_new_int_0_to_return_1"
+    description: "Expect plusOne(new int[] {0}) to return [1]"

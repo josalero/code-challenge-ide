@@ -1,0 +1,18 @@
+slug: power-of-two
+title: Power of Two
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Implement `Solution.isPowerOfTwo(int n)` — `true` if `n` is a power of two (`n > 0`).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_ispoweroftwo_1_to_equal_true"
+    description: "Expect isPowerOfTwo(1) to equal true"
+  - name: "expect_ispoweroftwo_3_to_equal_false"
+    description: "Expect isPowerOfTwo(3) to equal false"

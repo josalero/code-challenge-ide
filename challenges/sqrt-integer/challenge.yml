@@ -1,0 +1,18 @@
+slug: sqrt-integer
+title: Sqrt(x)
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Implement `Solution.mySqrt(int x)` returning the integer square root (floor).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_mysqrt_8_to_equal_2"
+    description: "Expect mySqrt(8) to equal 2"
+  - name: "expect_mysqrt_0_to_equal_0"
+    description: "Expect mySqrt(0) to equal 0"

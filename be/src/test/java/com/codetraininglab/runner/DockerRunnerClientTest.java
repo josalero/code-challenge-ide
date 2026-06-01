@@ -1,12 +1,16 @@
 package com.codetraininglab.integration.runner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 import com.codetraininglab.domain.WorkspaceLayout;
 import com.codetraininglab.platform.config.CtlProperties;
+import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
 import com.codetraininglab.platform.persistence.LanguageRepository;
 import com.codetraininglab.platform.persistence.LanguageRuntimeRepository;
 import java.nio.file.Path;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -18,38 +22,51 @@ class DockerRunnerClientTest {
 
   @Mock private LanguageRuntimeRepository runtimeRepository;
   @Mock private LanguageRepository languageRepository;
+  @Mock private RunnerContainerPool runnerContainerPool;
+
+  @BeforeEach
+  void disablePoolByDefault() {
+    lenient().when(runnerContainerPool.isEnabled()).thenReturn(false);
+  }
 
   private static CtlProperties properties(String mavenCacheVolume) {
+    var base = CtlPropertiesTestFixtures.defaults();
     return new CtlProperties(
-        true,
-        "test-jwt-secret-must-be-at-least-32-characters-long",
-        24,
-        "http://localhost:5173",
-        "challenges",
-        "runner",
+        base.registrationEnabled(),
+        base.jwtSecret(),
+        base.jwtExpirationHours(),
+        base.corsAllowedOrigins(),
+        base.challengesPath(),
+        base.runnerJava26Image(),
         mavenCacheVolume,
-        "lsp",
-        5,
-        24,
-        "openrouter",
-        "",
-        "model",
-        "http://localhost:11434",
-        "ollama",
+        base.runnerPoolEnabled(),
+        base.runnerPoolIdleMinutes(),
+        CtlPropertiesTestFixtures.TEST_LSP_IMAGES,
+        base.lspIdleMinutes(),
+        base.idempotencyTtlHours(),
+        base.aiProvider(),
+        base.openrouterApiKey(),
+        base.openrouterModel(),
+        base.ollamaBaseUrl(),
+        base.ollamaModel(),
         true,
-        false);
+        base.lspEnabled());
+  }
+
+  private DockerRunnerClient client(CtlProperties properties) {
+    return new DockerRunnerClient(
+        properties,
+        JsonMapper.builder().build(),
+        runtimeRepository,
+        languageRepository,
+        runnerContainerPool);
   }
 
   @Test
   void mountsSharedMavenCacheVolumeWhenConfigured() {
-    DockerRunnerClient client =
-        new DockerRunnerClient(
-            properties("ctl-runner-m2-cache"),
-            JsonMapper.builder().build(),
-            runtimeRepository,
-            languageRepository);
     var command =
-        client.buildDockerRunCommand(
+        client(properties("ctl-runner-m2-cache"))
+            .buildDockerRunCommand(
             Path.of("/challenges/reverse-string"),
             "code-challenge-ide-runner-java-26:local",
             RunnerJobPayload.RunnerLimits.defaults(),
@@ -60,14 +77,9 @@ class DockerRunnerClientTest {
 
   @Test
   void skipsMavenCacheMountForPythonRunner() {
-    DockerRunnerClient client =
-        new DockerRunnerClient(
-            properties("ctl-runner-m2-cache"),
-            JsonMapper.builder().build(),
-            runtimeRepository,
-            languageRepository);
     var command =
-        client.buildDockerRunCommand(
+        client(properties("ctl-runner-m2-cache"))
+            .buildDockerRunCommand(
             Path.of("/challenges/fizzbuzz-python"),
             "code-challenge-ide-runner-python-312:local",
             RunnerJobPayload.RunnerLimits.defaults(),
@@ -78,14 +90,9 @@ class DockerRunnerClientTest {
 
   @Test
   void skipsMavenCacheMountWhenVolumeNotConfigured() {
-    DockerRunnerClient client =
-        new DockerRunnerClient(
-            properties(""),
-            JsonMapper.builder().build(),
-            runtimeRepository,
-            languageRepository);
     var command =
-        client.buildDockerRunCommand(
+        client(properties(""))
+            .buildDockerRunCommand(
             Path.of("/challenges/reverse-string"),
             "code-challenge-ide-runner-java-26:local",
             RunnerJobPayload.RunnerLimits.defaults(),

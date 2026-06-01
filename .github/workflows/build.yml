@@ -1,7 +1,7 @@
 name: Docker
 
 # Publishes application images to GHCR.
-# Images: be, fe, runner-java-17/21/26, lsp-java
+# Images: be, fe, all language runners (11 tracks), lsp-java
 
 on:
   workflow_dispatch:
@@ -42,6 +42,36 @@ jobs:
             context: runners/java
             dockerfile: runners/java/Dockerfile
             build-args: JAVA_MAJOR=26
+          - component: runner-python-312
+            context: runners/python
+            dockerfile: runners/python/Dockerfile
+          - component: runner-go-123
+            context: runners/go
+            dockerfile: runners/go/Dockerfile
+          - component: runner-node-22
+            context: runners/node
+            dockerfile: runners/node/Dockerfile
+          - component: runner-dotnet-8
+            context: runners/dotnet
+            dockerfile: runners/dotnet/Dockerfile
+          - component: runner-typescript-57
+            context: runners/typescript
+            dockerfile: runners/typescript/Dockerfile
+          - component: runner-rust-184
+            context: runners/rust
+            dockerfile: runners/rust/Dockerfile
+          - component: runner-cpp-20
+            context: runners/cpp
+            dockerfile: runners/cpp/Dockerfile
+          - component: runner-react-19
+            context: runners/react
+            dockerfile: runners/react/Dockerfile
+          - component: runner-vue-35
+            context: runners/vue
+            dockerfile: runners/vue/Dockerfile
+          - component: runner-angular-19
+            context: runners/angular
+            dockerfile: runners/angular/Dockerfile
           - component: lsp-java
             context: runners/lsp-java
             dockerfile: runners/lsp-java/Dockerfile
