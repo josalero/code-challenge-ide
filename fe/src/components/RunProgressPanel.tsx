@@ -1,5 +1,4 @@
 import {
-  ChevronDown,
   CheckCircle2,
   Loader2,
   MinusCircle,
@@ -8,12 +7,12 @@ import {
   WifiOff,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SubmissionStatusValue } from "@/domain/constants";
 import { SubmissionStatus } from "@/domain/constants";
-import type { ActivityEntry, TrackedTest } from "@/domain/runProgressTypes";
+import type { TrackedTest } from "@/domain/runProgressTypes";
 import {
   formatRuntimeLabel,
   runnerPipelineLabel,
@@ -27,7 +26,6 @@ type Props = {
   isSubmitting: boolean;
   streamConnected: boolean;
   streamReconnecting: boolean;
-  activityLog: ActivityEntry[];
   trackedTests: TrackedTest[];
   hiddenTestCount: number;
   runtimeVersion: string;
@@ -76,7 +74,16 @@ function formatTestName(name: string, hiddenTestCount: number): string {
   return name;
 }
 
-function TestStatusIcon({ status }: { status: TrackedTest["status"] }) {
+function TestStatusIcon({
+  status,
+  runComplete,
+}: {
+  status: TrackedTest["status"];
+  runComplete: boolean;
+}) {
+  if (status === "pending" && runComplete) {
+    return <XCircle className="size-4 shrink-0 text-red-400" aria-hidden />;
+  }
   switch (status) {
     case "pass":
       return <CheckCircle2 className="size-4 shrink-0 text-emerald-400" aria-hidden />;
@@ -94,7 +101,6 @@ export default function RunProgressPanel({
   isSubmitting,
   streamConnected,
   streamReconnecting,
-  activityLog,
   trackedTests,
   hiddenTestCount,
   runtimeVersion,
@@ -104,12 +110,16 @@ export default function RunProgressPanel({
   const runtimeLabel = formatRuntimeLabel(challengeLanguage, runtimeVersion);
   const pipeline = runnerPipelineLabel(challengeLanguage);
   const [elapsedSec, setElapsedSec] = useState(0);
-  const [activityOpen, setActivityOpen] = useState(false);
 
   const isActive =
     isSubmitting
     || submissionStatus === SubmissionStatus.PENDING
     || submissionStatus === SubmissionStatus.RUNNING;
+
+  const runComplete =
+    submissionStatus === SubmissionStatus.COMPLETED
+    || submissionStatus === SubmissionStatus.FAILED
+    || submissionStatus === SubmissionStatus.CANCELLED;
 
   useEffect(() => {
     if (!runStartedAt || !isActive) {
@@ -131,11 +141,6 @@ export default function RunProgressPanel({
   const passedCount = finishedTests.filter((t) => t.status === "pass").length;
   const failedCount = finishedTests.filter((t) => t.status === "fail").length;
   const pendingCount = trackedTests.filter((t) => t.status === "pending").length;
-
-  const recentActivity = useMemo(
-    () => activityLog.slice(-6).reverse(),
-    [activityLog],
-  );
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
@@ -274,7 +279,7 @@ export default function RunProgressPanel({
                         : "border-slate-700/40 bg-slate-900/30"
                 }`}
               >
-                <TestStatusIcon status={test.status} />
+                <TestStatusIcon status={test.status} runComplete={runComplete} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span
@@ -319,35 +324,6 @@ export default function RunProgressPanel({
         <p className="shrink-0 text-[11px] leading-relaxed text-slate-600">
           {runnerWarmupHint(challengeLanguage)}
         </p>
-      )}
-
-      {/* Activity log — collapsed by default to reduce noise */}
-      {recentActivity.length > 0 && (
-        <div className="shrink-0 border-t border-slate-800/80 pt-2">
-          <button
-            type="button"
-            onClick={() => setActivityOpen((o) => !o)}
-            className="flex w-full items-center justify-between rounded-md px-1 py-1 text-left text-xs text-slate-500 transition-colors hover:text-slate-400"
-            aria-expanded={activityOpen}
-          >
-            <span>Activity ({activityLog.length})</span>
-            <ChevronDown
-              className={`size-3.5 transition-transform ${activityOpen ? "rotate-180" : ""}`}
-              aria-hidden
-            />
-          </button>
-          {activityOpen && (
-            <ScrollArea className="mt-1 max-h-24">
-              <ul className="space-y-0.5 pr-2 font-mono text-[10px] leading-relaxed text-slate-500">
-                {recentActivity.map((entry) => (
-                  <li key={entry.id} className="truncate">
-                    {entry.message}
-                  </li>
-                ))}
-              </ul>
-            </ScrollArea>
-          )}
-        </div>
       )}
     </div>
   );

@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -40,12 +41,26 @@ public class RunnerOpsService {
   private static final int LOG_TAIL_MAX = 8000;
   private static final List<String> LSP_WARM_LABELS =
       List.of("java", "python", "go", "typescript", "csharp", "rust", "cpp");
+  private static final List<String> RUNNER_WARM_LANGUAGES =
+      List.of(
+          "java",
+          "python",
+          "go",
+          "node",
+          "typescript",
+          "csharp",
+          "rust",
+          "cpp",
+          "react",
+          "vue",
+          "angular");
 
   private final CtlProperties properties;
   private final Environment environment;
   private final LanguageRuntimeRepository runtimeRepository;
   private final LanguageRepository languageRepository;
   private final JsonMapper jsonMapper;
+  private final ObjectProvider<RunnerPoolWarmExecutor> runnerPoolWarmExecutor;
   private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
   private final ConcurrentHashMap<UUID, JobState> jobs = new ConcurrentHashMap<>();
   private volatile UUID activeJobId;
@@ -55,20 +70,26 @@ public class RunnerOpsService {
       Environment environment,
       LanguageRuntimeRepository runtimeRepository,
       LanguageRepository languageRepository,
-      JsonMapper jsonMapper) {
+      JsonMapper jsonMapper,
+      ObjectProvider<RunnerPoolWarmExecutor> runnerPoolWarmExecutor) {
     this.properties = properties;
     this.environment = environment;
     this.runtimeRepository = runtimeRepository;
     this.languageRepository = languageRepository;
     this.jsonMapper = jsonMapper;
+    this.runnerPoolWarmExecutor = runnerPoolWarmExecutor;
   }
 
   public RunnerOpsStatusResponse status() {
-    Path repoRoot = resolveRepoRoot();
+    Path repoRoot = RunnerOpsPaths.resolveRepoRoot(environment);
+    Path opsDataDir = RunnerOpsPaths.resolveOpsDataDir(environment);
+    Path poolWarmStampFile = RunnerOpsPaths.poolWarmStampFile(environment);
+    Path lspWarmStampFile = RunnerOpsPaths.lspWarmStampFile(environment);
     boolean dockerAvailable = isDockerAvailable();
     boolean mavenCacheWarm = isMavenCacheWarm();
-    Map<String, String> lspWarmStamp = loadLspWarmStamp(repoRoot);
-    List<RunnerImageStatusResponse> runnerImages = runnerImageStatuses(mavenCacheWarm);
+    Map<String, String> lspWarmStamp = loadLspWarmStamp(lspWarmStampFile);
+    Map<String, String> poolWarmStamp = RunnerPoolWarmExecutor.loadStamp(poolWarmStampFile, jsonMapper);
+    List<RunnerImageStatusResponse> runnerImages = runnerImageStatuses(poolWarmStamp);
     List<RunnerImageStatusResponse> lspImages = lspImageStatuses(lspWarmStamp);
     return new RunnerOpsStatusResponse(
         dockerAvailable,
@@ -76,7 +97,9 @@ public class RunnerOpsService {
         mavenCacheWarm,
         Files.isRegularFile(repoRoot.resolve("scripts/lsp_warm.py")),
         !lspWarmStamp.isEmpty(),
+        !poolWarmStamp.isEmpty(),
         repoRoot.toString(),
+        opsDataDir.toString(),
         mavenCacheVolume(),
         runnerImages,
         lspImages,
@@ -99,7 +122,8 @@ public class RunnerOpsService {
 
   public RunnerOpsJobResponse startLspWarm(boolean force, List<String> only) {
     ensureDockerReady();
-    Path script = resolveRepoRoot().resolve("scripts/lsp_warm.py");
+    Path repoRoot = RunnerOpsPaths.resolveRepoRoot(environment);
+    Path script = repoRoot.resolve("scripts/lsp_warm.py");
     if (!Files.isRegularFile(script)) {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST,
@@ -111,6 +135,30 @@ public class RunnerOpsService {
         () -> {
           try {
             runLspWarm(script, force, labels);
+          } catch (IOException | InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(ex.getMessage(), ex);
+          }
+        });
+  }
+
+  public RunnerOpsJobResponse startRunnerWarm(boolean force, List<String> only) {
+    ensureDockerReady();
+    if (!properties.runnerPoolEnabled()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Runner pool is disabled (RUNNER_POOL_ENABLED=false).");
+    }
+    RunnerPoolWarmExecutor executor = runnerPoolWarmExecutor.getIfAvailable();
+    if (executor == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Runner pool warm requires Docker integration.");
+    }
+    List<String> languages = normalizeRunnerWarmLanguages(only);
+    return startJob(
+        "RUNNER_POOL_WARM",
+        () -> {
+          try {
+            runRunnerPoolWarm(force, languages, executor);
           } catch (IOException | InterruptedException ex) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(ex.getMessage(), ex);
@@ -212,6 +260,21 @@ public class RunnerOpsService {
     runProcess(job, command, script.getParent().getParent());
   }
 
+  private void runRunnerPoolWarm(boolean force, List<String> only, RunnerPoolWarmExecutor executor)
+      throws IOException, InterruptedException {
+    JobState job = requireActiveJob();
+    if (needsJavaWarm(only) && !isMavenCacheWarm()) {
+      job.appendLog("Maven cache is cold — warming before Java smoke runs…\n");
+      runMavenWarm(force);
+    }
+    Path stampFile = RunnerOpsPaths.poolWarmStampFile(environment);
+    executor.warm(force, only, job::appendLog, stampFile);
+  }
+
+  private boolean needsJavaWarm(List<String> only) {
+    return only.isEmpty() || only.stream().anyMatch(language -> "java".equalsIgnoreCase(language));
+  }
+
   private JobState requireActiveJob() {
     UUID id = activeJobId;
     if (id == null) {
@@ -262,7 +325,25 @@ public class RunnerOpsService {
     return labels;
   }
 
-  private List<RunnerImageStatusResponse> runnerImageStatuses(boolean mavenCacheWarm) {
+  private List<String> normalizeRunnerWarmLanguages(List<String> only) {
+    if (only == null || only.isEmpty()) {
+      return RUNNER_WARM_LANGUAGES;
+    }
+    List<String> languages =
+        only.stream()
+            .map(label -> label == null ? "" : label.trim().toLowerCase())
+            .filter(label -> !label.isBlank())
+            .toList();
+    for (String language : languages) {
+      if (!RUNNER_WARM_LANGUAGES.contains(language)) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Unsupported runner warm language: " + language);
+      }
+    }
+    return languages;
+  }
+
+  private List<RunnerImageStatusResponse> runnerImageStatuses(Map<String, String> poolWarmStamp) {
     Map<UUID, LanguageEntity> languages =
         languageRepository.findAll().stream()
             .collect(Collectors.toMap(LanguageEntity::getId, language -> language));
@@ -273,7 +354,7 @@ public class RunnerOpsService {
           (language == null ? "unknown" : language.getName()) + " " + runtime.getVersion();
       unique.putIfAbsent(
           runtime.getDockerImage(),
-          inspectRunnerImage(label, runtime.getDockerImage(), mavenCacheWarm));
+          inspectRunnerImage(label, runtime.getDockerImage(), poolWarmStamp));
     }
     return unique.values().stream()
         .sorted(Comparator.comparing(RunnerImageStatusResponse::label))
@@ -294,11 +375,16 @@ public class RunnerOpsService {
   }
 
   private RunnerImageStatusResponse inspectRunnerImage(
-      String label, String image, boolean mavenCacheWarm) {
+      String label, String image, Map<String, String> poolWarmStamp) {
     ImageInspect inspect = inspectDockerImage(image);
     Boolean warmed = null;
-    if (label.toLowerCase().startsWith("java")) {
-      warmed = inspect.present() && mavenCacheWarm;
+    if (inspect.present()) {
+      if (inspect.imageId() != null) {
+        String stampedId = poolWarmStamp.get(image);
+        warmed = stampedId != null && stampedId.equals(inspect.imageId());
+      } else {
+        warmed = false;
+      }
     }
     return new RunnerImageStatusResponse(
         label, image, inspect.present(), inspect.imageId(), warmed);
@@ -342,8 +428,7 @@ public class RunnerOpsService {
     }
   }
 
-  private Map<String, String> loadLspWarmStamp(Path repoRoot) {
-    Path stampFile = repoRoot.resolve(".ctl-lsp-warm-stamp");
+  private Map<String, String> loadLspWarmStamp(Path stampFile) {
     if (!Files.isRegularFile(stampFile)) {
       return Map.of();
     }
@@ -414,17 +499,7 @@ public class RunnerOpsService {
   }
 
   private Path resolveRepoRoot() {
-    String configured = environment.getProperty("ctl.repo-root", "");
-    if (configured != null && !configured.isBlank()) {
-      return Path.of(configured).toAbsolutePath().normalize();
-    }
-    Path current = Path.of("").toAbsolutePath();
-    for (Path candidate = current; candidate != null; candidate = candidate.getParent()) {
-      if (Files.isRegularFile(candidate.resolve("scripts/lsp_warm.py"))) {
-        return candidate;
-      }
-    }
-    return current;
+    return RunnerOpsPaths.resolveRepoRoot(environment);
   }
 
   private void pruneOldJobs() {

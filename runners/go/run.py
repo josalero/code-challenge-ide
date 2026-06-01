@@ -14,6 +14,7 @@ from pathlib import Path
 WORKSPACE = Path("/tmp/workspace")
 CHALLENGE_MOUNT = Path("/challenge")
 TESTS_DIR = WORKSPACE / "tests"
+STAMP = WORKSPACE / ".ctl-challenge-slug"
 MAX_LOG_BYTES = 4096
 GO_MOD = """module challenge
 
@@ -33,19 +34,21 @@ def write_file(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def setup_workspace(job: dict) -> None:
-    if os.environ.get("CTL_RUNNER_POOLED") == "1":
-        cache = Path("/tmp/gocache")
-        cache.mkdir(parents=True, exist_ok=True)
-        os.environ["GOCACHE"] = str(cache)
-
-    if WORKSPACE.exists():
-        shutil.rmtree(WORKSPACE)
-    WORKSPACE.mkdir(parents=True)
-    write_file(WORKSPACE / "go.mod", GO_MOD)
+def _write_solution(job: dict) -> None:
     write_file(WORKSPACE / "solution" / "solution.go", job["solution_code"])
+    custom = job.get("custom_tests_code")
+    if custom and str(custom).strip():
+        write_file(TESTS_DIR / "custom_tests_test.go", custom)
 
+
+def _write_all_sources(job: dict) -> None:
+    write_file(WORKSPACE / "go.mod", GO_MOD)
+    _write_solution(job)
+
+    if TESTS_DIR.is_dir():
+        shutil.rmtree(TESTS_DIR)
     TESTS_DIR.mkdir(parents=True, exist_ok=True)
+
     public_dir = CHALLENGE_MOUNT / "public" / "tests"
     if public_dir.is_dir():
         for src in sorted(public_dir.glob("*_test.go")):
@@ -59,9 +62,28 @@ def setup_workspace(job: dict) -> None:
                 name = re.sub(r"[^a-zA-Z0-9_]", "_", name) + "_test.go"
             write_file(TESTS_DIR / name, source)
 
-    custom = job.get("custom_tests_code")
-    if custom and str(custom).strip():
-        write_file(TESTS_DIR / "custom_tests_test.go", custom)
+
+def setup_workspace(job: dict) -> None:
+    slug = (job.get("challenge_slug") or "").strip()
+    pooled = os.environ.get("CTL_RUNNER_POOLED") == "1"
+
+    if (
+        pooled
+        and slug
+        and WORKSPACE.is_dir()
+        and STAMP.is_file()
+        and STAMP.read_text(encoding="utf-8") == slug
+        and (WORKSPACE / "go.mod").is_file()
+    ):
+        _write_solution(job)
+        return
+
+    if WORKSPACE.exists():
+        shutil.rmtree(WORKSPACE)
+    WORKSPACE.mkdir(parents=True)
+    _write_all_sources(job)
+    if pooled and slug:
+        STAMP.write_text(slug, encoding="utf-8")
 
 
 def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:

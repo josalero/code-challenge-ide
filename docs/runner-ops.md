@@ -13,9 +13,15 @@ When this doc disagrees with code, trust **`DockerRunnerClient`**, **`RunnerCont
 | Purpose | Compile & run tests | IntelliSense in Monaco |
 | Trigger | User clicks **Run tests** | Opening a challenge workspace |
 | Containers | `ctl-runner-pool-{image}` (pooled) or one-shot `docker run --rm` | `code-challenge-ide-lsp-*` (per WebSocket session) |
-| Warm in Admin Ops | **Maven cache** volume + per-row **Warm** on runner/LSP tables | Same Ops page — LSP **Warm** column |
+| Warm in Admin Ops | **Runner pool smoke** + **Maven cache** | LSP **Warm** |
 
-**Built** = Docker image exists locally. **Warm** = preloaded for faster cold start (Maven volume or LSP initialize stamp). Warm does **not** skip compile/test on each run.
+**Built** = Docker image exists locally.
+
+**Warm (runners)** = pool container started and a **smoke submission** completed for the current image (`.ctl-runner-pool-warm-stamp`). Test failures in the smoke challenge are OK — the goal is hot compile/tooling caches.
+
+**Warm (Maven)** = dependency JARs copied to `ctl-runner-m2-cache` (Java only; runner warm triggers this automatically when needed).
+
+**Warm (LSP)** = language-server initialize stamp (`.ctl-lsp-warm-stamp`).
 
 ---
 
@@ -79,6 +85,7 @@ Admins only. Requires Docker CLI on the API host.
 | Runner / LSP tables — **Built** | Image present locally |
 | Runner / LSP tables — **Warm** | Maven cache warm (Java runners) or LSP stamp (LSP rows) |
 | **Warm Maven cache** | Copy `/opt/m2` → volume |
+| **Warm runner pool** | Start pool containers + smoke `run.py` job per active language |
 | **Warm LSP** | Run `scripts/lsp_warm.py` handshake per image |
 
 Backend: `RunnerOpsService`, `OpsController`.
@@ -92,6 +99,7 @@ Backend: `RunnerOpsService`, `OpsController`.
 | `RUNNER_MAVEN_CACHE_VOLUME` | `ctl-runner-m2-cache` | Java `.m2` mount |
 | `RUNNER_POOL_ENABLED` | `true` | Pooled vs one-shot runners |
 | `RUNNER_POOL_IDLE_MINUTES` | `60` | Evict idle pool containers |
+| `RUNNER_POOL_WARM_ON_STARTUP` | `false` (local), `true` (compose) | Smoke-warm all active runner images after API boot |
 | `CTL_DOCKER_ENABLED` | `true` | Disable for stub runner in tests |
 | `RUNNER_JAVA_26_IMAGE`, … | see `.env.example` | Image tags per language |
 

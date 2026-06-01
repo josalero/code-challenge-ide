@@ -119,6 +119,7 @@ class AuthServiceTest {
             "http://localhost:11434",
             "ollama",
             false,
+            false,
             false);
     AuthService closed =
         new AuthService(
@@ -156,6 +157,7 @@ class AuthServiceTest {
             "model",
             "http://localhost:11434",
             "ollama",
+            false,
             false,
             false);
     AuthService closed =

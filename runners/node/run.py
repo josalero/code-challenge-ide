@@ -15,6 +15,7 @@ from pathlib import Path
 WORKSPACE = Path("/tmp/workspace")
 CHALLENGE_MOUNT = Path("/challenge")
 TESTS_DIR = WORKSPACE / "tests"
+STAMP = WORKSPACE / ".ctl-challenge-slug"
 MAX_LOG_BYTES = 4096
 
 
@@ -30,13 +31,20 @@ def write_file(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def setup_workspace(job: dict) -> None:
-    if WORKSPACE.exists():
-        shutil.rmtree(WORKSPACE)
-    WORKSPACE.mkdir(parents=True)
+def _write_solution(job: dict) -> None:
     write_file(WORKSPACE / "solution.js", job["solution_code"])
+    custom = job.get("custom_tests_code")
+    if custom and str(custom).strip():
+        write_file(TESTS_DIR / "custom.test.js", custom)
 
+
+def _write_all_sources(job: dict) -> None:
+    _write_solution(job)
+
+    if TESTS_DIR.is_dir():
+        shutil.rmtree(TESTS_DIR)
     TESTS_DIR.mkdir(parents=True, exist_ok=True)
+
     public_dir = CHALLENGE_MOUNT / "public" / "tests"
     if public_dir.is_dir():
         for src in sorted(public_dir.glob("*.test.js")):
@@ -50,9 +58,28 @@ def setup_workspace(job: dict) -> None:
                 name = re.sub(r"[^a-zA-Z0-9_.]", "_", name) + ".test.js"
             write_file(TESTS_DIR / name, source)
 
-    custom = job.get("custom_tests_code")
-    if custom and str(custom).strip():
-        write_file(TESTS_DIR / "custom.test.js", custom)
+
+def setup_workspace(job: dict) -> None:
+    slug = (job.get("challenge_slug") or "").strip()
+    pooled = os.environ.get("CTL_RUNNER_POOLED") == "1"
+
+    if (
+        pooled
+        and slug
+        and WORKSPACE.is_dir()
+        and STAMP.is_file()
+        and STAMP.read_text(encoding="utf-8") == slug
+        and (WORKSPACE / "solution.js").is_file()
+    ):
+        _write_solution(job)
+        return
+
+    if WORKSPACE.exists():
+        shutil.rmtree(WORKSPACE)
+    WORKSPACE.mkdir(parents=True)
+    _write_all_sources(job)
+    if pooled and slug:
+        STAMP.write_text(slug, encoding="utf-8")
 
 
 def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:
@@ -84,17 +111,6 @@ def run_tests(wall_seconds: int) -> tuple[int, str, str]:
         timeout=wall_seconds,
     )
     return proc.returncode, proc.stdout, proc.stderr
-
-
-def run_eslint() -> tuple[int, str]:
-    proc = subprocess.run(
-        ["eslint", "solution.js", "tests", "--format", "compact"],
-        cwd=WORKSPACE,
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    return proc.returncode, proc.stdout + proc.stderr
 
 
 def parse_c8_coverage() -> dict:
@@ -134,10 +150,20 @@ def parse_junit() -> list[dict]:
     return tests
 
 
-def parse_eslint(output: str) -> dict:
-    errors = len(re.findall(r"Error -", output))
-    warnings = len(re.findall(r"Warning -", output))
-    return {"errors": errors, "warnings": warnings, "findings": []}
+def parse_compile_warnings(stderr: str) -> dict:
+    messages: list[dict] = []
+    pattern = re.compile(r"^(.+\.js):(\d+):\d+\s+(?:Warning|warning)\s+\w+:\s+(.+)$")
+    for line in stderr.splitlines():
+        match = pattern.match(line.strip())
+        if match and len(messages) < 20:
+            messages.append(
+                {
+                    "file": match.group(1),
+                    "line": int(match.group(2)),
+                    "message": match.group(3).strip(),
+                }
+            )
+    return {"warnings": len(messages), "messages": messages}
 
 
 def emit(result: dict) -> None:
@@ -150,7 +176,7 @@ def failed(message: str) -> dict:
         "status": "FAILED",
         "tests": [{"name": "runner", "status": "FAIL", "message": message, "duration_ms": 0}],
         "coverage": {"line_percent": 0.0, "branch_percent": 0.0},
-        "checkstyle": {"errors": 0, "warnings": 0},
+        "compile": {"warnings": 0, "messages": []},
     }
 
 
@@ -176,12 +202,11 @@ def main() -> int:
         setup_workspace(job)
         code, stdout_log, stderr_log = run_tests(wall_seconds)
         tests = parse_junit()
-        eslint_code, eslint_out = run_eslint()
         if not tests and code != 0:
             emit(
                 {
                     **failed("node test failed: " + truncate(stderr_log or stdout_log)),
-                    "checkstyle": parse_eslint(eslint_out),
+                    "compile": parse_compile_warnings(stderr_log),
                     "logs": {
                         "stdout_truncated": truncate(stdout_log),
                         "stderr_truncated": truncate(stderr_log),
@@ -194,7 +219,7 @@ def main() -> int:
                 "status": "COMPLETED",
                 "tests": tests,
                 "coverage": parse_c8_coverage(),
-                "checkstyle": parse_eslint(eslint_out if eslint_code else ""),
+                "compile": parse_compile_warnings(stderr_log),
                 "logs": {
                     "stdout_truncated": truncate(stdout_log),
                     "stderr_truncated": truncate(stderr_log),

@@ -16,6 +16,7 @@ from pathlib import Path
 WORKSPACE = Path("/tmp/workspace")
 CHALLENGE_MOUNT = Path("/challenge")
 OPT = Path("/opt/runner")
+STAMP = WORKSPACE / ".ctl-challenge-slug"
 MAX_LOG_BYTES = 4096
 
 
@@ -31,21 +32,25 @@ def write_file(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def setup_workspace(job: dict) -> None:
-    if WORKSPACE.exists():
-        shutil.rmtree(WORKSPACE)
-    WORKSPACE.mkdir(parents=True)
+def _write_solution(job: dict) -> None:
     write_file(WORKSPACE / "solution.py", job["solution_code"])
+    custom = job.get("custom_tests_code")
+    if custom and str(custom).strip():
+        write_file(WORKSPACE / "tests" / "custom_tests.py", custom)
+
+
+def _write_all_sources(job: dict) -> None:
+    _write_solution(job)
+    tests_dir = WORKSPACE / "tests"
+    if tests_dir.is_dir():
+        shutil.rmtree(tests_dir)
+    tests_dir.mkdir(parents=True, exist_ok=True)
 
     public_dir = CHALLENGE_MOUNT / "public" / "tests"
     if public_dir.is_dir():
-        tests_dir = WORKSPACE / "tests"
-        tests_dir.mkdir(parents=True, exist_ok=True)
         for src in sorted(public_dir.glob("*.py")):
             shutil.copy(src, tests_dir / src.name)
 
-    tests_dir = WORKSPACE / "tests"
-    tests_dir.mkdir(parents=True, exist_ok=True)
     for hidden in job.get("hidden_tests") or []:
         source = hidden.get("source") or ""
         if source.strip():
@@ -54,9 +59,28 @@ def setup_workspace(job: dict) -> None:
                 name = re.sub(r"[^a-zA-Z0-9_]", "_", name) + ".py"
             write_file(tests_dir / name, source)
 
-    custom = job.get("custom_tests_code")
-    if custom and str(custom).strip():
-        write_file(tests_dir / "custom_tests.py", custom)
+
+def setup_workspace(job: dict) -> None:
+    slug = (job.get("challenge_slug") or "").strip()
+    pooled = os.environ.get("CTL_RUNNER_POOLED") == "1"
+
+    if (
+        pooled
+        and slug
+        and WORKSPACE.is_dir()
+        and STAMP.is_file()
+        and STAMP.read_text(encoding="utf-8") == slug
+        and (WORKSPACE / "solution.py").is_file()
+    ):
+        _write_solution(job)
+        return
+
+    if WORKSPACE.exists():
+        shutil.rmtree(WORKSPACE)
+    WORKSPACE.mkdir(parents=True)
+    _write_all_sources(job)
+    if pooled and slug:
+        STAMP.write_text(slug, encoding="utf-8")
 
 
 def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:

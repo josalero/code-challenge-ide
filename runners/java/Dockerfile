@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG JAVA_MAJOR=26
 FROM eclipse-temurin:${JAVA_MAJOR}-jdk-jammy
 
@@ -19,7 +20,9 @@ COPY pom-template.xml run.py daemon.py /opt/runner/
 COPY entrypoint.sh /entrypoint.sh
 
 # Warm Maven repository so sandbox runs work with --network none.
-RUN mkdir -p /opt/runner/warm/src/main/java/com/challenge \
+# Shared BuildKit cache (id=ctl-java-m2) speeds parallel java-17/21/25/26 builds; copy into the image layer.
+RUN --mount=type=cache,id=ctl-java-m2,target=/tmp/m2cache \
+    mkdir -p /opt/runner/warm/src/main/java/com/challenge \
     && mkdir -p /opt/runner/warm/src/test/java/com/challenge/public_ \
     && sed "s/__JAVA_MAJOR__/${JAVA_MAJOR}/g" /opt/runner/pom-template.xml > /opt/runner/warm/pom.xml \
     && printf '%s\n' \
@@ -33,8 +36,9 @@ RUN mkdir -p /opt/runner/warm/src/main/java/com/challenge \
         'import static org.junit.jupiter.api.Assertions.assertEquals;' \
         'class WarmTest { @Test void warm() { assertEquals("a", Solution.reverse("a")); } }' \
         > /opt/runner/warm/src/test/java/com/challenge/public_/WarmTest.java \
-    && mvn -q -Dmaven.repo.local=/opt/m2/repository -f /opt/runner/warm/pom.xml \
-        test jacoco:report
+    && mvn -q -Dmaven.repo.local=/tmp/m2cache -f /opt/runner/warm/pom.xml test jacoco:report \
+    && mkdir -p /opt/m2/repository \
+    && cp -a /tmp/m2cache/. /opt/m2/repository/
 
 RUN chmod +x /entrypoint.sh /opt/runner/run.py /opt/runner/daemon.py \
     && mkdir -p /tmp/workspace \

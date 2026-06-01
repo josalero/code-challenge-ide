@@ -92,29 +92,34 @@ export default function AppLayout({
             </span>
           </Link>
 
-          <nav
-            className="order-3 flex w-full min-w-0 gap-1 overflow-x-auto border-t border-slate-800/70 pt-2 sm:order-none sm:w-auto sm:flex-1 sm:border-t-0 sm:pt-0"
-            aria-label="Primary navigation"
-          >
-            {navItems.map(({ key, to, label, icon: Icon }) => (
-              <Link
-                key={key}
-                to={to}
-                className={cn(
-                  "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-medium no-underline transition-colors",
-                  selectedKey === key
-                    ? "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20"
-                    : "text-slate-400 hover:bg-slate-800/70 hover:text-slate-100",
-                )}
-                aria-current={selectedKey === key ? "page" : undefined}
-              >
-                <Icon className="size-4" aria-hidden />
-                {label}
-              </Link>
-            ))}
-          </nav>
+          <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
+            <nav
+              className="flex min-w-0 shrink gap-0.5 overflow-x-auto sm:gap-1"
+              aria-label="Primary navigation"
+            >
+              {navItems.map(({ key, to, label, icon: Icon }) => (
+                <Link
+                  key={key}
+                  to={to}
+                  className={cn(
+                    "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium no-underline transition-colors sm:gap-2 sm:px-3",
+                    selectedKey === key
+                      ? "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20"
+                      : "text-slate-400 hover:bg-slate-800/70 hover:text-slate-100",
+                  )}
+                  aria-current={selectedKey === key ? "page" : undefined}
+                >
+                  <Icon className="size-4" aria-hidden />
+                  {label}
+                </Link>
+              ))}
+            </nav>
 
-          <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">
+            <span
+              className="mx-0.5 hidden h-6 w-px shrink-0 bg-slate-800 sm:mx-1 sm:block"
+              aria-hidden
+            />
+
             {user && (
               <div className="hidden min-w-0 items-center gap-2 md:flex">
                 <Avatar

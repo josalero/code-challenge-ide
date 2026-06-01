@@ -102,6 +102,8 @@ ctl:
   docker-enabled: ${CTL_DOCKER_ENABLED:true}
   lsp-enabled: ${CTL_LSP_ENABLED:true}
   repo-root: ${CTL_REPO_ROOT:}
+  ops-data-dir: ${CTL_OPS_DATA_DIR:}
+  runner-pool-warm-on-startup: ${RUNNER_POOL_WARM_ON_STARTUP:false}
 
 springdoc:
   api-docs:

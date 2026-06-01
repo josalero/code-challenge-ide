@@ -79,6 +79,7 @@ export const ApiPaths = {
   OPS_RUNNERS_STATUS: "/api/v1/ops/runners/status",
   OPS_RUNNERS_WARM_MAVEN: "/api/v1/ops/runners/warm/maven",
   OPS_RUNNERS_WARM_LSP: "/api/v1/ops/runners/warm/lsp",
+  OPS_RUNNERS_WARM_POOL: "/api/v1/ops/runners/warm/pool",
   opsRunnerJob: (jobId: string) => `/api/v1/ops/runners/jobs/${jobId}`,
   challenge: (slug: string) => `/api/v1/challenges/${slug}`,
   challengeCustomTests: (slug: string) => `/api/v1/challenges/${slug}/custom-tests`,

@@ -53,11 +53,11 @@ class SubmissionPendingRecoveryTest {
             "code",
             null,
             null,
-            now.minus(5, ChronoUnit.MINUTES),
-            now.minus(5, ChronoUnit.MINUTES));
+            now.minus(2, ChronoUnit.MINUTES),
+            now.minus(2, ChronoUnit.MINUTES));
 
     when(submissionRepository.findByStatusAndUpdatedAtBefore(
-            SubmissionStatus.PENDING, now.minus(2, ChronoUnit.MINUTES)))
+            SubmissionStatus.PENDING, now.minus(45, ChronoUnit.SECONDS)))
         .thenReturn(List.of(stale));
     when(submissionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 

@@ -48,20 +48,25 @@ final class DockerRunnerCommands {
     command.add("-e");
     command.add("CTL_RUNNER_POOLED=1");
     addMavenCacheMount(command, workspaceLayout, properties);
+    // Idle container — jobs run via `docker exec … run.py` so a broken attach/daemon cannot block.
     command.add("--entrypoint");
-    command.add("python3");
+    command.add("sleep");
     command.add(image);
-    command.add("/opt/runner/daemon.py");
+    command.add("infinity");
     return command;
   }
 
-  static List<String> buildAttachCommand(String containerId) {
-    return List.of("docker", "attach", containerId);
-  }
-
-  /** Fallback when an image has no daemon yet (one-shot exec). */
   static List<String> buildPoolExecCommand(String containerId) {
-    return List.of("docker", "exec", "-i", containerId, "python3", "/opt/runner/run.py");
+    return List.of(
+        "docker",
+        "exec",
+        "-i",
+        "-e",
+        "PYTHONUNBUFFERED=1",
+        containerId,
+        "python3",
+        "-u",
+        "/opt/runner/run.py");
   }
 
   static String poolContainerName(String image) {

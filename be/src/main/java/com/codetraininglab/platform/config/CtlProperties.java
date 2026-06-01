@@ -23,7 +23,8 @@ public record CtlProperties(
     String ollamaBaseUrl,
     String ollamaModel,
     boolean dockerEnabled,
-    boolean lspEnabled) {
+    boolean lspEnabled,
+    boolean runnerPoolWarmOnStartup) {
 
   public String lspImageFor(String language) {
     if (language == null || language.isBlank()) {

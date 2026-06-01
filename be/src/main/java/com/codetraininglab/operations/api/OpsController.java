@@ -60,6 +60,14 @@ public class OpsController {
     return runnerOpsService.startLspWarm(force, only);
   }
 
+  @PostMapping(ApiPaths.OPS_RUNNERS_WARM_POOL)
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public RunnerOpsJobResponse warmRunnerPool(@RequestBody(required = false) RunnerWarmRequest request) {
+    boolean force = request != null && request.force();
+    List<String> only = request == null ? List.of() : request.only();
+    return runnerOpsService.startRunnerWarm(force, only);
+  }
+
   @GetMapping(ApiPaths.OPS_RUNNERS_JOBS + "/{jobId}")
   public RunnerOpsJobResponse runnerJob(@PathVariable UUID jobId) {
     return runnerOpsService

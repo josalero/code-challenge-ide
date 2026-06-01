@@ -31,6 +31,7 @@ import { useSubmissionEvents } from "../hooks/useSubmissionEvents";
 import {
   applyTestResult,
   buildInitialTrackedTests,
+  finalizeTrackedTestsOnComplete,
 } from "../utils/submissionProgress";
 
 export default function ChallengeWorkspacePage() {
@@ -287,6 +288,7 @@ export default function ChallengeWorkspacePage() {
       setStreamConnected(false);
       setSubmissionStatus((prev) =>
         prev === SubmissionStatus.FAILED ? prev : SubmissionStatus.COMPLETED);
+      setTrackedTests((prev) => finalizeTrackedTestsOnComplete(prev));
       appendActivity("Run finished — loading coach report…");
       const rawReportId =
         payload[SsePayloadKeys.REPORT_ID] ?? payload.reportId;
@@ -309,6 +311,7 @@ export default function ChallengeWorkspacePage() {
     onError: (errorMessage, logs) => {
       setStreamConnected(false);
       setSubmissionStatus(SubmissionStatus.FAILED);
+      setTrackedTests((prev) => finalizeTrackedTestsOnComplete(prev));
       setSubmitError(errorMessage);
       appendActivity(errorMessage);
       message.error(errorMessage);

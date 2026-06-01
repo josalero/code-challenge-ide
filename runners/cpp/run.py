@@ -17,6 +17,7 @@ CHALLENGE_MOUNT = Path("/challenge")
 TESTS_DIR = WORKSPACE / "tests"
 OPT = Path("/opt/runner")
 BUILD_DIR = WORKSPACE / "build"
+STAMP = WORKSPACE / ".ctl-challenge-slug"
 MAX_LOG_BYTES = 4096
 
 
@@ -32,14 +33,21 @@ def write_file(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def setup_workspace(job: dict) -> None:
-    if WORKSPACE.exists():
-        shutil.rmtree(WORKSPACE)
-    WORKSPACE.mkdir(parents=True)
-    shutil.copy(OPT / "CMakeLists.txt", WORKSPACE / "CMakeLists.txt")
+def _write_solution(job: dict) -> None:
     write_file(WORKSPACE / "solution.cpp", job["solution_code"])
+    custom = job.get("custom_tests_code")
+    if custom and str(custom).strip():
+        write_file(TESTS_DIR / "custom_tests.cpp", custom)
 
+
+def _write_all_sources(job: dict) -> None:
+    shutil.copy(OPT / "CMakeLists.txt", WORKSPACE / "CMakeLists.txt")
+    _write_solution(job)
+
+    if TESTS_DIR.is_dir():
+        shutil.rmtree(TESTS_DIR)
     TESTS_DIR.mkdir(parents=True, exist_ok=True)
+
     public_dir = CHALLENGE_MOUNT / "public" / "tests"
     if public_dir.is_dir():
         for src in sorted(public_dir.glob("*.cpp")):
@@ -53,9 +61,28 @@ def setup_workspace(job: dict) -> None:
                 name = re.sub(r"[^a-zA-Z0-9_]", "_", name) + ".cpp"
             write_file(TESTS_DIR / name, source)
 
-    custom = job.get("custom_tests_code")
-    if custom and str(custom).strip():
-        write_file(TESTS_DIR / "custom_tests.cpp", custom)
+
+def setup_workspace(job: dict) -> None:
+    slug = (job.get("challenge_slug") or "").strip()
+    pooled = os.environ.get("CTL_RUNNER_POOLED") == "1"
+
+    if (
+        pooled
+        and slug
+        and WORKSPACE.is_dir()
+        and STAMP.is_file()
+        and STAMP.read_text(encoding="utf-8") == slug
+        and (WORKSPACE / "CMakeLists.txt").is_file()
+    ):
+        _write_solution(job)
+        return
+
+    if WORKSPACE.exists():
+        shutil.rmtree(WORKSPACE)
+    WORKSPACE.mkdir(parents=True)
+    _write_all_sources(job)
+    if pooled and slug:
+        STAMP.write_text(slug, encoding="utf-8")
 
 
 def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:
@@ -66,22 +93,24 @@ def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:
 
 def run_build_and_test(wall_seconds: int) -> tuple[int, str, str, Path]:
     BUILD_DIR.mkdir(exist_ok=True)
-    cmake = subprocess.run(
-        [
-            "cmake",
-            "-S",
-            str(WORKSPACE),
-            "-B",
-            str(BUILD_DIR),
-            "-DFETCHCONTENT_SOURCE_DIR_CATCH2=/opt/catch2-src",
-            "-DFETCHCONTENT_UPDATES_DISCONNECTED=ON",
-        ],
-        capture_output=True,
-        text=True,
-        timeout=120,
-    )
-    if cmake.returncode != 0:
-        return cmake.returncode, cmake.stdout, cmake.stderr, BUILD_DIR
+    cmake_cache = BUILD_DIR / "CMakeCache.txt"
+    if not cmake_cache.is_file():
+        cmake = subprocess.run(
+            [
+                "cmake",
+                "-S",
+                str(WORKSPACE),
+                "-B",
+                str(BUILD_DIR),
+                "-DFETCHCONTENT_SOURCE_DIR_CATCH2=/opt/catch2-src",
+                "-DFETCHCONTENT_UPDATES_DISCONNECTED=ON",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        if cmake.returncode != 0:
+            return cmake.returncode, cmake.stdout, cmake.stderr, BUILD_DIR
 
     build = subprocess.run(
         ["cmake", "--build", str(BUILD_DIR), "-j", "2"],
@@ -104,15 +133,22 @@ def run_build_and_test(wall_seconds: int) -> tuple[int, str, str, Path]:
     return proc.returncode, proc.stdout, proc.stderr, junit
 
 
-def run_cppcheck() -> tuple[int, str]:
-    proc = subprocess.run(
-        ["cppcheck", "--enable=warning,style", "--error-exitcode=0", "solution.cpp", "tests"],
-        cwd=WORKSPACE,
-        capture_output=True,
-        text=True,
-        timeout=60,
+def parse_compile_warnings(build_output: str) -> dict:
+    messages: list[dict] = []
+    pattern = re.compile(
+        r"^(?P<file>[^:\s]+\.(?:cpp|hpp|h)):(?P<line>\d+):\d+:\s+warning:\s+(?P<message>.+)$"
     )
-    return proc.returncode, proc.stdout + proc.stderr
+    for line in build_output.splitlines():
+        match = pattern.match(line.strip())
+        if match and len(messages) < 20:
+            messages.append(
+                {
+                    "file": match.group("file"),
+                    "line": int(match.group("line")),
+                    "message": match.group("message").strip(),
+                }
+            )
+    return {"warnings": len(messages), "messages": messages}
 
 
 def parse_junit(junit_path: Path) -> list[dict]:
@@ -174,12 +210,6 @@ def parse_coverage() -> dict:
     return {"line_percent": round(line_percent, 1), "branch_percent": 0.0}
 
 
-def parse_cppcheck(output: str) -> dict:
-    errors = len(re.findall(r"\[error\]", output))
-    warnings = len(re.findall(r"\[warning\]", output))
-    return {"errors": errors, "warnings": warnings, "findings": []}
-
-
 def emit(result: dict) -> None:
     sys.stdout.write(json.dumps(result, separators=(",", ":")))
     sys.stdout.flush()
@@ -190,7 +220,7 @@ def failed(message: str) -> dict:
         "status": "FAILED",
         "tests": [{"name": "runner", "status": "FAIL", "message": message, "duration_ms": 0}],
         "coverage": {"line_percent": 0.0, "branch_percent": 0.0},
-        "checkstyle": {"errors": 0, "warnings": 0},
+        "compile": {"warnings": 0, "messages": []},
     }
 
 
@@ -213,13 +243,13 @@ def main() -> int:
         setup_workspace(job)
         code, stdout_log, stderr_log, junit_path = run_build_and_test(wall_seconds)
         tests = parse_junit(junit_path)
-        cppcheck_code, cppcheck_out = run_cppcheck()
+        build_log = stdout_log + "\n" + stderr_log
         coverage = parse_coverage() if code == 0 else {"line_percent": 0.0, "branch_percent": 0.0}
         if not tests and code != 0:
             emit(
                 {
                     **failed("C++ build/test failed: " + truncate(stderr_log or stdout_log)),
-                    "checkstyle": parse_cppcheck(cppcheck_out),
+                    "compile": parse_compile_warnings(build_log),
                     "logs": {
                         "stdout_truncated": truncate(stdout_log),
                         "stderr_truncated": truncate(stderr_log),
@@ -232,7 +262,7 @@ def main() -> int:
                 "status": "COMPLETED",
                 "tests": tests,
                 "coverage": coverage,
-                "checkstyle": parse_cppcheck(cppcheck_out if cppcheck_code else ""),
+                "compile": parse_compile_warnings(build_log),
                 "logs": {
                     "stdout_truncated": truncate(stdout_log),
                     "stderr_truncated": truncate(stderr_log),

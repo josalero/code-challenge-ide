@@ -116,10 +116,10 @@ export function runnerPipelineLabel(language: string): string {
 
 export function runnerWarmupHint(language: string): string {
   if (language === "java") {
-    return "First Java run may take 1–3 minutes while Docker warms the Maven cache. Later runs are faster.";
+    return "If the runner pool is cold, the first Java run may take longer while Docker starts the sandbox. Warm the pool from Admin → Ops for faster first runs.";
   }
   if (language === "csharp" || language === "cpp" || language === "rust") {
-    return "Compiling native code in Docker can take a minute on the first run.";
+    return "Compiling native code in Docker can take a minute on a cold pool. Admin → Ops → Warm runner pool preloads this.";
   }
-  return "Docker is starting the sandbox — this usually takes a few seconds.";
+  return "Docker is starting the sandbox — warm the runner pool from Admin → Ops to skip this on first run.";
 }

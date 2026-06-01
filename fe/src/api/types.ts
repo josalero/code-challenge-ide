@@ -162,7 +162,9 @@ export type RunnerOpsStatus = {
   mavenCacheWarm: boolean;
   lspScriptsAvailable: boolean;
   lspWarmStampPresent: boolean;
+  runnerPoolWarmStampPresent: boolean;
   repoRoot: string;
+  opsDataDir: string;
   mavenCacheVolume: string;
   runnerImages: RunnerImageStatus[];
   lspImages: RunnerImageStatus[];

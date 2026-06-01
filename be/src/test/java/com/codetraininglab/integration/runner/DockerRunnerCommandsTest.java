@@ -32,8 +32,8 @@ class DockerRunnerCommandsTest {
         .contains("--name", "ctl-runner-pool-java")
         .contains("--label", DockerRunnerCommands.POOL_LABEL)
         .contains("-e", "CTL_RUNNER_POOLED=1")
-        .contains("--entrypoint", "python3")
-        .contains("/opt/runner/daemon.py")
+        .contains("--entrypoint", "sleep")
+        .contains("infinity")
         .doesNotContain("--read-only");
   }
 

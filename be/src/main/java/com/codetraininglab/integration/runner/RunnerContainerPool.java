@@ -5,10 +5,8 @@ import com.codetraininglab.domain.TestOutcomeStatus;
 import com.codetraininglab.platform.config.CtlProperties;
 import jakarta.annotation.PostConstruct;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -33,6 +31,7 @@ import tools.jackson.databind.json.JsonMapper;
 public class RunnerContainerPool {
 
   private static final Logger log = LoggerFactory.getLogger(RunnerContainerPool.class);
+  private static final int EXEC_EXIT_GRACE_SECONDS = 15;
 
   private final CtlProperties properties;
   private final JsonMapper jsonMapper;
@@ -65,7 +64,6 @@ public class RunnerContainerPool {
                     new ReentrantLock(),
                     new AtomicReference<>(null),
                     new AtomicReference<>(Instant.EPOCH),
-                    new AtomicReference<>(null),
                     new AtomicReference<>(null)));
 
     pooled.lock.lock();
@@ -142,7 +140,6 @@ public class RunnerContainerPool {
                     new ReentrantLock(),
                     new AtomicReference<>(parts[0]),
                     new AtomicReference<>(clock.instant()),
-                    new AtomicReference<>(null),
                     new AtomicReference<>(null));
               });
           log.info("Adopted pooled runner container {} for image {}", parts[2], runnerImage);
@@ -224,7 +221,26 @@ public class RunnerContainerPool {
       return;
     }
     syncChallenge(pooled.containerId.get(), absolute);
+    clearWorkspaceStamp(pooled.containerId.get());
     pooled.lastChallengeDir.set(challengeKey);
+  }
+
+  /** Drops incremental-workspace stamp only; run.py reuses Maven target when the challenge changes. */
+  private void clearWorkspaceStamp(String containerId) throws RunnerPoolException {
+    try {
+      runDocker(
+          "docker",
+          "exec",
+          "-u",
+          "runner",
+          containerId,
+          "rm",
+          "-f",
+          "/tmp/workspace/.ctl-challenge-slug");
+    } catch (IOException | InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      throw new RunnerPoolException("Could not clear workspace stamp", ex);
+    }
   }
 
   private void syncChallenge(String containerId, Path absolute) throws RunnerPoolException {
@@ -252,14 +268,7 @@ public class RunnerContainerPool {
     if (containerId == null) {
       throw new RunnerPoolException("Runner container is not running");
     }
-    try {
-      AttachSession attach = ensureAttach(pooled, containerId);
-      String line = attach.submit(jobJson);
-      return jsonMapper.readValue(line, RunnerResult.class);
-    } catch (IOException ex) {
-      closeAttach(pooled);
-      return execViaOneShotResult(containerId, jobJson, limits);
-    }
+    return execViaOneShotResult(containerId, jobJson, limits);
   }
 
   private RunnerResult execViaOneShotResult(
@@ -285,9 +294,20 @@ public class RunnerContainerPool {
               new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
         line = reader.readLine();
       }
-      boolean finished = process.waitFor(limits.wallSeconds() + 10L, TimeUnit.SECONDS);
-      if (!finished || line == null || line.isBlank()) {
+      if (line == null || line.isBlank()) {
+        boolean finished =
+            process.waitFor(Math.min(limits.wallSeconds() + 10L, 130L), TimeUnit.SECONDS);
+        if (!finished) {
+          process.destroyForcibly();
+          throw new RunnerPoolException("Runner produced no output (timed out)");
+        }
         throw new RunnerPoolException("Runner produced no output");
+      }
+      boolean exited = process.waitFor(EXEC_EXIT_GRACE_SECONDS, TimeUnit.SECONDS);
+      if (!exited) {
+        log.warn("Runner process did not exit within {}s after emitting result; destroying", EXEC_EXIT_GRACE_SECONDS);
+        process.destroyForcibly();
+        process.waitFor(5, TimeUnit.SECONDS);
       }
       return jsonMapper.readValue(line, RunnerResult.class);
     } catch (IOException | InterruptedException ex) {
@@ -296,31 +316,7 @@ public class RunnerContainerPool {
     }
   }
 
-  private AttachSession ensureAttach(PooledRunner pooled, String containerId)
-      throws RunnerPoolException {
-    AttachSession current = pooled.attachSession.get();
-    if (current != null && current.isAlive()) {
-      return current;
-    }
-    closeAttach(pooled);
-    try {
-      AttachSession session = new AttachSession(containerId);
-      pooled.attachSession.set(session);
-      return session;
-    } catch (IOException ex) {
-      throw new RunnerPoolException("Could not attach to runner daemon", ex);
-    }
-  }
-
-  private void closeAttach(PooledRunner pooled) {
-    AttachSession session = pooled.attachSession.getAndSet(null);
-    if (session != null) {
-      session.close();
-    }
-  }
-
   private void destroyContainer(PooledRunner pooled) {
-    closeAttach(pooled);
     pooled.lastChallengeDir.set(null);
     String containerId = pooled.containerId.getAndSet(null);
     if (containerId == null) {
@@ -384,50 +380,6 @@ public class RunnerContainerPool {
         null);
   }
 
-  private static final class AttachSession {
-    private final Process process;
-    private final BufferedWriter stdin;
-    private final BufferedReader stdout;
-
-    private AttachSession(String containerId) throws IOException {
-      process = new ProcessBuilder(DockerRunnerCommands.buildAttachCommand(containerId)).start();
-      CompletableFuture.runAsync(
-          () -> {
-            try {
-              process.getErrorStream().transferTo(java.io.OutputStream.nullOutputStream());
-            } catch (IOException ignored) {
-              // Best-effort drain.
-            }
-          });
-      stdin =
-          new BufferedWriter(
-              new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8));
-      stdout =
-          new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
-    }
-
-    private boolean isAlive() {
-      return process.isAlive();
-    }
-
-    private String submit(String jobJson) throws IOException {
-      synchronized (this) {
-        stdin.write(jobJson);
-        stdin.write('\n');
-        stdin.flush();
-        String line = stdout.readLine();
-        if (line == null || line.isBlank()) {
-          throw new IOException("Runner daemon produced no output");
-        }
-        return line;
-      }
-    }
-
-    private void close() {
-      process.destroyForcibly();
-    }
-  }
-
   private static final class PooledRunner {
     private final String image;
     private final String containerName;
@@ -435,7 +387,6 @@ public class RunnerContainerPool {
     private final AtomicReference<String> containerId;
     private final AtomicReference<Instant> lastUsedAt;
     private final AtomicReference<String> lastChallengeDir;
-    private final AtomicReference<AttachSession> attachSession;
 
     private PooledRunner(
         String image,
@@ -443,15 +394,13 @@ public class RunnerContainerPool {
         ReentrantLock lock,
         AtomicReference<String> containerId,
         AtomicReference<Instant> lastUsedAt,
-        AtomicReference<String> lastChallengeDir,
-        AtomicReference<AttachSession> attachSession) {
+        AtomicReference<String> lastChallengeDir) {
       this.image = image;
       this.containerName = containerName;
       this.lock = lock;
       this.containerId = containerId;
       this.lastUsedAt = lastUsedAt;
       this.lastChallengeDir = lastChallengeDir;
-      this.attachSession = attachSession;
     }
   }
 

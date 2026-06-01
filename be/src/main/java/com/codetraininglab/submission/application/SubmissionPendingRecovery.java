@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 public class SubmissionPendingRecovery {
 
   private static final Logger log = LoggerFactory.getLogger(SubmissionPendingRecovery.class);
-  private static final long STALE_MINUTES = 2;
+  private static final long STALE_SECONDS = 45;
 
   private final SubmissionRepository submissionRepository;
   private final RabbitTemplate rabbitTemplate;
@@ -37,7 +37,7 @@ public class SubmissionPendingRecovery {
 
   @Scheduled(fixedRate = 60_000)
   public void recoverStalePendingSubmissions() {
-    Instant cutoff = clock.instant().minus(STALE_MINUTES, ChronoUnit.MINUTES);
+    Instant cutoff = clock.instant().minus(STALE_SECONDS, ChronoUnit.SECONDS);
     List<SubmissionEntity> stale =
         submissionRepository.findByStatusAndUpdatedAtBefore(SubmissionStatus.PENDING, cutoff);
     for (SubmissionEntity submission : stale) {

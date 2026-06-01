@@ -71,6 +71,7 @@ class ChallengePublisherTest {
             "http://localhost:11434",
             "model",
             false,
+            false,
             false);
     publisher =
         new ChallengePublisher(

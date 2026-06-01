@@ -15,6 +15,7 @@ WORKSPACE = Path("/tmp/workspace")
 CHALLENGE_MOUNT = Path("/challenge")
 TESTS_DIR = WORKSPACE / "tests"
 OPT = Path("/opt/runner")
+STAMP = WORKSPACE / ".ctl-challenge-slug"
 MAX_LOG_BYTES = 4096
 
 
@@ -30,16 +31,22 @@ def write_file(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def setup_workspace(job: dict) -> None:
-    if WORKSPACE.exists():
-        shutil.rmtree(WORKSPACE)
-    WORKSPACE.mkdir(parents=True)
-    shutil.copy(OPT / "Cargo.toml", WORKSPACE / "Cargo.toml")
-    src_dir = WORKSPACE / "src"
-    src_dir.mkdir(parents=True, exist_ok=True)
-    write_file(src_dir / "lib.rs", job["solution_code"])
+def _write_solution(job: dict) -> None:
+    write_file(WORKSPACE / "src" / "lib.rs", job["solution_code"])
+    custom = job.get("custom_tests_code")
+    if custom and str(custom).strip():
+        write_file(TESTS_DIR / "custom_tests.rs", custom)
 
+
+def _write_all_sources(job: dict) -> None:
+    shutil.copy(OPT / "Cargo.toml", WORKSPACE / "Cargo.toml")
+    (WORKSPACE / "src").mkdir(parents=True, exist_ok=True)
+    _write_solution(job)
+
+    if TESTS_DIR.is_dir():
+        shutil.rmtree(TESTS_DIR)
     TESTS_DIR.mkdir(parents=True, exist_ok=True)
+
     public_dir = CHALLENGE_MOUNT / "public" / "tests"
     if public_dir.is_dir():
         for src in sorted(public_dir.glob("*.rs")):
@@ -53,9 +60,28 @@ def setup_workspace(job: dict) -> None:
                 name = re.sub(r"[^a-zA-Z0-9_]", "_", name) + ".rs"
             write_file(TESTS_DIR / name, source)
 
-    custom = job.get("custom_tests_code")
-    if custom and str(custom).strip():
-        write_file(TESTS_DIR / "custom_tests.rs", custom)
+
+def setup_workspace(job: dict) -> None:
+    slug = (job.get("challenge_slug") or "").strip()
+    pooled = os.environ.get("CTL_RUNNER_POOLED") == "1"
+
+    if (
+        pooled
+        and slug
+        and WORKSPACE.is_dir()
+        and STAMP.is_file()
+        and STAMP.read_text(encoding="utf-8") == slug
+        and (WORKSPACE / "Cargo.toml").is_file()
+    ):
+        _write_solution(job)
+        return
+
+    if WORKSPACE.exists():
+        shutil.rmtree(WORKSPACE)
+    WORKSPACE.mkdir(parents=True)
+    _write_all_sources(job)
+    if pooled and slug:
+        STAMP.write_text(slug, encoding="utf-8")
 
 
 def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:
@@ -83,17 +109,6 @@ def run_cargo_test(wall_seconds: int) -> tuple[int, str, str]:
     return proc.returncode, proc.stdout, proc.stderr
 
 
-def run_clippy() -> tuple[int, str]:
-    proc = subprocess.run(
-        ["cargo", "clippy", "--quiet", "--", "-D", "warnings"],
-        cwd=WORKSPACE,
-        capture_output=True,
-        text=True,
-        timeout=120,
-    )
-    return proc.returncode, proc.stdout + proc.stderr
-
-
 def run_coverage_from_output(stdout: str, stderr: str) -> dict:
     line_percent = 0.0
     for line in (stdout + stderr).splitlines():
@@ -118,10 +133,26 @@ def parse_cargo_output(stdout: str, stderr: str) -> list[dict]:
     return tests
 
 
-def parse_clippy(output: str) -> dict:
-    errors = len(re.findall(r"error:", output))
-    warnings = len(re.findall(r"warning:", output))
-    return {"errors": errors, "warnings": warnings, "findings": []}
+
+def parse_compile_warnings(stderr: str) -> dict:
+    messages: list[dict] = []
+    pending_message: str | None = None
+    for line in stderr.splitlines():
+        warn = re.match(r"^warning:\s+(.+)$", line.strip())
+        if warn:
+            pending_message = warn.group(1).strip()
+            continue
+        loc = re.match(r"^\s+-->\s+([^:]+):(\d+):\d+", line.strip())
+        if loc and pending_message and len(messages) < 20:
+            messages.append(
+                {
+                    "file": loc.group(1),
+                    "line": int(loc.group(2)),
+                    "message": pending_message,
+                }
+            )
+            pending_message = None
+    return {"warnings": len(messages), "messages": messages}
 
 
 def emit(result: dict) -> None:
@@ -134,7 +165,7 @@ def failed(message: str) -> dict:
         "status": "FAILED",
         "tests": [{"name": "runner", "status": "FAIL", "message": message, "duration_ms": 0}],
         "coverage": {"line_percent": 0.0, "branch_percent": 0.0},
-        "checkstyle": {"errors": 0, "warnings": 0},
+        "compile": {"warnings": 0, "messages": []},
     }
 
 
@@ -142,6 +173,9 @@ def configure_cargo_home() -> None:
     cargo_home = Path("/tmp/cargo-home")
     cargo_home.mkdir(parents=True, exist_ok=True)
     os.environ["CARGO_HOME"] = str(cargo_home)
+    target_dir = Path("/tmp/cargo-target")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    os.environ["CARGO_TARGET_DIR"] = str(target_dir)
 
 
 def main() -> int:
@@ -163,6 +197,7 @@ def main() -> int:
             emit(
                 {
                     **failed("cargo test failed: " + truncate(stderr_log or stdout_log)),
+                    "compile": parse_compile_warnings(stderr_log),
                     "logs": {
                         "stdout_truncated": truncate(stdout_log),
                         "stderr_truncated": truncate(stderr_log),
@@ -170,7 +205,6 @@ def main() -> int:
                 }
             )
             return 0
-        clippy_code, clippy_out = run_clippy() if code == 0 else (0, "")
         coverage = (
             run_coverage_from_output(stdout_log, stderr_log)
             if code == 0
@@ -181,7 +215,7 @@ def main() -> int:
                 "status": "COMPLETED",
                 "tests": tests,
                 "coverage": coverage,
-                "checkstyle": parse_clippy(clippy_out if clippy_code else ""),
+                "compile": parse_compile_warnings(stderr_log),
                 "logs": {
                     "stdout_truncated": truncate(stdout_log),
                     "stderr_truncated": truncate(stderr_log),

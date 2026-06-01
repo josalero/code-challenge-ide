@@ -58,8 +58,15 @@ def ensure_m2_repository() -> Path:
     return target
 
 
-def _write_test_sources(job: dict) -> None:
+def _write_solution(job: dict) -> None:
     write_file(WORKSPACE / "src/main/java/com/challenge/Solution.java", job["solution_code"])
+    custom = job.get("custom_tests_code")
+    if custom and str(custom).strip():
+        write_file(WORKSPACE / java_test_path(custom), custom)
+
+
+def _write_all_test_sources(job: dict) -> None:
+    _write_solution(job)
 
     test_root = WORKSPACE / "src/test/java"
     if test_root.is_dir():
@@ -77,14 +84,24 @@ def _write_test_sources(job: dict) -> None:
         if source.strip():
             write_file(WORKSPACE / java_test_path(source), source)
 
-    custom = job.get("custom_tests_code")
-    if custom and str(custom).strip():
-        write_file(WORKSPACE / java_test_path(custom), custom)
-
 
 def _bootstrap_workspace(pom_text: str) -> None:
     WORKSPACE.mkdir(parents=True, exist_ok=True)
     (WORKSPACE / "pom.xml").write_text(pom_text, encoding="utf-8")
+
+
+def _pooled_maven_cache_ready() -> bool:
+    return (
+        WORKSPACE.is_dir()
+        and (WORKSPACE / "pom.xml").is_file()
+        and (WORKSPACE / "target").is_dir()
+    )
+
+
+def _reset_workspace_sources() -> None:
+    src = WORKSPACE / "src"
+    if src.is_dir():
+        shutil.rmtree(src)
 
 
 def setup_workspace(job: dict) -> None:
@@ -103,18 +120,25 @@ def setup_workspace(job: dict) -> None:
     if (
         pooled
         and slug
-        and WORKSPACE.is_dir()
         and STAMP.is_file()
         and STAMP.read_text(encoding="utf-8") == slug
-        and (WORKSPACE / "pom.xml").is_file()
+        and _pooled_maven_cache_ready()
     ):
-        _write_test_sources(job)
+        _write_solution(job)
+        return
+
+    if pooled and _pooled_maven_cache_ready():
+        # Same pooled container, different challenge: keep Maven target/deps, swap sources only.
+        _reset_workspace_sources()
+        _write_all_test_sources(job)
+        if slug:
+            STAMP.write_text(slug, encoding="utf-8")
         return
 
     if WORKSPACE.exists():
         shutil.rmtree(WORKSPACE)
     _bootstrap_workspace(pom_text)
-    _write_test_sources(job)
+    _write_all_test_sources(job)
     if pooled and slug:
         STAMP.write_text(slug, encoding="utf-8")
 
@@ -129,6 +153,8 @@ def run_maven(wall_seconds: int) -> tuple[int, str, str]:
     m2_repo = ensure_m2_repository()
     base = [
         "mvn",
+        "-B",
+        "-ntp",
         "-q",
         "-o",
         "-T",
@@ -144,7 +170,7 @@ def run_maven(wall_seconds: int) -> tuple[int, str, str]:
         "-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmx512m",
     )
     proc = subprocess.run(
-        [*base, "test", "jacoco:report"],
+        [*base, "test"],
         cwd=WORKSPACE,
         capture_output=True,
         text=True,

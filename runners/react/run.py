@@ -16,6 +16,7 @@ WORKSPACE = Path("/tmp/workspace")
 CHALLENGE_MOUNT = Path("/challenge")
 TESTS_DIR = WORKSPACE / "tests"
 OPT = Path("/opt/runner")
+STAMP = WORKSPACE / ".ctl-challenge-slug"
 MAX_LOG_BYTES = 4096
 LAYOUT = "vitest-react"
 
@@ -43,14 +44,21 @@ def copy_runner_deps() -> None:
         os.symlink(src_modules, dest, target_is_directory=True)
 
 
-def setup_workspace(job: dict) -> None:
-    if WORKSPACE.exists():
-        shutil.rmtree(WORKSPACE)
-    WORKSPACE.mkdir(parents=True)
-    copy_runner_deps()
+def _write_solution(job: dict) -> None:
     write_file(WORKSPACE / "solution.tsx", job["solution_code"])
+    custom = job.get("custom_tests_code")
+    if custom and str(custom).strip():
+        write_file(TESTS_DIR / "custom.test.tsx", custom)
 
+
+def _write_all_sources(job: dict) -> None:
+    copy_runner_deps()
+    _write_solution(job)
+
+    if TESTS_DIR.is_dir():
+        shutil.rmtree(TESTS_DIR)
     TESTS_DIR.mkdir(parents=True, exist_ok=True)
+
     public_dir = CHALLENGE_MOUNT / "public" / "tests"
     if public_dir.is_dir():
         for src in sorted(public_dir.glob("*.test.*")):
@@ -64,9 +72,28 @@ def setup_workspace(job: dict) -> None:
                 name = re.sub(r"[^a-zA-Z0-9_.-]", "_", name) + ".test.tsx"
             write_file(TESTS_DIR / name, source)
 
-    custom = job.get("custom_tests_code")
-    if custom and str(custom).strip():
-        write_file(TESTS_DIR / "custom.test.tsx", custom)
+
+def setup_workspace(job: dict) -> None:
+    slug = (job.get("challenge_slug") or "").strip()
+    pooled = os.environ.get("CTL_RUNNER_POOLED") == "1"
+
+    if (
+        pooled
+        and slug
+        and WORKSPACE.is_dir()
+        and STAMP.is_file()
+        and STAMP.read_text(encoding="utf-8") == slug
+        and (WORKSPACE / "package.json").is_file()
+    ):
+        _write_solution(job)
+        return
+
+    if WORKSPACE.exists():
+        shutil.rmtree(WORKSPACE)
+    WORKSPACE.mkdir(parents=True)
+    _write_all_sources(job)
+    if pooled and slug:
+        STAMP.write_text(slug, encoding="utf-8")
 
 
 def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:

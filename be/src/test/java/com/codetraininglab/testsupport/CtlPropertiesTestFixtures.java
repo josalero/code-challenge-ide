@@ -33,6 +33,7 @@ public final class CtlPropertiesTestFixtures {
         "http://localhost:11434",
         "ollama",
         false,
+        false,
         false);
   }
 }

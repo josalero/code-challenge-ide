@@ -76,9 +76,16 @@ public class SubmissionProcessor {
                   context.challenge().getId()),
               context.challengeDir(),
               context.runtime().getDockerImage());
+      long runnerMs = Duration.between(dockerStarted, clock.instant()).toMillis();
+      log.info(
+          "Submission {} runner finished in {} ms ({} tests)",
+          submissionId,
+          runnerMs,
+          result.tests().size());
     } catch (Exception e) {
       heartbeat.cancel(false);
-      log.error("Unexpected error running submission {}", submissionId, e);
+      long runnerMs = Duration.between(dockerStarted, clock.instant()).toMillis();
+      log.error("Unexpected error running submission {} after {} ms", submissionId, runnerMs, e);
       stateWriter.markInfrastructureFailure(submissionId, "Submission processing failed", null);
       return;
     } finally {

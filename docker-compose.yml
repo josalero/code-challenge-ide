@@ -78,6 +78,8 @@ services:
       CTL_DOCKER_ENABLED: "true"
       RUNNER_JAVA_26_IMAGE: ${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}
       RUNNER_MAVEN_CACHE_VOLUME: ${RUNNER_MAVEN_CACHE_VOLUME:-ctl-runner-m2-cache}
+      RUNNER_POOL_WARM_ON_STARTUP: ${RUNNER_POOL_WARM_ON_STARTUP:-true}
+      CTL_OPS_DATA_DIR: /data/ctl-ops
       LSP_JAVA_IMAGE: ${LSP_JAVA_IMAGE:-code-challenge-ide-lsp-java:local}
       CTL_LSP_ENABLED: ${CTL_LSP_ENABLED:-true}
       AI_PROVIDER: ${AI_PROVIDER:-openrouter}
@@ -88,6 +90,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./challenges:/challenges:ro
+      - ctl-ops-data:/data/ctl-ops
     group_add:
       - "${DOCKER_GID:-0}"
     depends_on:
@@ -121,3 +124,4 @@ services:
 
 volumes:
   ctl-postgres-data:
+  ctl-ops-data:
