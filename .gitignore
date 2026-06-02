@@ -173,9 +173,9 @@ temp/
 .pmd/
 .spotbugs/
 
-# --- Local dev sandboxes ---
-workspace/
-sandboxes/
+# --- Local dev sandboxes (root only — do not match fe/src/components/workspace/) ---
+/workspace/
+/sandboxes/
 runner-workspace/
 submissions-local/
 .ctl-lsp-warm-stamp
