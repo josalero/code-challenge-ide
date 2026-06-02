@@ -4,14 +4,26 @@ difficulty: easy
 language: go
 default_runtime_version: "1.23"
 description_md: |
+  ## What to do
   Array contains n distinct values in [0,n]; one missing. Return it.
+  
+  The array `nums` contains `n` distinct values taken from the range `[0, n]`. Exactly one number from that range is missing.
+  
+  
+  ## Examples
+  - `[3, 0, 1]` → `2`
+  - `[0]` → `1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use package `solution` and the function signature from the starter file.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
 public_tests_meta:
-  - name: "public_1"
+  - name: "missingnumber_3_0_1_should_equal_2"
     description: "missingNumber([3, 0, 1]) should equal 2"
-  - name: "public_2"
+  - name: "missingnumber_0_should_equal_1"
     description: "missingNumber([0]) should equal 1"

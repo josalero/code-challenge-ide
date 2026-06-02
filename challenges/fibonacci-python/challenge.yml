@@ -4,7 +4,23 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Return the n-th Fibonacci number (`fib(0)=0`, `fib(1)=1`).
+  
+  Use the standard definition: `F(0) = 0`, `F(1) = 1`, and `F(n) = F(n-1) + F(n-2)`.
+  
+  
+  ## Examples
+  - `0` → `0`
+  - `5` → `5`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `fib(0)=0`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +28,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_fib_zero"
-    description: "Checks that fib zero"
+    description: "Expect fib(0) to equal 0"
   - name: "test_fib_five"
-    description: "Checks that fib five"
+    description: "Expect fib(5) to equal 5"

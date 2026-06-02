@@ -9,7 +9,7 @@
 # Pre-warm LSP images (optional — not part of make runners):
 #   make lsp-warm
 #
-# Build only: make runners
+# Build only: make runners (make runners also prunes orphan compose containers via down --remove-orphans)
 
 volumes:
   ctl-runner-m2-cache:
@@ -21,24 +21,6 @@ x-runner-build-only: &runner-build-only
   networks: []
 
 services:
-  runner-java-17:
-    <<: *runner-build-only
-    build:
-      context: ./runners/java
-      dockerfile: Dockerfile
-      args:
-        JAVA_MAJOR: "17"
-    image: ${RUNNER_JAVA_17_IMAGE:-code-challenge-ide-runner-java-17:local}
-
-  runner-java-21:
-    <<: *runner-build-only
-    build:
-      context: ./runners/java
-      dockerfile: Dockerfile
-      args:
-        JAVA_MAJOR: "21"
-    image: ${RUNNER_JAVA_21_IMAGE:-code-challenge-ide-runner-java-21:local}
-
   runner-java-25:
     <<: *runner-build-only
     build:

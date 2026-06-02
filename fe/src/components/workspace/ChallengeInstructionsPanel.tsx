@@ -1,6 +1,10 @@
-import { BookOpen, ListChecks } from "lucide-react";
+import { BookOpen, Table2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ChallengeDetail } from "@/api/types";
+import {
+  resolveChallengeExamples,
+  stripExamplesFromDescription,
+} from "@/utils/challengeExamples";
 import { formatRuntimeLabel } from "@/utils/languageRuntimes";
 import WorkspacePanelHeader from "./WorkspacePanelHeader";
 
@@ -13,6 +17,16 @@ export default function ChallengeInstructionsPanel({
   challenge,
   runtimeVersion,
 }: Props) {
+  const exampleRows = resolveChallengeExamples(
+    challenge.descriptionMd,
+    challenge.publicTests,
+    challenge.slug,
+  );
+  const descriptionMd =
+    exampleRows.length > 0
+      ? stripExamplesFromDescription(challenge.descriptionMd)
+      : challenge.descriptionMd;
+
   return (
     <aside
       className="flex h-full min-h-0 w-full flex-1 flex-col bg-slate-900/40"
@@ -48,38 +62,51 @@ export default function ChallengeInstructionsPanel({
             </div>
           </div>
 
-          <div className="ctl-workspace-prose whitespace-pre-wrap">{challenge.descriptionMd}</div>
-
-          {challenge.publicTests.length > 0 && (
-            <section aria-labelledby="public-tests-heading">
+          {exampleRows.length > 0 && (
+            <section aria-labelledby="examples-heading">
               <h2
-                id="public-tests-heading"
-                className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400"
+                id="examples-heading"
+                className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-300"
               >
-                <ListChecks className="size-3.5 text-emerald-400/80" aria-hidden />
-                Public tests ({challenge.publicTests.length})
+                <Table2 className="size-3.5 text-sky-400/90" aria-hidden />
+                Examples
               </h2>
-              <ul className="space-y-2">
-                {challenge.publicTests.map((test, index) => (
-                  <li key={test.name} className="ctl-workspace-test-card">
-                    <div className="flex items-start gap-2">
-                      <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-medium text-slate-400 ring-1 ring-slate-600/60">
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="font-medium text-slate-100">{test.name}</p>
-                        {test.description ? (
-                          <p className="mt-1 text-sm leading-relaxed text-slate-400">
-                            {test.description}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <div className="overflow-hidden rounded-lg border border-slate-700/60">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700/60 bg-slate-800/50 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                      <th className="px-3 py-2 font-medium">Input</th>
+                      <th className="px-3 py-2 font-medium">Output</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exampleRows.map((row) => (
+                      <tr
+                        key={`${row.input}-${row.output}`}
+                        className="border-b border-slate-800/80 last:border-0"
+                      >
+                        <td className="px-3 py-2 font-mono text-xs text-slate-200">
+                          {row.input}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs text-emerald-300/90">
+                          {row.output}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                {challenge.slug === "anagram-groups"
+                  ? "Group and word order may vary; tests compare normalized groups. Hidden tests may use other inputs."
+                  : "Sample cases from the problem statement. Hidden tests may use other inputs."}
+              </p>
             </section>
           )}
+
+          <div className="ctl-workspace-prose whitespace-pre-wrap text-slate-300">
+            {descriptionMd}
+          </div>
         </div>
       </ScrollArea>
     </aside>

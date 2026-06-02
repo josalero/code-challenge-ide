@@ -2,6 +2,7 @@
 
 | Doc | Purpose |
 | --- | --- |
+| [user-guide.md](./user-guide.md) | **How to use the app** — setup flow, Run/Submit, admin Ops, troubleshooting |
 | [runner-ops.md](./runner-ops.md) | **Run tests** pooling, Maven/LSP warm, Admin Ops, env vars |
 | [code_training_lab_mvp_specification.md](./code_training_lab_mvp_specification.md) | Product scope, roadmap, architecture |
 | [contracts.md](./contracts.md) | Runner, submission, SSE, challenge on-disk contract |
@@ -19,6 +20,7 @@
 
 | I want to… | Start here |
 | --- | --- |
+| Use the app (sign-up, challenges, Run/Submit, Ops) | [user-guide.md](./user-guide.md) |
 | Run the app locally (prerequisites) | [../README.md#prerequisites](../README.md#prerequisites) |
 | Run the app locally (steps) | [../README.md](../README.md) |
 | Add a new code challenge | [adding-challenges.md](./adding-challenges.md) |

@@ -48,6 +48,56 @@ public class RunnerContainerPool {
     return properties.runnerPoolEnabled();
   }
 
+  /**
+   * True when a pooled runner container is running for {@code image} (in-memory map or on the
+   * Docker host). Ops status uses this so a live pool is not shown as cold when only the image
+   * stamp is stale after {@code docker build}.
+   */
+  public boolean isPoolRunningForImage(String image) {
+    if (image == null || image.isBlank()) {
+      return false;
+    }
+    PooledRunner pooled = pools.get(image);
+    if (pooled != null) {
+      String containerId = pooled.containerId.get();
+      if (containerId != null && isRunning(containerId)) {
+        return true;
+      }
+    }
+    return isPoolRunningOnHost(image);
+  }
+
+  private boolean isPoolRunningOnHost(String image) {
+    try {
+      Process process =
+          new ProcessBuilder(
+                  "docker",
+                  "ps",
+                  "--filter",
+                  "label=" + DockerRunnerCommands.POOL_LABEL,
+                  "--filter",
+                  "label=" + DockerRunnerCommands.POOL_IMAGE_LABEL + "=" + image,
+                  "--filter",
+                  "status=running",
+                  "--format",
+                  "{{.ID}}")
+              .start();
+      boolean finished = process.waitFor(10, TimeUnit.SECONDS);
+      if (!finished || process.exitValue() != 0) {
+        return false;
+      }
+      try (BufferedReader reader =
+          new BufferedReader(
+              new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+        String line = reader.readLine();
+        return line != null && !line.isBlank();
+      }
+    } catch (IOException | InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      return false;
+    }
+  }
+
   public RunnerResult execute(
       String image,
       Path challengeDir,

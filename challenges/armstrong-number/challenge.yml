@@ -4,7 +4,24 @@ difficulty: medium
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Return `True` if `n` equals sum of its digits each raised to the power of digit count.
+  
+  An Armstrong number equals the sum of its digits each raised to the power of the number of digits (e.g. 153 = 1³ + 5³ + 3³).
+  
+  
+  ## Examples
+  - `153` → `true`
+  - `10` → `false`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  - Aim for an efficient solution; brute force may time out on large hidden inputs.
+  
+  ## Method to implement
+  
+  `True`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +29,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_153"
-    description: "Checks that 153"
+    description: "Expect is_armstrong(153) to be true"
   - name: "test_10"
-    description: "Checks that 10"
+    description: "Expect is_armstrong(10) to be false"

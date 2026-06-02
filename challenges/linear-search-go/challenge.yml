@@ -4,14 +4,26 @@ difficulty: easy
 language: go
 default_runtime_version: "1.23"
 description_md: |
+  ## What to do
   Return index of target in nums, or -1.
+  
+  Return the index of `target` in the array, or `-1` if the value does not occur.
+  
+  
+  ## Examples
+  - `[2, 3, 4], 3` → `index 1`
+  - `[1, 2], 5` → `index -1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use package `solution` and the function signature from the starter file.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
 public_tests_meta:
-  - name: "public_1"
+  - name: "linearsearch_2_3_4_3_should_return_index_1"
     description: "linearSearch([2, 3, 4], 3) should return index 1"
-  - name: "public_2"
+  - name: "linearsearch_1_2_5_should_return_index_1"
     description: "linearSearch([1, 2], 5) should return index -1"

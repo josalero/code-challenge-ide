@@ -4,9 +4,27 @@ difficulty: medium
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Given an array of strings, implement `Solution.groupAnagrams(String[] strs)`.
-
+  
   Group words that are anagrams of each other. Each input word appears in exactly one group. Order of groups and words within a group does not matter.
+  
+  
+  ## Examples
+  - `["eat", "tea", "tan", "ate", "nat", "bat"]` → `[["bat"], ["nat", "tan"], ["eat", "tea", "ate"]]`
+  - `[]` → `[]`
+  - `["a"]` → `[["a"]]`
+
+  Order of inner groups and words inside each group may vary in the runner; tests compare normalized groups.
+
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  
+  ## Method to implement
+  
+  `Solution.groupAnagrams(String[] strs)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
@@ -15,8 +33,8 @@ limits:
 starter_main_class: com.challenge.Solution
 public_tests_meta:
   - name: "groups_classic_example"
-    description: "Groups Classic Example"
-  - name: "expect_groupanagrams_new_string_to_equal_list_of"
-    description: "Expect groupAnagrams(new String[] {}) to equal List.of()"
+    description: 'Expect groupAnagrams(new String[] {"eat", "tea", "tan", "ate", "nat", "bat"}) to equal [["bat"],["nat","tan"],["eat","tea","ate"]]'
+  - name: "empty_input_returns_empty_groups"
+    description: "Expect groupAnagrams(new String[] {}) to equal []"
   - name: "single_word_forms_one_group"
-    description: "Single Word Forms One Group"
+    description: 'Expect groupAnagrams(new String[] {"a"}) to equal [["a"]]'

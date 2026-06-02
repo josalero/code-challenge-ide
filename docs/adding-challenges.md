@@ -6,6 +6,8 @@ How challenges enter the platform today, and how to extend the catalog later.
 
 When this doc disagrees with code, **trust the code** (`ChallengeGitLoader`, `ChallengePublisher`, `scripts/seed-challenges/`).
 
+**Catalog inspiration** (TheAlgorithms, type-challenges, app-ideas, RealWorld, etc.): [challenge-catalog-sources.md](./challenge-catalog-sources.md).
+
 ---
 
 ## How challenges are loaded
@@ -95,11 +97,11 @@ gating_config:
 limits:
   per_test_timeout_seconds: 10
 starter_main_class: solution   # java: com.challenge.Solution
-public_tests_meta:             # optional; shown in workspace UI
+public_tests_meta:             # optional; learner-facing labels for public test names
   - name: "test_hello"
-    description: "Checks hello"
+    description: 'Expect countVowels("hello") to equal 2'
   - name: "test_empty"
-    description: "Checks empty"
+    description: 'Expect countVowels("") to equal 0'
 ```
 
 | Field | Required | Notes |
@@ -112,8 +114,45 @@ public_tests_meta:             # optional; shown in workspace UI
 | `difficulty` | recommended | `easy`, `medium`, `hard` |
 | `gating_config` | recommended | Coverage/style thresholds; see MVP spec |
 | `limits` | optional | Per-test timeout |
-| `public_tests_meta` | optional | Maps public test names → learner-visible descriptions |
+| `public_tests_meta` | optional | Maps public test names → learner-visible descriptions (use input/output phrasing; see below) |
 | `starter_main_class` | Java/Python | Loader metadata for runners |
+
+### Input / output examples (learner-facing)
+
+Good exercises show **sample inputs and expected outputs** (like LeetCode). The workspace **Problem** panel shows an **Examples** table (from `## Examples` bullets or parseable `public_tests_meta` descriptions) and the rest of `description_md` below without duplicating that section.
+
+**In `description_md`** (manual or seed):
+
+```yaml
+description_md: |
+  Return the factorial of `n` (non-negative).
+
+  **Examples**
+  - `0` → `1`
+  - `5` → `120`
+```
+
+**In `public_tests_meta`** (preferred for generated catalog):
+
+Use descriptions the UI can parse, e.g. `Expect factorial(5) to equal 120L` or `Expect isPrime(17) to be true`. The seed script (`generate.py`) builds these from JUnit/pytest assertions and appends a **Examples** block to `description_md` automatically.
+
+To refresh on-disk challenges after changing the catalog:
+
+```bash
+python3 scripts/seed-challenges/generate.py --force   # rewrites challenge.yml for all catalog slugs
+```
+
+Restart the API so `ChallengeGitLoader` syncs updated `public_tests_meta` and `description_md` into Postgres.
+
+### Rich descriptions (bulk)
+
+`scripts/seed-challenges/challenge_enrichment.py` expands each catalog entry into sections: **What to do**, context, **Examples**, **Constraints**, and **Method to implement**. Regenerate everything:
+
+```bash
+python3 scripts/seed-challenges/generate.py --force
+```
+
+Then restart the API. See [challenge-catalog-sources.md](./challenge-catalog-sources.md#enriching-exercises-for-learners).
 
 ---
 

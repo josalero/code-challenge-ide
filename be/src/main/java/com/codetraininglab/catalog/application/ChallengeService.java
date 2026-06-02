@@ -56,6 +56,9 @@ public class ChallengeService {
     int hiddenCount = hiddenTestRepository.findByChallengeIdOrderBySortOrderAsc(entity.getId()).size();
     List<RuntimeOption> runtimes =
         runtimeRepository.findActiveByLanguageName(entity.getLanguage()).stream()
+            .sorted(
+                (left, right) ->
+                    RuntimeVersionOrder.compare(right.getVersion(), left.getVersion()))
             .map(r -> new RuntimeOption(r.getVersion(), r.isActive()))
             .toList();
     return new ChallengeDetail(

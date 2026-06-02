@@ -4,7 +4,18 @@ difficulty: easy
 language: csharp
 default_runtime_version: "8.0"
 description_md: |
+  ## What to do
   Return maximum profit from one buy and one sell; 0 if no profit possible.
+  
+  Each array element is a stock price on a given day. You may complete **at most one** transaction: choose one day to buy and a later day to sell. Return the maximum profit, or `0` if no profit is possible.
+  
+  
+  ## Examples
+  - `[7, 1, 5, 3, 6, 4]` → `5`
+  - `[7, 6, 4, 3, 1]` → `0`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

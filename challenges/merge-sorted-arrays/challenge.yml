@@ -4,7 +4,20 @@ difficulty: easy
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Implement `Solution.merge(int[] nums1, int m, int[] nums2, int n)` merging `nums2` into `nums1` (length `m+n`, trailing zeros).
+  
+  Both input arrays are sorted in non-decreasing order. Return a new sorted array containing all elements from both inputs.
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  - Arrays may be empty unless examples show otherwise.
+  
+  ## Method to implement
+  
+  `Solution.merge(int[] nums1, int m, int[] nums2, int n)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

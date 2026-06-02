@@ -1,6 +1,7 @@
 import { BulbOutlined, RobotOutlined } from "@ant-design/icons";
 import { useMutation } from "@tanstack/react-query";
 import { Alert, Button, List, Segmented, Space, Spin, Tag, Typography } from "antd";
+import CoachMarkdown from "./CoachMarkdown";
 import CtlCard from "./ui/CtlCard";
 import { useMemo, useState } from "react";
 import { apiFetch, ApiError } from "../api/client";
@@ -129,7 +130,8 @@ export default function AiCoachPanel({ report, challengeSlug, onReportUpdate }: 
           : counts.warn > 0
             ? `${counts.warn} warning(s) to consider. `
             : "All automated checks passed. "}
-        Use <strong>Ask AI coach</strong> for hints — not full solutions.
+        Use <strong>Ask AI coach</strong> to analyze your submitted code: hints, alternatives, and short
+        code samples that illustrate patterns — not full solutions.
       </Typography.Paragraph>
 
       <Segmented
@@ -180,11 +182,7 @@ export default function AiCoachPanel({ report, challengeSlug, onReportUpdate }: 
                   showIcon
                   icon={<BulbOutlined />}
                   message="Coach insight"
-                  description={
-                    <Typography.Paragraph className="!mb-0 whitespace-pre-wrap !text-slate-300">
-                      {item.aiExplanation}
-                    </Typography.Paragraph>
-                  }
+                  description={<CoachMarkdown text={item.aiExplanation} />}
                 />
               ) : (
                 <Button
@@ -226,11 +224,7 @@ export default function AiCoachPanel({ report, challengeSlug, onReportUpdate }: 
               type="success"
               showIcon
               message="Alternative approaches"
-              description={
-                <Typography.Paragraph className="!mb-0 whitespace-pre-wrap !text-slate-300">
-                  {alternatives}
-                </Typography.Paragraph>
-              }
+              description={<CoachMarkdown text={alternatives} />}
             />
           )}
         </div>

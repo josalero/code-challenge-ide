@@ -4,7 +4,22 @@ difficulty: easy
 language: rust
 default_runtime_version: "1.84"
 description_md: |
+  ## What to do
   Return true if `s` and `t` are anagrams (case-sensitive).
+  
+  Two strings are anagrams if they contain the same characters with the same counts (comparison is case-sensitive unless stated otherwise).
+  
+  
+  ## Examples
+  - `\"anagram\", \"nagaram\"` → `true`
+  - `\"rat\", \"car\"` → `false`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  
+  ## Method to implement
+  
+  `s`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

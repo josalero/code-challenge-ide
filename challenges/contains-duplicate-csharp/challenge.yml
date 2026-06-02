@@ -4,7 +4,18 @@ difficulty: easy
 language: csharp
 default_runtime_version: "8.0"
 description_md: |
+  ## What to do
   Return true if any value appears at least twice.
+  
+  Return `true` if any value appears at least twice in the array.
+  
+  
+  ## Examples
+  - `[1, 2, 3, 1]` → `true`
+  - `[1, 2, 3, 4]` → `false`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

@@ -11,7 +11,7 @@ Default assumptions for this repository:
 - **Spring Boot 4.x** and **Spring Framework 7.x**.
 - **Jakarta** namespaces (`jakarta.*`), not `javax.*` for new web/JPA/validation code.
 - Activate JDK before Java/Gradle/Maven commands: `jenv shell 26` (see `.java-version`).
-- Challenge **runners** may target other Java versions (17, 21, 25, 26) per `language_runtimes`; the API service itself stays on Java 26 unless build files say otherwise.
+- Challenge **runners** may target Java 25 or 26 per `language_runtimes`; the API service itself stays on Java 26 unless build files say otherwise.
 
 Before changing code:
 

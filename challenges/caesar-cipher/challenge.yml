@@ -4,7 +4,24 @@ difficulty: medium
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Shift lowercase letters a-z by `shift` positions (wrap within alphabet). Leave other chars unchanged.
+  
+  Apply the transformation character by character; preserve case and non-alphabetic symbols unless stated.
+  
+  
+  ## Examples
+  - `\"abc\", 3` → `\"def\"`
+  - `\"xyz\", 3` → `\"abc\"`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  - Aim for an efficient solution; brute force may time out on large hidden inputs.
+  
+  ## Method to implement
+  
+  `shift`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +29,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_shift_three"
-    description: "Checks that shift three"
+    description: "Expect caesar_cipher(\"abc\", 3) to equal \"def\""
   - name: "test_wrap"
-    description: "Checks that wrap"
+    description: "Expect caesar_cipher(\"xyz\", 3) to equal \"abc\""

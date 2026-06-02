@@ -1,97 +1,202 @@
 # Challenge catalog — inspiration sources
 
-Use these references when adding or reviewing challenges. Regenerate with:
+The seeded catalog is **inspired by** (not a direct copy of) exercises and algorithms from the repositories below. Each challenge in `challenges/{slug}/` is an **original on-disk package**: starter code, public/hidden tests, and a short `description_md` written for this platform.
+
+Regenerate from seed modules:
 
 ```bash
 python3 scripts/seed-challenges/generate.py        # new slugs only
-python3 scripts/seed-challenges/generate.py --force # overwrite all
+python3 scripts/seed-challenges/generate.py --force # overwrite all challenge.yml trees
 ```
 
-## React
+Restart the API after seeding so `ChallengeGitLoader` syncs metadata into Postgres.
 
-| Source | Ideas mapped in catalog |
-|--------|-------------------------|
-| [florinpop17/app-ideas](https://github.com/florinpop17/app-ideas) | Counter, greeting, todo, calculator, progress, star rating, accordion, dark mode, searchable list, color box |
-| [greatfrontend/greatfrontend-projects](https://github.com/greatfrontend/greatfrontend-projects) | Component + interaction patterns (lists, toggles, ratings) |
-| [alan2207/bulletproof-react](https://github.com/alan2207/bulletproof-react) | Small feature-style components, testable units |
+---
 
-**Seed:** `catalog_frontend.py`, `catalog_frontend_extra.py`
+## Primary inspiration (your catalog)
 
-## Vue
+| Repository | Used for |
+| --- | --- |
+| [TheAlgorithms/Java](https://github.com/TheAlgorithms/Java) | Java DSA exercises — `scripts/seed-challenges/catalog.py` |
+| [TheAlgorithms/Python](https://github.com/TheAlgorithms/Python) | Python DSA — `catalog.py` |
+| [TheAlgorithms/Go](https://github.com/TheAlgorithms/Go) | Go — `catalog_multi.py`, `catalog_multi_extended.py` |
+| [TheAlgorithms/C-Sharp](https://github.com/TheAlgorithms/C-Sharp) | C# — `catalog_multi.py`, `catalog_multi_extended.py` |
+| [TheAlgorithms/Rust](https://github.com/TheAlgorithms/Rust) | Rust — `catalog_multi.py`, `catalog_multi_extended.py` |
+| [TheAlgorithms/C-Plus-Plus](https://github.com/TheAlgorithms/C-Plus-Plus) | C++ — `catalog_multi.py`, `catalog_multi_extended.py` |
+| [TheAlgorithms/TypeScript](https://github.com/TheAlgorithms/TypeScript) | TypeScript DSA — `catalog_multi.py`, `catalog_multi_extended.py`, `catalog_typescript_extra.py` |
+| [type-challenges/type-challenges](https://github.com/type-challenges/type-challenges) | TypeScript utility-style exercises (runtime ports; type-only challenges are backlog) |
+| [florinpop17/app-ideas](https://github.com/florinpop17/app-ideas) | React / Vue UI component ideas — `catalog_frontend.py`, `catalog_frontend_extra.py` |
+| [gothinkster/realworld](https://github.com/gothinkster/realworld) | Angular services/pipes patterns (e.g. slugify) — `catalog_frontend.py`, `catalog_frontend_extra.py` |
 
-| Source | Ideas mapped |
-|--------|----------------|
-| [florinpop17/app-ideas](https://github.com/florinpop17/app-ideas) | Counter, todos |
-| [vuejs/examples](https://github.com/vuejs/examples) | Hello world, computed/filter, emits |
-| [vuejs/awesome-vue](https://github.com/vuejs/awesome-vue) | SFC + composition API patterns |
+**Also referenced in seed headers:** [kunal-kushwaha/DSA-Bootcamp-Java](https://github.com/kunal-kushwaha/DSA-Bootcamp-Java), [Asabeneh/30-Days-Of-Python](https://github.com/Asabeneh/30-Days-Of-Python), [project-based-learning](https://github.com/practical-tutorials/project-based-learning).
 
-**Seed:** `catalog_frontend.py`, `catalog_frontend_extra.py`
+### Why some exercises feel short on context
 
-## Angular
+Upstream repos focus on **implementations and unit tests**, not learner-facing problem statements. The generator turns each entry into:
 
-| Source | Ideas mapped |
-|--------|----------------|
-| [gothinkster/realworld](https://github.com/gothinkster/realworld) | Slugify service (article slugs) |
-| [learning-zone/angular-basics](https://github.com/learning-zone/angular-basics) | Pipes (reverse, truncate, title case, multiply) |
-| [PatrickJS/awesome-angular](https://github.com/PatrickJS/awesome-angular) | Standalone pipes/services |
+- A one-line **task** in `description_md` (method signature + goal)
+- **Examples** (from public test assertions when you run `generate.py`)
+- Runnable **starter** + **public** / **hidden** tests
 
-**Seed:** `catalog_frontend.py`, `catalog_frontend_extra.py`
+To add more explanation (story, constraints, edge cases), enrich `description_md` in `challenge.yml` or extend the catalog entry’s `description` field before regenerating — see [adding-challenges.md](./adding-challenges.md#input--output-examples-learner-facing).
 
-## TypeScript
+---
 
-| Source | Ideas mapped |
-|--------|----------------|
-| [type-challenges/type-challenges](https://github.com/type-challenges/type-challenges) | Pick/omit-style utilities (runtime exercises; type-only TBD) |
-| [TheAlgorithms/TypeScript](https://github.com/TheAlgorithms/TypeScript) | DSA ports via `catalog_multi.py` + extras |
-| [TypeScript handbook v2](https://github.com/microsoft/TypeScript-Website/tree/v2/packages/typescriptlang-org/src/copy/en/handbook-v2) | `capitalize`, `groupBy`, shallow compare |
+## Java
 
-**Seed:** `catalog_multi.py`, `catalog_multi_extended.py`, `catalog_typescript_extra.py`
+| Source | Role in catalog |
+| --- | --- |
+| [TheAlgorithms/Java](https://github.com/TheAlgorithms/Java) | Core DSA slugs (factorial, two-sum-style ports, stock, trees, etc.) |
+| [kunal-kushwaha/DSA-Bootcamp-Java](https://github.com/kunal-kushwaha/DSA-Bootcamp-Java) | Additional classic problems |
 
-## C#
+**Seed:** `scripts/seed-challenges/catalog.py`
 
-| Source | Ideas mapped |
-|--------|----------------|
-| [TheAlgorithms/C-Sharp](https://github.com/TheAlgorithms/C-Sharp) | Classic DSA in `catalog_multi.py` / `catalog_multi_extended.py` |
-| [ardalis/CleanArchitecture](https://github.com/ardalis/CleanArchitecture) | Future: layered service exercises |
-| [dotnet-architecture/eShop](https://github.com/dotnet-architecture/eShop) | Future: domain-style modules |
+---
+
+## Python
+
+| Source | Role in catalog |
+| --- | --- |
+| [TheAlgorithms/Python](https://github.com/TheAlgorithms/Python) | Core DSA |
+| [Asabeneh/30-Days-Of-Python](https://github.com/Asabeneh/30-Days-Of-Python) | Beginner-friendly variants |
+
+**Seed:** `scripts/seed-challenges/catalog.py`
+
+---
 
 ## Go
 
-| Source | Ideas mapped |
-|--------|----------------|
+| Source | Role in catalog |
+| --- | --- |
 | [TheAlgorithms/Go](https://github.com/TheAlgorithms/Go) | DSA + extended algorithms |
 | [golang/go/wiki/CodeReviewComments](https://github.com/golang/go/wiki/CodeReviewComments) | Idiomatic naming in generated tests |
-| [avelino/awesome-go](https://github.com/avelino/awesome-go) | Standard library style functions |
 
 **Seed:** `catalog_multi.py`, `catalog_multi_extended.py`
+
+---
+
+## Node.js
+
+| Source | Role in catalog |
+| --- | --- |
+| [TheAlgorithms/JavaScript](https://github.com/TheAlgorithms/JavaScript) | Same DSA themes as multi-language extended set (ported to `node:test`) |
+
+**Seed:** `catalog_multi.py`, `catalog_multi_extended.py` (language key `node`)
+
+---
+
+## TypeScript
+
+| Source | Role in catalog |
+| --- | --- |
+| [type-challenges/type-challenges](https://github.com/type-challenges/type-challenges) | Utility exercises (Pick/Omit-style at runtime; compile-only TBD) |
+| [TheAlgorithms/TypeScript](https://github.com/TheAlgorithms/TypeScript) | DSA ports |
+| [TypeScript handbook](https://github.com/microsoft/TypeScript-Website/tree/v2/packages/typescriptlang-org/src/copy/en/handbook-v2) | `capitalize`, `groupBy`, shallow compare |
+
+**Seed:** `catalog_multi.py`, `catalog_multi_extended.py`, `catalog_typescript_extra.py`
+
+---
+
+## C#
+
+| Source | Role in catalog |
+| --- | --- |
+| [TheAlgorithms/C-Sharp](https://github.com/TheAlgorithms/C-Sharp) | Classic DSA in multi + extended modules |
+
+**Seed:** `catalog_multi.py`, `catalog_multi_extended.py`
+
+---
 
 ## Rust
 
-| Source | Ideas mapped |
-|--------|----------------|
-| [rust-lang/rustlings](https://github.com/rust-lang/rustlings) | Small `assert_eq!` exercises |
+| Source | Role in catalog |
+| --- | --- |
 | [TheAlgorithms/Rust](https://github.com/TheAlgorithms/Rust) | DSA ports |
-| [rust-unofficial/awesome-rust](https://github.com/rust-unofficial/awesome-rust) | Ownership-friendly APIs |
+| [rust-lang/rustlings](https://github.com/rust-lang/rustlings) | Small `assert_eq!` exercise style |
 
 **Seed:** `catalog_multi.py`, `catalog_multi_extended.py`
+
+---
 
 ## C++
 
-| Source | Ideas mapped |
-|--------|----------------|
+| Source | Role in catalog |
+| --- | --- |
 | [TheAlgorithms/C-Plus-Plus](https://github.com/TheAlgorithms/C-Plus-Plus) | DSA ports |
-| [isocpp/CppCoreGuidelines](https://github.com/isocpp/CppCoreGuidelines) | `const` refs, vectors in signatures |
-| [practical-tutorials/project-based-learning](https://github.com/practical-tutorials/project-based-learning) | Future: multi-file projects |
 
 **Seed:** `catalog_multi.py`, `catalog_multi_extended.py`
 
-## Module index
+---
+
+## React
+
+| Source | Role in catalog |
+| --- | --- |
+| [florinpop17/app-ideas](https://github.com/florinpop17/app-ideas) | Counter, greeting, todo, calculator, progress, star rating, accordion, dark mode, searchable list, color box |
+| [greatfrontend/greatfrontend-projects](https://github.com/greatfrontend/greatfrontend-projects) | Component + interaction patterns |
+
+**Seed:** `catalog_frontend.py`, `catalog_frontend_extra.py`
+
+---
+
+## Vue
+
+| Source | Role in catalog |
+| --- | --- |
+| [florinpop17/app-ideas](https://github.com/florinpop17/app-ideas) | Counter, todos |
+| [vuejs/examples](https://github.com/vuejs/examples) | Hello world, computed/filter, emits |
+
+**Seed:** `catalog_frontend.py`, `catalog_frontend_extra.py`
+
+---
+
+## Angular
+
+| Source | Role in catalog |
+| --- | --- |
+| [gothinkster/realworld](https://github.com/gothinkster/realworld) | Slugify service (article slugs) |
+| [learning-zone/angular-basics](https://github.com/learning-zone/angular-basics) | Pipes (reverse, truncate, title case) |
+
+**Seed:** `catalog_frontend.py`, `catalog_frontend_extra.py`
+
+---
+
+## Seed module index
 
 | File | Contents |
-|------|----------|
+| --- | --- |
 | `catalog.py` | Java + Python |
 | `catalog_multi.py` | Go, Node, TS, C#, Rust, C++ (core DSA) |
 | `catalog_multi_extended.py` | +12 algorithms × 6 languages |
 | `catalog_typescript_extra.py` | TS utility challenges |
-| `catalog_frontend.py` | Base React/Vue/Angular |
-| `catalog_frontend_extra.py` | App-ideas / examples / RealWorld-style UI |
+| `catalog_frontend.py` | Base React / Vue / Angular |
+| `catalog_frontend_extra.py` | app-ideas / RealWorld-style UI |
+
+---
+
+## Enriching exercises for learners
+
+`scripts/seed-challenges/challenge_enrichment.py` builds structured `description_md` when you regenerate:
+
+| Section | Content |
+| --- | --- |
+| **What to do** | Catalog task line + method signature |
+| *(context)* | Slug-specific narrative (stock, anagram, UI tracks, …) |
+| **Examples** | Parsed from public test assertions |
+| **Constraints** | Platform rules + language notes |
+| **Method to implement** | Extracted signature |
+
+```bash
+python3 scripts/seed-challenges/generate.py --force
+```
+
+Restart the API — `ChallengeGitLoader` syncs updated `description_md` into Postgres for existing slugs.
+
+| Approach | When to use |
+| --- | --- |
+| `generate.py --force` | Bulk refresh all catalog challenges |
+| Edit `challenges/{slug}/challenge.yml` | One-off overrides |
+| Extend `SLUG_CONTEXT` in `challenge_enrichment.py` | Add narrative for a family of problems |
+| Admin **Create challenge** | Custom exercises with full markdown up front |
+
+Examples appear in `description_md` in the workspace **Problem** panel — see [adding-challenges.md](./adding-challenges.md).

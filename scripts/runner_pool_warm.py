@@ -153,8 +153,6 @@ export class ReversePipe implements PipeTransform {
 RUNNER_TARGETS: tuple[tuple[str, str, str, str, str], ...] = (
     ("Java 26", "RUNNER_JAVA_26_IMAGE", "code-challenge-ide-runner-java-26:local", "reverse-string", "maven"),
     ("Java 25", "RUNNER_JAVA_25_IMAGE", "code-challenge-ide-runner-java-25:local", "reverse-string", "maven"),
-    ("Java 21", "RUNNER_JAVA_21_IMAGE", "code-challenge-ide-runner-java-21:local", "reverse-string", "maven"),
-    ("Java 17", "RUNNER_JAVA_17_IMAGE", "code-challenge-ide-runner-java-17:local", "reverse-string", "maven"),
     ("Python", "RUNNER_PYTHON_312_IMAGE", "code-challenge-ide-runner-python-312:local", "fizzbuzz-python", "pytest"),
     ("Go", "RUNNER_GO_123_IMAGE", "code-challenge-ide-runner-go-123:local", "gcd-go", "go-test"),
     ("Node.js", "RUNNER_NODE_22_IMAGE", "code-challenge-ide-runner-node-22:local", "gcd-node", "node-test"),

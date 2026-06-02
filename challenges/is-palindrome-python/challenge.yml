@@ -4,7 +4,23 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Return `True` if `s` reads the same forward and backward (ignore case optional — use exact match).
+  
+  Consider only alphanumeric characters and ignore case when checking palindrome property.
+  
+  
+  ## Examples
+  - `\"racecar\"` → `true`
+  - `\"hello\"` → `false`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `True`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +28,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_racecar"
-    description: "Checks that racecar"
+    description: "Expect is_palindrome(\"racecar\") to be true"
   - name: "test_hello"
-    description: "Checks that hello"
+    description: "Expect is_palindrome(\"hello\") to be false"

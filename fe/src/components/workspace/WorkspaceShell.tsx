@@ -11,6 +11,7 @@ import WorkspaceBottomPanel, {
   type BottomPanelTab,
 } from "./WorkspaceBottomPanel";
 import WorkspacePanelFrame from "./WorkspacePanelFrame";
+import WorkspaceResizableLayout from "./WorkspaceResizableLayout";
 import RunStateBanner from "./RunStateBanner";
 import type { ChallengeDetail, ReportResponse, RunnerLogs } from "@/api/types";
 import type { WorkspaceRunPhase } from "@/domain/workspaceRunState";
@@ -18,6 +19,7 @@ import type { SubmissionStatusValue } from "@/domain/constants";
 import type { AutosaveStatus } from "@/hooks/useAutosaveDraft";
 import type { ActivityEntry, TrackedTest } from "@/domain/runProgressTypes";
 import type { AttemptRecord } from "./AttemptHistoryTab";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -141,6 +143,7 @@ export default function WorkspaceShell({
 }: Props) {
   const [mobilePane, setMobilePane] = useState<MobilePane>("editor");
   const [instructionsOpen, setInstructionsOpen] = useState(false);
+  const isDesktopWorkspace = useMediaQuery("(min-width: 768px)");
 
   useEffect(() => {
     if (showLiveRun) {
@@ -283,10 +286,11 @@ export default function WorkspaceShell({
         </Sheet>
       </div>
 
+      {!isDesktopWorkspace && (
       <div className="ctl-workspace-ide-grid min-h-0 flex-1 overflow-hidden">
         <div
           className={cn(
-            "ctl-workspace-ide-column border-slate-700/70 bg-slate-900/30 md:border-r",
+            "ctl-workspace-ide-column border-slate-700/70 bg-slate-900/30",
             paneClass("instructions", mobilePane),
           )}
         >
@@ -309,13 +313,33 @@ export default function WorkspaceShell({
 
         <div
           className={cn(
-            "ctl-workspace-ide-column border-slate-700/70 bg-slate-900/40 md:border-l",
+            "ctl-workspace-ide-column border-slate-700/70 bg-slate-900/40",
             paneClass("output", mobilePane),
           )}
         >
           <WorkspacePanelFrame>{outputPanel}</WorkspacePanelFrame>
         </div>
       </div>
+      )}
+
+      {isDesktopWorkspace && (
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <WorkspaceResizableLayout
+          problem={instructionsPanel}
+          editor={editorPanel}
+          activity={
+            <WorkspaceActivityPanel
+              activityLog={activityLog}
+              isActive={isRunning || showLiveRun}
+              streamConnected={streamConnected}
+              streamReconnecting={streamReconnecting}
+              layout="resizable"
+            />
+          }
+          output={outputPanel}
+        />
+      </div>
+      )}
     </div>
   );
 }

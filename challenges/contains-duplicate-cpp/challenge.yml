@@ -4,14 +4,25 @@ difficulty: easy
 language: cpp
 default_runtime_version: "20"
 description_md: |
+  ## What to do
   Return true if any value appears at least twice.
+  
+  Return `true` if any value appears at least twice in the array.
+  
+  
+  ## Examples
+  - `[1, 2, 3, 1]` → `true`
+  - `[1, 2, 3, 4]` → `false`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
 public_tests_meta:
-  - name: "public_1"
+  - name: "containsduplicate_1_2_3_1_should_be_true"
     description: "containsDuplicate([1, 2, 3, 1]) should be true"
-  - name: "public_2"
+  - name: "containsduplicate_1_2_3_4_should_be_false"
     description: "containsDuplicate([1, 2, 3, 4]) should be false"

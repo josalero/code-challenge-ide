@@ -16,7 +16,7 @@ Code Training Lab is a self-hosted stack: API, UI, Postgres, RabbitMQ, and **on-
 | Postgres | `postgres:17` | Persistent volume |
 | RabbitMQ | `rabbitmq:3-management` | Optional management UI |
 
-Runner images (Java 17/21/25/26, Python 3.12, Go, Node, C#, TypeScript, Rust, C++, React, Vue, Angular, LSP) are **not** long-running services. Pull or build them on the host:
+Runner images (Java 25/26, Python 3.12, Go, Node, C#, TypeScript, Rust, C++, React, Vue, Angular, LSP) are **not** long-running services. Pull or build them on the host:
 
 ```bash
 ./scripts/pull-runner-images.sh

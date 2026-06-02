@@ -4,7 +4,23 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Return index of `target` in `nums` or `-1`.
+  
+  Return the index of `target` in the array, or `-1` if the value does not occur.
+  
+  
+  ## Examples
+  - `[2, 3, 4], 3` → `1`
+  - `[1, 2], 5` → `-1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `target`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +28,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_found"
-    description: "Checks that found"
+    description: "Expect linear_search([2, 3, 4], 3) to equal 1"
   - name: "test_missing"
-    description: "Checks that missing"
+    description: "Expect linear_search([1, 2], 5) to equal -1"

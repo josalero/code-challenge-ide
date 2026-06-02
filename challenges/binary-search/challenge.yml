@@ -4,9 +4,25 @@ difficulty: easy
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Implement `Solution.binarySearch(int[] nums, int target)` on a **sorted ascending** array.
-
+  
   Return the 0-based index of `target`, or `-1` if it is not present.
+  
+  
+  ## Examples
+  - `[1, 3, 5, 7, 9], 3` → `1`
+  - `[1, 3, 5, 7, 9], 4` → `-1`
+  - `[2, 4, 6], 2` → `0`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  - Arrays may be empty unless examples show otherwise.
+  
+  ## Method to implement
+  
+  `Solution.binarySearch(int[] nums, int target)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

@@ -4,7 +4,24 @@ difficulty: medium
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Count primes strictly less than `n`. `Solution.countPrimes(int n)`.
+  
+  A prime number is an integer greater than `1` with no positive divisors other than `1` and itself.
+  
+  
+  ## Examples
+  - `10` → `4`
+  - `0` → `0`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  - Aim for an efficient solution; brute force may time out on large hidden inputs.
+  
+  ## Method to implement
+  
+  `n`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

@@ -10,11 +10,58 @@ export function activeLanguages(runtimes: LanguageRuntimeOption[]): string[] {
   return [...names].sort(compareLanguages);
 }
 
+/** Ascending compare for dotted/numeric runtime versions (17 < 21 < 26, 5.7 < 5.10). */
+export function compareRuntimeVersions(left: string, right: string): number {
+  const leftParts = left.split(/[.\-_+]/);
+  const rightParts = right.split(/[.\-_+]/);
+  const length = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < length; index++) {
+    const leftPart = leftParts[index] ?? "";
+    const rightPart = rightParts[index] ?? "";
+    const leftNumber = parseVersionPart(leftPart);
+    const rightNumber = parseVersionPart(rightPart);
+    if (leftNumber != null && rightNumber != null && leftNumber !== rightNumber) {
+      return leftNumber - rightNumber;
+    }
+    if (leftPart !== rightPart) {
+      return leftPart.localeCompare(rightPart, undefined, { numeric: true, sensitivity: "base" });
+    }
+  }
+  return left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" });
+}
+
+function parseVersionPart(part: string): number | null {
+  const match = /^(\d+)/.exec(part);
+  if (!match) {
+    return null;
+  }
+  const value = Number.parseInt(match[1], 10);
+  return Number.isFinite(value) ? value : null;
+}
+
+export function sortRuntimesByVersionDesc<T extends { version: string }>(
+  runtimes: T[],
+): T[] {
+  return [...runtimes].sort((left, right) =>
+    compareRuntimeVersions(right.version, left.version),
+  );
+}
+
+export function latestActiveRuntimeVersion(
+  runtimes: { version: string; active: boolean }[],
+  fallback = "",
+): string {
+  const newest = sortRuntimesByVersionDesc(runtimes.filter((runtime) => runtime.active))[0];
+  return newest?.version ?? fallback;
+}
+
 export function activeRuntimesForLanguage(
   runtimes: LanguageRuntimeOption[],
   language: string,
 ): LanguageRuntimeOption[] {
-  return runtimes.filter((r) => r.active && r.language === language);
+  return sortRuntimesByVersionDesc(
+    runtimes.filter((r) => r.active && r.language === language),
+  );
 }
 
 export function formatLanguageLabel(language: string): string {

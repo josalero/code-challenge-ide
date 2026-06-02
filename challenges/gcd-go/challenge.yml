@@ -4,16 +4,29 @@ difficulty: easy
 language: go
 default_runtime_version: "1.23"
 description_md: |
+  ## What to do
   Return the greatest common divisor of a and b.
+  
+  The greatest common divisor (GCD) is the largest integer that divides both inputs without remainder.
+  
+  
+  ## Examples
+  - `54, 24` → `6`
+  - `17, 13` → `1`
+  - `25, 15` → `5`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use package `solution` and the function signature from the starter file.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
 public_tests_meta:
-  - name: "public_1"
+  - name: "gcd_54_24_should_equal_6"
     description: "GCD(54, 24) should equal 6"
-  - name: "public_2"
+  - name: "gcd_17_13_should_equal_1"
     description: "GCD(17, 13) should equal 1"
-  - name: "public_3"
+  - name: "gcd_25_15_should_equal_5"
     description: "GCD(25, 15) should equal 5"

@@ -4,7 +4,19 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Merge two sorted lists into one sorted list.
+  
+  Both input arrays are sorted in non-decreasing order. Return a new sorted array containing all elements from both inputs.
+  
+  
+  ## Examples
+  - `[1, 3], [2, 4]` → `[1,2,3,4]`
+  - `[], [1]` → `[1]`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +24,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_merge"
-    description: "Checks that merge"
+    description: "Expect merge_sorted([1, 3], [2, 4]) to equal [1, 2, 3, 4]"
   - name: "test_empty_a"
-    description: "Checks that empty a"
+    description: "Expect merge_sorted([], [1]) to equal [1]"

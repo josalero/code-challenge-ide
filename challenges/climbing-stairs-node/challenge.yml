@@ -4,14 +4,25 @@ difficulty: easy
 language: node
 default_runtime_version: "22"
 description_md: |
+  ## What to do
   Count ways to climb n steps (1 or 2 at a time).
+  
+  You can climb 1 or 2 steps at a time. Count how many distinct ways you can reach step `n`.
+  
+  
+  ## Examples
+  - `2` → `2`
+  - `3` → `3`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
 public_tests_meta:
-  - name: "public_1"
+  - name: "climbstairs_2_should_equal_2"
     description: "climbStairs(2) should equal 2"
-  - name: "public_2"
+  - name: "climbstairs_3_should_equal_3"
     description: "climbStairs(3) should equal 3"

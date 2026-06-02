@@ -4,7 +4,23 @@ difficulty: easy
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Implement `Solution.longestCommonPrefix(String[] strs)` for an array of strings.
+  
+  Read the task and signature carefully. Use the public examples to clarify edge cases before submitting.
+  
+  
+  ## Examples
+  - `{\"flower\",\"flow\",\"flight\"}` → `\"fl\"`
+  - `{\"dog\",\"racecar\",\"car\"}` → `\"\"`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  
+  ## Method to implement
+  
+  `Solution.longestCommonPrefix(String[] strs)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

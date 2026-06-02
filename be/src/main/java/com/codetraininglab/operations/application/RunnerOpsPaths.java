@@ -5,14 +5,14 @@ import java.nio.file.Path;
 import org.springframework.core.env.Environment;
 
 /** Resolves repo checkout vs durable ops data paths (warm stamps, etc.). */
-final class RunnerOpsPaths {
+public final class RunnerOpsPaths {
 
   static final String POOL_WARM_STAMP = ".ctl-runner-pool-warm-stamp";
   static final String LSP_WARM_STAMP = ".ctl-lsp-warm-stamp";
 
   private RunnerOpsPaths() {}
 
-  static Path resolveOpsDataDir(Environment environment) {
+  public static Path resolveOpsDataDir(Environment environment) {
     String configured = environment.getProperty("ctl.ops-data-dir", "");
     if (configured != null && !configured.isBlank()) {
       return Path.of(configured).toAbsolutePath().normalize();

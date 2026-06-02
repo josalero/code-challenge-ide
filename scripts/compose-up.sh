@@ -18,7 +18,7 @@ if [[ -z "${DOCKER_GID:-}" ]] && [[ -S /var/run/docker.sock ]]; then
 fi
 
 "${ROOT}/scripts/compose-runners.sh"
-docker compose up --build -d "$@"
+docker compose up --build -d --remove-orphans "$@"
 echo ""
 echo "UI:  http://localhost:${FE_PORT:-3000}"
 echo "API: http://localhost:${API_PORT:-8080}/actuator/health"

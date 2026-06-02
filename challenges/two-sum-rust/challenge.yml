@@ -4,7 +4,22 @@ difficulty: easy
 language: rust
 default_runtime_version: "1.84"
 description_md: |
+  ## What to do
   Return 0-based indices of two distinct elements that sum to `target` (exactly one solution).
+  
+  You are given an array of integers and a target sum. Find **two different indices** whose values add up to the target. Exactly one valid pair exists.
+  
+  
+  ## Examples
+  - `[2, 7, 11, 15], 9` → `[0,1]`
+  - `[3, 2, 4], 6` → `[1,2]`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  
+  ## Method to implement
+  
+  `target`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

@@ -4,7 +4,14 @@ difficulty: easy
 language: cpp
 default_runtime_version: "20"
 description_md: |
+  ## What to do
   Return the reverse of the input string.
+  
+  Return a new string (or mutate in place where applicable) with characters in reverse order.
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

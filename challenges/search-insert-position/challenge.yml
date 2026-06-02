@@ -4,7 +4,23 @@ difficulty: easy
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Sorted array without duplicates. Return index if `target` found else insert position. `Solution.searchInsert(int[] nums, int target)`.
+  
+  Search the structure or array as described and return the required index or boolean result.
+  
+  
+  ## Examples
+  - `[1, 3, 5, 6], 5` → `2`
+  - `[1, 3, 5, 6], 2` → `1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  
+  ## Method to implement
+  
+  `target`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

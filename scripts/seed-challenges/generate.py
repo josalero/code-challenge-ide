@@ -7,6 +7,7 @@ import re
 import sys
 from pathlib import Path
 
+from challenge_enrichment import build_description_md
 from catalog import JAVA_CHALLENGES, PYTHON_CHALLENGES
 from test_descriptions import (
     describe_core_case,
@@ -147,6 +148,15 @@ def write_java_challenge(entry: dict, base: Path) -> None:
     slug = entry["slug"]
     challenge_dir = base / slug
     challenge_dir.mkdir(parents=True, exist_ok=True)
+    public_meta = java_public_meta(entry)
+    description = build_description_md(
+        slug,
+        entry["title"],
+        entry["difficulty"],
+        "java",
+        entry["description"],
+        public_meta,
+    )
 
     yml = f"""slug: {slug}
 title: {entry["title"]}
@@ -154,14 +164,14 @@ difficulty: {entry["difficulty"]}
 language: java
 default_runtime_version: "26"
 description_md: |
-  {entry["description"].replace(chr(10), chr(10) + "  ")}
+  {description.replace(chr(10), chr(10) + "  ")}
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
 starter_main_class: com.challenge.Solution
-{format_public_tests_meta_yaml(java_public_meta(entry))}"""
+{format_public_tests_meta_yaml(public_meta)}"""
     (challenge_dir / "challenge.yml").write_text(yml, encoding="utf-8")
 
     starter_dir = challenge_dir / "starter"
@@ -181,6 +191,15 @@ def write_python_challenge(entry: dict, base: Path) -> None:
     slug = entry["slug"]
     challenge_dir = base / slug
     challenge_dir.mkdir(parents=True, exist_ok=True)
+    public_meta = python_public_meta(entry)
+    description = build_description_md(
+        slug,
+        entry["title"],
+        entry["difficulty"],
+        "python",
+        entry["description"],
+        public_meta,
+    )
 
     yml = f"""slug: {slug}
 title: {entry["title"]}
@@ -188,13 +207,13 @@ difficulty: {entry["difficulty"]}
 language: python
 default_runtime_version: "3.12"
 description_md: |
-  {entry["description"].replace(chr(10), chr(10) + "  ")}
+  {description.replace(chr(10), chr(10) + "  ")}
 gating_config:
   line_coverage_percent: 80
 limits:
   per_test_timeout_seconds: 10
 starter_main_class: solution
-{format_public_tests_meta_yaml(python_public_meta(entry))}"""
+{format_public_tests_meta_yaml(public_meta)}"""
     (challenge_dir / "challenge.yml").write_text(yml, encoding="utf-8")
 
     starter_dir = challenge_dir / "starter"
@@ -216,6 +235,15 @@ def write_generic_challenge(entry: dict, base: Path) -> None:
     slug = entry["slug"]
     challenge_dir = base / slug
     challenge_dir.mkdir(parents=True, exist_ok=True)
+    public_meta = entry.get("public_tests_meta") or frontend_public_meta(entry)
+    description = build_description_md(
+        slug,
+        entry["title"],
+        entry["difficulty"],
+        lang,
+        entry["description"],
+        public_meta,
+    )
 
     yml = f"""slug: {slug}
 title: {entry["title"]}
@@ -223,13 +251,13 @@ difficulty: {entry["difficulty"]}
 language: {lang}
 default_runtime_version: "{entry["runtime"]}"
 description_md: |
-  {entry["description"].replace(chr(10), chr(10) + "  ")}
+  {description.replace(chr(10), chr(10) + "  ")}
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
-{format_public_tests_meta_yaml(entry.get("public_tests_meta") or frontend_public_meta(entry))}"""
+{format_public_tests_meta_yaml(public_meta)}"""
     (challenge_dir / "challenge.yml").write_text(yml, encoding="utf-8")
 
     starter_rel = cfg.get("starter_dir", "starter")

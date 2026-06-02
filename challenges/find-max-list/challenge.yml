@@ -4,7 +4,23 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Return the maximum integer in non-empty list `values`.
+  
+  Read the task and signature carefully. Use the public examples to clarify edge cases before submitting.
+  
+  
+  ## Examples
+  - `[1, 5, 3]` → `5`
+  - `[-3, -1, -7]` → `-1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `values`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +28,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_max_basic"
-    description: "Checks that max basic"
+    description: "Expect find_max([1, 5, 3]) to equal 5"
   - name: "test_max_negative"
-    description: "Checks that max negative"
+    description: "Expect find_max([-3, -1, -7]) to equal -1"

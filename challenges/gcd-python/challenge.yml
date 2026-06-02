@@ -4,7 +4,23 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Greatest common divisor of `a` and `b`.
+  
+  The greatest common divisor (GCD) is the largest integer that divides both inputs without remainder.
+  
+  
+  ## Examples
+  - `54, 24` → `6`
+  - `17, 13` → `1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `a`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +28,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_gcd_sample"
-    description: "Checks that gcd sample"
+    description: "Expect gcd(54, 24) to equal 6"
   - name: "test_gcd_coprime"
-    description: "Checks that gcd coprime"
+    description: "Expect gcd(17, 13) to equal 1"

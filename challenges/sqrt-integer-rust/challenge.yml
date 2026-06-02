@@ -4,14 +4,21 @@ difficulty: easy
 language: rust
 default_runtime_version: "1.84"
 description_md: |
+  ## What to do
   Return integer square root (floor).
+  
+  Return the integer part of the square root of `x` (truncate toward zero).
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
 public_tests_meta:
-  - name: "public_1"
+  - name: "integer_square_root_of_8_should_be_2"
     description: "integer square root of 8 should be 2"
-  - name: "public_2"
+  - name: "integer_square_root_of_0_should_be_0"
     description: "integer square root of 0 should be 0"

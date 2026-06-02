@@ -29,7 +29,11 @@ import {
   RUN_PHASE_LABELS,
   type WorkspaceRunPhase,
 } from "@/domain/workspaceRunState";
-import { formatLanguageLabel, formatRuntimeLabel } from "@/utils/languageRuntimes";
+import {
+  formatLanguageLabel,
+  formatRuntimeLabel,
+  sortRuntimesByVersionDesc,
+} from "@/utils/languageRuntimes";
 import { difficultyColorClass } from "./difficultyBadgeStyles";
 import { languageBadgeClass } from "./languageBadgeStyles";
 
@@ -142,9 +146,7 @@ export default function WorkspaceHeader({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {challenge.runtimes
-                .filter((r) => r.active)
-                .map((r) => (
+              {sortRuntimesByVersionDesc(challenge.runtimes.filter((r) => r.active)).map((r) => (
                   <SelectItem key={r.version} value={r.version}>
                     {formatRuntimeLabel(challenge.language, r.version)}
                   </SelectItem>

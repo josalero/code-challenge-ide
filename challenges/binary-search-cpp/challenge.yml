@@ -4,7 +4,22 @@ difficulty: easy
 language: cpp
 default_runtime_version: "20"
 description_md: |
+  ## What to do
   Return index of `target` in sorted `nums`, or -1 if absent.
+  
+  The input array is sorted in ascending order. Return the index of `target`, or `-1` if it is not present.
+  
+  
+  ## Examples
+  - `[1, 3, 5, 7, 9], 3` → `index 1`
+  - `[1, 3, 5, 7, 9], 4` → `index -1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  
+  ## Method to implement
+  
+  `target`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

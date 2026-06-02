@@ -4,7 +4,23 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Implement `factorial(n: int) -> int` returning `n!` for `n >= 0`.
+  
+  By definition, `0! = 1`. For `n > 0`, multiply all integers from `1` through `n`.
+  
+  
+  ## Examples
+  - `0` → `1`
+  - `5` → `120`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `factorial(n: int) -> int`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +28,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_zero"
-    description: "Checks that zero"
+    description: "Expect factorial(0) to equal 1"
   - name: "test_five"
-    description: "Checks that five"
+    description: "Expect factorial(5) to equal 120"

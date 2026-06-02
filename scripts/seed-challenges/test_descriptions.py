@@ -64,15 +64,54 @@ def describe_extended_case(slug: str, case: tuple) -> str:
     return f"case {case!r} should produce {case[-1]!r}"
 
 
+def _java_string_array_braced_to_json(braced: str) -> str:
+    content = braced.strip().strip("{}").strip()
+    if not content:
+        return "[]"
+    words = [part.strip().strip('"') for part in content.split(",") if part.strip()]
+    return json.dumps(words)
+
+
+def _java_list_of_groups_to_json(list_of_body: str) -> str:
+    groups: list[list[str]] = []
+    for match in re.finditer(r"List\.of\(([^)]*)\)", list_of_body):
+        inner = match.group(1)
+        words = [part.strip().strip('"') for part in inner.split(",") if part.strip()]
+        groups.append(words)
+    return json.dumps(groups)
+
+
 def describe_java_assert(body: str, challenge_slug: str | None = None) -> str:
     """Turn a JUnit assertion line into a short description."""
     text = body.strip().rstrip(";")
+    grouped_var = re.search(
+        r"expected\s*=\s*List\.of\(([\s\S]*?)\)\s*;\s*assertGroupedEquals\(expected,\s*Solution\.(\w+)\(new String\[\]\s*(\{[^}]*\})?\)\s*\)",
+        text,
+        re.DOTALL,
+    )
+    if grouped_var:
+        method = grouped_var.group(2)
+        braced = grouped_var.group(3) or "{}"
+        output_json = _java_list_of_groups_to_json(grouped_var.group(1))
+        return f"Expect {method}(new String[] {braced}) to equal {output_json}"
+    grouped = re.search(
+        r"assertGroupedEquals\(\s*List\.of\(([\s\S]*?)\)\s*,\s*Solution\.(\w+)\(new String\[\]\s*(\{[^}]*\})?\)\s*\)",
+        text,
+        re.DOTALL,
+    )
+    if grouped:
+        method = grouped.group(2)
+        braced = grouped.group(3) or "{}"
+        output_json = _java_list_of_groups_to_json(grouped.group(1))
+        return f"Expect {method}(new String[] {braced}) to equal {output_json}"
     eq = re.search(
         r"assertEquals\(\s*([^,]+)\s*,\s*Solution\.(\w+)\(([^)]*)\)\s*\)",
         text,
     )
     if eq:
         expected, method, args = eq.group(1), eq.group(2), eq.group(3).strip()
+        if expected.strip() == "List.of()":
+            expected = "[]"
         if args:
             return f"Expect {method}({args}) to equal {expected}"
         return f"Expect {method}() to equal {expected}"
@@ -115,7 +154,17 @@ def describe_java_assert(body: str, challenge_slug: str | None = None) -> str:
 
 
 def describe_python_test(func_name: str, body: str) -> str:
-    """Describe a pytest test from its body when the name alone is not enough."""
+    """Describe a pytest test from its body (input/output friendly for the workspace UI)."""
+    text = " ".join(body.strip().split())
+    equal = re.search(r"assert\s+([\w.]+)\(([^)]*)\)\s*==\s*(.+)$", text)
+    if equal:
+        return f"Expect {equal.group(1)}({equal.group(2).strip()}) to equal {equal.group(3).strip()}"
+    boolean = re.search(r"assert\s+([\w.]+)\(([^)]*)\)\s+is\s+(True|False)", text)
+    if boolean:
+        return (
+            f"Expect {boolean.group(1)}({boolean.group(2).strip()}) "
+            f"to be {boolean.group(3).lower()}"
+        )
     if func_name.startswith("test_"):
         words = func_name.removeprefix("test_").replace("_", " ")
         return f"Checks that {words}"

@@ -4,6 +4,6 @@
 
 extern bool is_anagram(const std::string& s, const std::string& t);
 
-TEST_CASE("isAnagram(\"anagram\", \"nagaram\") should be true") {
+TEST_CASE("isAnagram("anagram", "nagaram") should be true") {
     REQUIRE(is_anagram("anagram", "nagaram") == true);
 }

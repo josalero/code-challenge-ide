@@ -4,7 +4,20 @@ difficulty: medium
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Rotate `nums` right by `k` steps in-place. `Solution.rotate(int[] nums, int k)`.
+  
+  Read the task and signature carefully. Use the public examples to clarify edge cases before submitting.
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  - Aim for an efficient solution; brute force may time out on large hidden inputs.
+  
+  ## Method to implement
+  
+  `nums`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

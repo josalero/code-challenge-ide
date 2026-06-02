@@ -4,7 +4,19 @@ difficulty: easy
 language: go
 default_runtime_version: "1.23"
 description_md: |
+  ## What to do
   After removing non-alphanumeric characters and lowercasing, return whether the string is a palindrome.
+  
+  Consider only alphanumeric characters and ignore case when checking palindrome property.
+  
+  
+  ## Examples
+  - `\"A man, a plan, a can…\"` → `true`
+  - `\"race a car\"` → `false`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use package `solution` and the function signature from the starter file.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
