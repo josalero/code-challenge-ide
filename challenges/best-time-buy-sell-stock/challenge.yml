@@ -1,0 +1,18 @@
+slug: best-time-buy-sell-stock
+title: Best Time to Buy and Sell Stock
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Given daily prices, return maximum profit from one buy and one sell. `Solution.maxProfit(int[] prices)`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_maxprofit_new_int_7_1_5_3_6_4_to_equal_5"
+    description: "Expect maxProfit(new int[] {7,1,5,3,6,4}) to equal 5"
+  - name: "expect_maxprofit_new_int_7_6_4_3_1_to_equal_0"
+    description: "Expect maxProfit(new int[] {7,6,4,3,1}) to equal 0"

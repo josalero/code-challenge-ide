@@ -73,4 +73,17 @@ class DeadLetterQueueServiceTest {
     assertThat(response.items().getFirst().submissionId()).isEqualTo(submissionId);
     verify(rabbitTemplate).send(eq(RabbitMqConfig.SUBMISSION_QUEUE), eq(message));
   }
+
+  @Test
+  void peekReturnsUnparseableMessageMetadata() {
+    Message message = new Message("not-json".getBytes(StandardCharsets.UTF_8), new MessageProperties());
+    when(rabbitTemplate.receive(eq(RabbitMqConfig.SUBMISSION_DLQ), anyLong())).thenReturn(message);
+
+    DeadLetterQueueService svc = new DeadLetterQueueService(rabbitTemplate, jsonMapper);
+    var results = svc.peek(1);
+
+    assertThat(results).hasSize(1);
+    assertThat(results.getFirst().submissionId()).isNull();
+    assertThat(results.getFirst().errorHint()).isEqualTo("Unparseable message");
+  }
 }

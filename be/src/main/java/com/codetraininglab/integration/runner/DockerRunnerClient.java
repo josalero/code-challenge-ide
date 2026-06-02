@@ -15,8 +15,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -29,16 +29,19 @@ public class DockerRunnerClient implements RunnerClient {
   private final JsonMapper jsonMapper;
   private final LanguageRuntimeRepository runtimeRepository;
   private final LanguageRepository languageRepository;
+  private final RunnerContainerPool runnerContainerPool;
 
   public DockerRunnerClient(
       CtlProperties properties,
       JsonMapper jsonMapper,
       LanguageRuntimeRepository runtimeRepository,
-      LanguageRepository languageRepository) {
+      LanguageRepository languageRepository,
+      RunnerContainerPool runnerContainerPool) {
     this.properties = properties;
     this.jsonMapper = jsonMapper;
     this.runtimeRepository = runtimeRepository;
     this.languageRepository = languageRepository;
+    this.runnerContainerPool = runnerContainerPool;
   }
 
   @Override
@@ -50,42 +53,68 @@ public class DockerRunnerClient implements RunnerClient {
       String runnerImage) {
     RunnerJobPayload.RunnerLimits limits = RunnerJobPayload.RunnerLimits.defaults();
     try {
-      RunnerJobPayload job = buildJob(submission, hiddenTests, limits, workspaceLayout(submission));
+      String layout = workspaceLayout(submission);
+      RunnerJobPayload job = buildJob(submission, challengeSlug, hiddenTests, limits, layout);
       String jobJson = jsonMapper.writeValueAsString(job);
-      Path mountDir = challengeDir.toAbsolutePath().normalize();
-      List<String> command =
-          buildDockerRunCommand(
-              mountDir, resolveRunnerImage(runnerImage), limits, job.workspaceLayout());
-
-      ProcessBuilder builder = new ProcessBuilder(command);
-      Process process = builder.start();
-      process.getOutputStream().write(jobJson.getBytes(StandardCharsets.UTF_8));
-      process.getOutputStream().close();
-
-      String line;
-      try (BufferedReader reader =
-          new BufferedReader(
-              new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-        line = reader.readLine();
+      String image = resolveRunnerImage(runnerImage);
+      if (runnerContainerPool.isEnabled()) {
+        return runnerContainerPool.execute(image, challengeDir, layout, jobJson, limits);
       }
-      process.getErrorStream().transferTo(java.io.OutputStream.nullOutputStream());
-
-      boolean finished = process.waitFor(limits.wallSeconds() + 10L, TimeUnit.SECONDS);
-      if (!finished) {
-        process.destroyForcibly();
-        return failedResult("Runner timed out");
-      }
-      if (line == null || line.isBlank()) {
-        return failedResult("Runner produced no output");
-      }
-      return jsonMapper.readValue(line, RunnerResult.class);
+      return executeEphemeral(image, challengeDir, layout, jobJson, limits);
     } catch (Exception e) {
       return failedResult(e.getMessage() == null ? "Runner error" : e.getMessage());
     }
   }
 
+  private RunnerResult executeEphemeral(
+      String image,
+      Path challengeDir,
+      String workspaceLayout,
+      String jobJson,
+      RunnerJobPayload.RunnerLimits limits)
+      throws Exception {
+    Path mountDir = challengeDir.toAbsolutePath().normalize();
+    List<String> command =
+        buildDockerRunCommand(mountDir, image, limits, workspaceLayout);
+
+    ProcessBuilder builder = new ProcessBuilder(command);
+    Process process = builder.start();
+    process.getOutputStream().write(jobJson.getBytes(StandardCharsets.UTF_8));
+    process.getOutputStream().close();
+
+    CompletableFuture<Void> stderrDrain =
+        CompletableFuture.runAsync(
+            () -> {
+              try {
+                process.getErrorStream().transferTo(java.io.OutputStream.nullOutputStream());
+              } catch (Exception ignored) {
+                // Best-effort drain so a full stderr pipe cannot block the runner.
+              }
+            });
+
+    String line;
+    try (BufferedReader reader =
+        new BufferedReader(
+            new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+      line = reader.readLine();
+    }
+
+    long waitSeconds = limits.wallSeconds() + 10L;
+    boolean finished = process.waitFor(waitSeconds, TimeUnit.SECONDS);
+    stderrDrain.join();
+    if (!finished) {
+      process.destroyForcibly();
+      return failedResult("Runner timed out");
+    }
+    if (line == null || line.isBlank()) {
+      return failedResult("Runner produced no output");
+    }
+    return jsonMapper.readValue(line, RunnerResult.class);
+  }
+
   private RunnerJobPayload buildJob(
       SubmissionEntity submission,
+      String challengeSlug,
       List<ChallengeHiddenTestEntity> hiddenTests,
       RunnerJobPayload.RunnerLimits limits,
       String workspaceLayout) {
@@ -95,6 +124,7 @@ public class DockerRunnerClient implements RunnerClient {
             .toList();
     return new RunnerJobPayload(
         submission.getId().toString(),
+        challengeSlug,
         workspaceLayout,
         submission.getSolutionCode(),
         submission.getCustomTestsCode(),
@@ -115,33 +145,8 @@ public class DockerRunnerClient implements RunnerClient {
       String image,
       RunnerJobPayload.RunnerLimits limits,
       String workspaceLayout) {
-    List<String> command = new ArrayList<>();
-    command.add("docker");
-    command.add("run");
-    command.add("--rm");
-    command.add("-i");
-    command.add("--network");
-    command.add("none");
-    command.add("--memory");
-    command.add(limits.memoryMb() + "m");
-    command.add("--cpus");
-    command.add(String.valueOf(limits.cpus()));
-    command.add("--pids-limit");
-    command.add(String.valueOf(limits.pids()));
-    command.add("--read-only");
-    command.add("--tmpfs");
-    command.add("/tmp:rw,size=768m,mode=1777");
-    String mavenCacheVolume = properties.runnerMavenCacheVolume();
-    if (WorkspaceLayout.MAVEN.id().equals(workspaceLayout)
-        && mavenCacheVolume != null
-        && !mavenCacheVolume.isBlank()) {
-      command.add("-v");
-      command.add(mavenCacheVolume + ":/tmp/home/.m2:rw");
-    }
-    command.add("-v");
-    command.add(challengeMountDir + ":/challenge:ro");
-    command.add(image);
-    return command;
+    return DockerRunnerCommands.buildEphemeralRunCommand(
+        challengeMountDir, image, limits, workspaceLayout, properties);
   }
 
   private String resolveRunnerImage(String runnerImage) {
@@ -158,7 +163,8 @@ public class DockerRunnerClient implements RunnerClient {
             new RunnerResult.TestOutcome(
                 "runner", TestOutcomeStatus.FAIL.name(), message, 0)),
         new RunnerResult.CoverageOutcome(0, 0),
-        new RunnerResult.CheckstyleOutcome(0, 0),
+        new RunnerResult.CompileOutcome(0, List.of()),
+        null,
         null);
   }
 }

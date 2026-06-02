@@ -10,6 +10,7 @@ import com.codetraininglab.platform.persistence.UserProgressEntity;
 import com.codetraininglab.platform.persistence.UserProgressRepository;
 import com.codetraininglab.platform.persistence.UserRepository;
 import com.codetraininglab.domain.ProgressState;
+import com.codetraininglab.domain.UserRole;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +38,8 @@ class MeControllerTest {
     when(userRepository.findById(userId))
         .thenReturn(
             Optional.of(
-                new UserEntity(userId, "a@b.com", "hash", Instant.EPOCH, Instant.EPOCH)));
+                new UserEntity(
+                    userId, "a@b.com", "hash", UserRole.USER, Instant.EPOCH, Instant.EPOCH)));
     var response =
         controller.me(new UsernamePasswordAuthenticationToken(userId, null, List.of()));
     assertThat(response.email()).isEqualTo("a@b.com");

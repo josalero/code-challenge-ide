@@ -1,0 +1,18 @@
+slug: count-primes
+title: Count Primes
+difficulty: medium
+language: java
+default_runtime_version: "26"
+description_md: |
+  Count primes strictly less than `n`. `Solution.countPrimes(int n)`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_countprimes_10_to_equal_4"
+    description: "Expect countPrimes(10) to equal 4"
+  - name: "expect_countprimes_0_to_equal_0"
+    description: "Expect countPrimes(0) to equal 0"

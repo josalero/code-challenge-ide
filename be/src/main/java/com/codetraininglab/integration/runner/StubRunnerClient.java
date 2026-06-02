@@ -31,7 +31,8 @@ public class StubRunnerClient implements RunnerClient {
               new RunnerResult.TestOutcome(
                   "stub-test", TestOutcomeStatus.PASS.name(), null, 1)),
           new RunnerResult.CoverageOutcome(85.0, 75.0),
-          new RunnerResult.CheckstyleOutcome(0, 0),
+          new RunnerResult.CompileOutcome(0, List.of()),
+          null,
           null);
     }
     return new RunnerResult(
@@ -40,7 +41,8 @@ public class StubRunnerClient implements RunnerClient {
             new RunnerResult.TestOutcome(
                 "stub-test", TestOutcomeStatus.FAIL.name(), "Assertion failed", 1)),
         new RunnerResult.CoverageOutcome(10.0, 5.0),
-        new RunnerResult.CheckstyleOutcome(1, 0),
+        new RunnerResult.CompileOutcome(0, List.of()),
+        null,
         null);
   }
 }

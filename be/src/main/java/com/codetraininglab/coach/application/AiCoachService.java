@@ -46,14 +46,62 @@ public class AiCoachService {
 
   @Transactional
   public ExplainResponse explain(UUID userId, UUID itemId) {
-    FeedbackItemEntity item = loadOwnedItem(userId, itemId);
+    OwnedFeedback ownedFeedback = loadOwnedItem(userId, itemId);
+    FeedbackItemEntity item = ownedFeedback.item();
     if (item.getAiExplanation() != null) {
       return new ExplainResponse(item.getAiExplanation());
     }
-    String explanation = callProvider(coachPrompt(item));
+    String explanation = callProvider(coachPrompt(item, ownedFeedback.challenge()));
     item.setAiExplanation(explanation);
     feedbackItemRepository.save(item);
     return new ExplainResponse(explanation);
+  }
+
+  /**
+   * Generic "review my submission" callable from the on-demand feedback-actions API. Returns
+   * coach text describing the submitted code in the context of its challenge; does not require a
+   * passing submission, since the user explicitly asked for feedback.
+   */
+  public String reviewSubmission(UUID submissionId) {
+    SubmissionEntity submission =
+        submissionRepository
+            .findById(submissionId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    ChallengeEntity challenge =
+        challengeRepository
+            .findById(submission.getChallengeId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    String prompt =
+        """
+        You are a supportive coding coach reviewing a learner's submission for challenge '%s' (%s).
+
+        Submission code:
+        ```
+        %s
+        ```
+
+        Give a short structured review covering:
+        1. Correctness and edge cases
+        2. Readability and naming
+        3. Performance and complexity (with Big-O when relevant)
+        4. One concrete next improvement they could try
+
+        Do not output a full replacement solution; suggest direction, not code.
+        """
+            .formatted(
+                challenge.getSlug(),
+                displayLanguage(challenge.getLanguage()),
+                truncateForPrompt(submission.getSolutionCode()))
+            .trim();
+    return callProvider(prompt);
+  }
+
+  private static String truncateForPrompt(String code) {
+    int limit = 6000;
+    if (code == null) {
+      return "";
+    }
+    return code.length() <= limit ? code : code.substring(0, limit) + "\n...[truncated]";
   }
 
   public AlternativesResponse alternatives(UUID userId, String slug) {
@@ -75,16 +123,16 @@ public class AiCoachService {
     String text =
         callProvider(
             """
-            You are a coding coach. The learner passed challenge '%s' in Java.
+            You are a coding coach. The learner passed challenge '%s' in %s.
             Suggest 2–3 alternative approaches or refinements (trade-offs, complexity, readability).
             Do not provide a full replacement solution or complete code.
             """
-                .formatted(slug)
+                .formatted(slug, displayLanguage(challenge.getLanguage()))
                 .trim());
     return new AlternativesResponse(text);
   }
 
-  private FeedbackItemEntity loadOwnedItem(UUID userId, UUID itemId) {
+  private OwnedFeedback loadOwnedItem(UUID userId, UUID itemId) {
     FeedbackItemEntity item =
         feedbackItemRepository
             .findById(itemId)
@@ -100,7 +148,11 @@ public class AiCoachService {
     if (!submission.getUserId().equals(userId)) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }
-    return item;
+    ChallengeEntity challenge =
+        challengeRepository
+            .findById(submission.getChallengeId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    return new OwnedFeedback(item, challenge);
   }
 
   private ChallengeEntity findChallenge(String slug) {
@@ -171,11 +223,12 @@ public class AiCoachService {
     }
   }
 
-  private static String coachPrompt(FeedbackItemEntity item) {
+  static String coachPrompt(FeedbackItemEntity item, ChallengeEntity challenge) {
     return """
-        You are a supportive coding coach helping someone practice Java challenges.
+        You are a supportive coding coach helping someone practice %s challenges.
         They are learning — analyze this automated feedback and help them improve.
 
+        Challenge: %s
         Category: %s
         Result: %s
         Feedback: %s
@@ -183,8 +236,32 @@ public class AiCoachService {
         Explain what this means in plain language, why it matters for practice, and give
         specific next steps. Do not paste a full solution; hints and small examples only.
         """
-        .formatted(item.getCategory(), item.getStatus(), item.getMessage())
+        .formatted(
+            displayLanguage(challenge.getLanguage()),
+            challenge.getSlug(),
+            item.getCategory(),
+            item.getStatus(),
+            item.getMessage())
         .trim();
+  }
+
+  static String displayLanguage(String language) {
+    if (language == null || language.isBlank()) {
+      return "the target language";
+    }
+    return switch (language.trim().toLowerCase()) {
+      case "cpp" -> "C++";
+      case "csharp" -> "C#";
+      case "node" -> "Node.js";
+      case "typescript" -> "TypeScript";
+      case "react" -> "React";
+      case "vue" -> "Vue";
+      case "angular" -> "Angular";
+      default -> {
+        String normalized = language.trim().toLowerCase();
+        yield Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
+      }
+    };
   }
 
   private static String jsonEscape(String value) {
@@ -194,4 +271,6 @@ public class AiCoachService {
   public record ExplainResponse(String explanation) {}
 
   public record AlternativesResponse(String alternatives) {}
+
+  private record OwnedFeedback(FeedbackItemEntity item, ChallengeEntity challenge) {}
 }

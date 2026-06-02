@@ -1,0 +1,15 @@
+slug: accordion-react
+title: Accordion (React)
+difficulty: easy
+language: react
+default_runtime_version: "19"
+description_md: |
+  Implement `Accordion` — `items: {title, content}[]`; only one section open at a time; click header toggles.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "shows_content_when_header_clicked"
+    description: "Shows content when header clicked"

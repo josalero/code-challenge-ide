@@ -1,6 +1,8 @@
 package com.codetraininglab.platform.persistence;
 
+import com.codetraininglab.domain.SubmissionStatus;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,4 +18,6 @@ public interface SubmissionRepository extends JpaRepository<SubmissionEntity, UU
       """)
   Optional<SubmissionEntity> findIdempotent(
       @Param("userId") UUID userId, @Param("key") String key, @Param("since") Instant since);
+
+  List<SubmissionEntity> findByStatusAndUpdatedAtBefore(SubmissionStatus status, Instant cutoff);
 }

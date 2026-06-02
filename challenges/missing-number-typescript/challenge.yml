@@ -1,0 +1,17 @@
+slug: missing-number-typescript
+title: Missing Number (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Array contains n distinct values in [0,n]; one missing. Return it.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "public_1"
+    description: "missingNumber([3, 0, 1]) should equal 2"
+  - name: "public_2"
+    description: "missingNumber([0]) should equal 1"

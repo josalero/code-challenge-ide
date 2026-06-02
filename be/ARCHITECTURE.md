@@ -23,7 +23,7 @@ platform/         config, persistence, security, web
 | `*.api` | REST controllers + DTOs |
 | `*.application` | Services, transactions |
 | `*.messaging` | Rabbit listeners, queue payloads |
-| `integration.*` | Docker runner, LSP adapters |
+| `integration.*` | Docker runner pool, LSP adapters |
 | `platform.*` | Shared infra (no feature rules) |
 
 ## Dependency rules
@@ -41,7 +41,8 @@ platform/         config, persistence, security, web
 | Challenges | `catalog.api.ChallengeController` |
 | Submit / report | `submission.api.SubmissionController` |
 | Queue worker | `submission.messaging.SubmissionJobListener` |
-| Runner | `integration.runner.DockerRunnerClient` |
+| Runner | `integration.runner.DockerRunnerClient` → `RunnerContainerPool` (pooled, default) |
+| Runner ops (admin) | `operations.application.RunnerOpsService` |
 | Runtime by language | `submission.application.LanguageRuntimeResolver` |
 | Python image | `runners/python/` |
 

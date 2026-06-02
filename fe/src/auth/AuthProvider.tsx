@@ -7,6 +7,7 @@ import {
 } from "react";
 import { apiFetch } from "../api/client";
 import type { AuthResponse, MeResponse } from "../api/types";
+import { ApiPaths } from "../domain/constants";
 import { clearAccessToken, getAccessToken, setAccessToken } from "./authStorage";
 import { AuthContext, type AuthContextValue } from "./authContext";
 
@@ -22,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const me = await apiFetch<MeResponse>("/api/v1/me");
+      const me = await apiFetch<MeResponse>(ApiPaths.ME);
       setUser(me);
     } catch {
       clearAccessToken();
@@ -40,13 +41,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const applyAuth = useCallback((response: AuthResponse) => {
     setAccessToken(response.accessToken);
     setToken(response.accessToken);
-    setUser({ id: response.userId, email: response.email });
+    setUser({ id: response.userId, email: response.email, role: response.role });
     setLoading(false);
   }, []);
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const response = await apiFetch<AuthResponse>("/api/v1/auth/login", {
+      const response = await apiFetch<AuthResponse>(ApiPaths.AUTH_LOGIN, {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (email: string, password: string) => {
-      const response = await apiFetch<AuthResponse>("/api/v1/auth/register", {
+      const response = await apiFetch<AuthResponse>(ApiPaths.AUTH_REGISTER, {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
@@ -72,9 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const isAdmin = user?.role === "ADMIN";
+
   const value = useMemo(
-    () => ({ token, user, loading, login, register, logout }),
-    [token, user, loading, login, register, logout],
+    () => ({ token, user, loading, isAdmin, login, register, logout }),
+    [token, user, loading, isAdmin, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

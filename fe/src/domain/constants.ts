@@ -1,5 +1,12 @@
 /** Mirrors backend enums — use these instead of string literals in UI code. */
 
+export const SubmissionKind = {
+  RUN: "RUN",
+  SUBMIT: "SUBMIT",
+} as const;
+
+export type SubmissionKindValue = (typeof SubmissionKind)[keyof typeof SubmissionKind];
+
 export const SubmissionStatus = {
   PENDING: "PENDING",
   RUNNING: "RUNNING",
@@ -58,25 +65,43 @@ export const SsePayloadKeys = {
   STATUS: "status",
   SUBMISSION_ID: "submission_id",
   REPORT_ID: "report_id",
+  KIND: "kind",
+  PASSED: "passed",
   MESSAGE: "message",
   STDOUT: "stdout",
   STDERR: "stderr",
 } as const;
 
 export const ApiPaths = {
+  AUTH_LOGIN: "/api/v1/auth/login",
+  AUTH_REGISTER: "/api/v1/auth/register",
+  AUTH_REGISTRATION_INFO: "/api/v1/auth/registration-info",
   CHALLENGES: "/api/v1/challenges",
+  LANGUAGES: "/api/v1/languages",
+  ME: "/api/v1/me",
   ME_PROGRESS: "/api/v1/me/progress",
   SUBMISSIONS: "/api/v1/submissions",
   LSP_JAVA: "/api/v1/lsp/java",
+  lsp: (language: string) => `/api/v1/lsp/${language}`,
   OPS_DEAD_LETTER_SUBMISSIONS: "/api/v1/ops/dead-letter-submissions",
   OPS_DEAD_LETTER_REPLAY: "/api/v1/ops/dead-letter-submissions/replay",
+  OPS_RUNNERS_STATUS: "/api/v1/ops/runners/status",
+  OPS_RUNNERS_WARM_MAVEN: "/api/v1/ops/runners/warm/maven",
+  OPS_RUNNERS_WARM_LSP: "/api/v1/ops/runners/warm/lsp",
+  OPS_RUNNERS_WARM_POOL: "/api/v1/ops/runners/warm/pool",
+  OPS_RUNNERS_WARM_INFRA: "/api/v1/ops/runners/warm/infra",
+  opsRunnerJob: (jobId: string) => `/api/v1/ops/runners/jobs/${jobId}`,
   challenge: (slug: string) => `/api/v1/challenges/${slug}`,
+  challengeRedo: (slug: string) => `/api/v1/challenges/${slug}/redo`,
   challengeCustomTests: (slug: string) => `/api/v1/challenges/${slug}/custom-tests`,
   challengeAlternatives: (slug: string) => `/api/v1/challenges/${slug}/alternatives`,
   submission: (id: string) => `/api/v1/submissions/${id}`,
   submissionEvents: (id: string) => `/api/v1/submissions/${id}/events`,
   report: (id: string) => `/api/v1/reports/${id}`,
   feedbackExplain: (itemId: string) => `/api/v1/feedback/${itemId}/explain`,
+  submissionFeedbackActions: (submissionId: string) =>
+    `/api/v1/submissions/${submissionId}/feedback-actions`,
+  feedbackAction: (actionId: string) => `/api/v1/feedback-actions/${actionId}`,
 } as const;
 
 export const JavaRuntimeVersion = {

@@ -14,8 +14,8 @@ class RunnerResultDeserializationTest {
     String line =
         """
         {"status":"COMPLETED","tests":[{"name":"t","status":"PASS","message":null,\
-        "duration_ms":1}],"coverage":{"line_percent":50.0,"branch_percent":0.0,\
-        "raw_path":"/tmp/x"},"checkstyle":{"errors":0,"warnings":0,"findings":[]}}\
+        "duration_ms":1}],"coverage":{"line_percent":50.0,"branch_percent":0.0},\
+        "compile":{"warnings":2,"messages":[{"file":"/x.java","line":3,"message":"raw type"}]}}\
         """;
 
     RunnerResult result = jsonMapper.readValue(line, RunnerResult.class);
@@ -23,5 +23,22 @@ class RunnerResultDeserializationTest {
     assertThat(result.status()).isEqualTo("COMPLETED");
     assertThat(result.tests().getFirst().durationMs()).isEqualTo(1);
     assertThat(result.coverage().linePercent()).isEqualTo(50.0);
+    assertThat(result.compile().warnings()).isEqualTo(2);
+    assertThat(result.compile().messages()).hasSize(1);
+    assertThat(result.checkstyle().errors()).isZero();
+  }
+
+  @Test
+  void deserializesLegacyResultWithoutCompileField() throws Exception {
+    String line =
+        """
+        {"status":"COMPLETED","tests":[],"coverage":{"line_percent":0.0,"branch_percent":0.0},\
+        "checkstyle":{"errors":0,"warnings":0}}\
+        """;
+
+    RunnerResult result = jsonMapper.readValue(line, RunnerResult.class);
+
+    assertThat(result.compile().warnings()).isZero();
+    assertThat(result.compile().messages()).isEmpty();
   }
 }

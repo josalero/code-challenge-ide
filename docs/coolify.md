@@ -16,11 +16,12 @@ Code Training Lab is a self-hosted stack: API, UI, Postgres, RabbitMQ, and **on-
 | Postgres | `postgres:17` | Persistent volume |
 | RabbitMQ | `rabbitmq:3-management` | Optional management UI |
 
-Runner images (Java 17/21/25/26, Python 3.12, LSP) are **not** long-running services. Pull or build them on the host:
+Runner images (Java 17/21/25/26, Python 3.12, Go, Node, C#, TypeScript, Rust, C++, React, Vue, Angular, LSP) are **not** long-running services. Pull or build them on the host:
 
 ```bash
 ./scripts/pull-runner-images.sh
-# or: ./scripts/build-runner-images.sh
+# or: make runners
+# verify: ./scripts/smoke-runners.sh
 ```
 
 ## Environment (API)
@@ -32,7 +33,7 @@ Copy from [`.env.example`](../.env.example):
 - `CTL_CHALLENGES_PATH=/challenges`
 - `CTL_DOCKER_ENABLED=true`
 - `DOCKER_GID` (Linux: group id of `/var/run/docker.sock`)
-- Runner image tags: `RUNNER_JAVA_*_IMAGE`, `RUNNER_PYTHON_312_IMAGE`, `LSP_JAVA_IMAGE`
+- Runner image tags: `RUNNER_JAVA_*_IMAGE`, `RUNNER_PYTHON_312_IMAGE`, `RUNNER_GO_123_IMAGE`, `RUNNER_NODE_22_IMAGE`, `RUNNER_DOTNET_8_IMAGE`, `RUNNER_TYPESCRIPT_57_IMAGE`, `RUNNER_RUST_184_IMAGE`, `RUNNER_CPP_20_IMAGE`, `RUNNER_REACT_19_IMAGE`, `RUNNER_VUE_35_IMAGE`, `RUNNER_ANGULAR_19_IMAGE`, `LSP_*_IMAGE` (see `.env.example`)
 - `CTL_LSP_ENABLED=true` when LSP sidecar image is available
 
 ## Compose reference
@@ -44,7 +45,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
-Map Coolify domains to the frontend service; ensure WebSocket upgrade works for `/api/v1/lsp/java` and submission SSE.
+Map Coolify domains to the frontend service; ensure WebSocket upgrade works for `/api/v1/lsp/{language}` and submission SSE.
 
 ## Operations
 

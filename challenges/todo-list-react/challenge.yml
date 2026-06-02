@@ -1,0 +1,17 @@
+slug: todo-list-react
+title: Todo List (React)
+difficulty: medium
+language: react
+default_runtime_version: "19"
+description_md: |
+  Implement `TodoList` — text input adds todos; clicking a todo toggles `done` class on its `<li>`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "adds_a_todo_on_enter"
+    description: "Adds a todo on Enter"
+  - name: "toggles_done_class"
+    description: "Toggles done class"

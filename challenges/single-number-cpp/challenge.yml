@@ -1,0 +1,17 @@
+slug: single-number-cpp
+title: Single Number (C++)
+difficulty: easy
+language: cpp
+default_runtime_version: "20"
+description_md: |
+  Every element appears twice except one; return that element.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "singlenumber_2_2_1_should_equal_1"
+    description: "singleNumber([2, 2, 1]) should equal 1"
+  - name: "singlenumber_4_1_2_1_2_should_equal_4"
+    description: "singleNumber([4, 1, 2, 1, 2]) should equal 4"

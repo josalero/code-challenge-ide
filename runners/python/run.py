@@ -16,6 +16,7 @@ from pathlib import Path
 WORKSPACE = Path("/tmp/workspace")
 CHALLENGE_MOUNT = Path("/challenge")
 OPT = Path("/opt/runner")
+STAMP = WORKSPACE / ".ctl-challenge-slug"
 MAX_LOG_BYTES = 4096
 
 
@@ -31,21 +32,24 @@ def write_file(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def setup_workspace(job: dict) -> None:
-    if WORKSPACE.exists():
-        shutil.rmtree(WORKSPACE)
-    WORKSPACE.mkdir(parents=True)
+def _write_solution(job: dict) -> None:
     write_file(WORKSPACE / "solution.py", job["solution_code"])
+    custom = job.get("custom_tests_code")
+    if custom and str(custom).strip():
+        write_file(WORKSPACE / "tests" / "custom_tests.py", custom)
+
+
+def _write_tests(job: dict) -> None:
+    tests_dir = WORKSPACE / "tests"
+    if tests_dir.is_dir():
+        shutil.rmtree(tests_dir)
+    tests_dir.mkdir(parents=True, exist_ok=True)
 
     public_dir = CHALLENGE_MOUNT / "public" / "tests"
     if public_dir.is_dir():
-        tests_dir = WORKSPACE / "tests"
-        tests_dir.mkdir(parents=True, exist_ok=True)
         for src in sorted(public_dir.glob("*.py")):
             shutil.copy(src, tests_dir / src.name)
 
-    tests_dir = WORKSPACE / "tests"
-    tests_dir.mkdir(parents=True, exist_ok=True)
     for hidden in job.get("hidden_tests") or []:
         source = hidden.get("source") or ""
         if source.strip():
@@ -54,9 +58,49 @@ def setup_workspace(job: dict) -> None:
                 name = re.sub(r"[^a-zA-Z0-9_]", "_", name) + ".py"
             write_file(tests_dir / name, source)
 
-    custom = job.get("custom_tests_code")
-    if custom and str(custom).strip():
-        write_file(tests_dir / "custom_tests.py", custom)
+
+def _write_all_sources(job: dict) -> None:
+    _write_solution(job)
+    _write_tests(job)
+
+
+def _is_warm_smoke(job: dict) -> bool:
+    return (job.get("submission_id") or "").startswith("warm-")
+
+
+def setup_workspace(job: dict) -> None:
+    slug = (job.get("challenge_slug") or "").strip()
+    pooled = os.environ.get("CTL_RUNNER_POOLED") == "1"
+    warm_smoke = _is_warm_smoke(job)
+
+    if warm_smoke:
+        if WORKSPACE.exists():
+            shutil.rmtree(WORKSPACE)
+        WORKSPACE.mkdir(parents=True)
+        _write_all_sources(job)
+        if pooled and slug:
+            STAMP.write_text(slug, encoding="utf-8")
+        return
+
+    if (
+        pooled
+        and slug
+        and WORKSPACE.is_dir()
+        and STAMP.is_file()
+        and STAMP.read_text(encoding="utf-8") == slug
+        and (WORKSPACE / "solution.py").is_file()
+    ):
+        _write_solution(job)
+        # Pooled containers can reuse /tmp/workspace without tests/ (e.g. partial cleanup).
+        _write_tests(job)
+        return
+
+    if WORKSPACE.exists():
+        shutil.rmtree(WORKSPACE)
+    WORKSPACE.mkdir(parents=True)
+    _write_all_sources(job)
+    if pooled and slug:
+        STAMP.write_text(slug, encoding="utf-8")
 
 
 def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:
@@ -65,37 +109,39 @@ def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:
     return text[: limit - 3] + "..."
 
 
-def run_pytest(wall_seconds: int) -> tuple[int, str, str]:
+def run_pytest(wall_seconds: int, *, collect_coverage: bool) -> tuple[int, str, str]:
     cmd = [
         "python",
         "-m",
         "pytest",
         "tests",
         "-q",
-        "--tb=short",
-        f"--cov=solution",
-        "--cov-report=xml:/tmp/workspace/coverage.xml",
+        "--tb=line",
         "--junitxml=/tmp/workspace/junit.xml",
     ]
+    env = os.environ.copy()
+    if collect_coverage:
+        cmd.extend(
+            [
+                "--cov=solution",
+                "--cov-report=xml:/tmp/workspace/coverage.xml",
+            ]
+        )
+        # Faster tracing on Python 3.12+ (coverage.py sysmon core).
+        env.setdefault("COVERAGE_CORE", "sysmon")
+    else:
+        # Pool warm / smoke: skip pytest-cov hooks — often 3–10× faster for small suites.
+        cmd.extend(["-p", "no:pytest_cov"])
+
     proc = subprocess.run(
         cmd,
         cwd=WORKSPACE,
         capture_output=True,
         text=True,
         timeout=wall_seconds,
+        env=env,
     )
     return proc.returncode, proc.stdout, proc.stderr
-
-
-def run_ruff() -> tuple[int, str]:
-    proc = subprocess.run(
-        ["ruff", "check", "solution.py", "tests"],
-        cwd=WORKSPACE,
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    return proc.returncode, proc.stderr + proc.stdout
 
 
 def parse_junit() -> list[dict]:
@@ -137,9 +183,20 @@ def parse_coverage() -> dict:
     }
 
 
-def parse_ruff(stderr_stdout: str) -> dict:
-    errors = len(re.findall(r":\d+:\d+:", stderr_stdout))
-    return {"errors": errors, "warnings": 0, "findings": []}
+def parse_compile_warnings(stderr: str) -> dict:
+    """Surface pytest collection warnings and python SyntaxWarnings from stderr."""
+    messages: list[dict] = []
+    for line in stderr.splitlines():
+        match = re.match(r"^(.+\.py):(\d+):\s*(SyntaxWarning|DeprecationWarning|UserWarning):\s*(.+)$", line)
+        if match and len(messages) < 20:
+            messages.append(
+                {
+                    "file": match.group(1),
+                    "line": int(match.group(2)),
+                    "message": f"{match.group(3)}: {match.group(4)}",
+                }
+            )
+    return {"warnings": len(messages), "messages": messages}
 
 
 def emit(result: dict) -> None:
@@ -152,7 +209,7 @@ def failed(message: str) -> dict:
         "status": "FAILED",
         "tests": [{"name": "runner", "status": "FAIL", "message": message, "duration_ms": 0}],
         "coverage": {"line_percent": 0.0, "branch_percent": 0.0},
-        "checkstyle": {"errors": 0, "warnings": 0},
+        "compile": {"warnings": 0, "messages": []},
     }
 
 
@@ -166,15 +223,17 @@ def main() -> int:
             return 0
         limits = job.get("limits") or {}
         wall_seconds = int(limits.get("wall_seconds", 120))
+        warm_smoke = _is_warm_smoke(job)
         setup_workspace(job)
-        code, stdout_log, stderr_log = run_pytest(wall_seconds)
+        code, stdout_log, stderr_log = run_pytest(
+            wall_seconds, collect_coverage=not warm_smoke
+        )
         tests = parse_junit()
-        ruff_code, ruff_out = run_ruff()
         if not tests and code != 0:
             emit(
                 {
                     **failed("pytest failed: " + truncate(stderr_log or stdout_log)),
-                    "checkstyle": parse_ruff(ruff_out),
+                    "compile": parse_compile_warnings(stderr_log),
                     "logs": {
                         "stdout_truncated": truncate(stdout_log),
                         "stderr_truncated": truncate(stderr_log),
@@ -187,7 +246,7 @@ def main() -> int:
                 "status": "COMPLETED",
                 "tests": tests,
                 "coverage": parse_coverage(),
-                "checkstyle": parse_ruff(ruff_out),
+                "compile": parse_compile_warnings(stderr_log),
                 "logs": {
                     "stdout_truncated": truncate(stdout_log),
                     "stderr_truncated": truncate(stderr_log),

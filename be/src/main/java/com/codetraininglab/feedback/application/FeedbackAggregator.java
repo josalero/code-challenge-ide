@@ -5,17 +5,25 @@ import com.codetraininglab.domain.FeedbackStatus;
 import com.codetraininglab.domain.GatingConfigKeys;
 import com.codetraininglab.domain.GatingDefaults;
 import com.codetraininglab.domain.TestOutcomeStatus;
+import com.codetraininglab.integration.runner.RunnerResult;
 import com.codetraininglab.platform.persistence.FeedbackItemEntity;
 import com.codetraininglab.platform.persistence.SubmissionReportEntity;
-import com.codetraininglab.integration.runner.RunnerResult;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
+/**
+ * Builds the report + feedback items emitted on every submission.
+ *
+ * <p>The default submission flow only runs tests and coverage. Style/security analysis is requested
+ * explicitly via the feedback-actions API and aggregated separately. The aggregator therefore
+ * emits three categories ({@link FeedbackCategory#CORRECTNESS}, {@link FeedbackCategory#COVERAGE},
+ * {@link FeedbackCategory#READABILITY}) and only marks the submission as blocked when tests fail.
+ */
 public final class FeedbackAggregator {
 
   private FeedbackAggregator() {}
@@ -28,14 +36,14 @@ public final class FeedbackAggregator {
       JsonMapper mapper,
       Clock clock) {
     double coverageThreshold = GatingDefaults.LINE_COVERAGE_PERCENT;
-    int maxCheckstyleErrors = GatingDefaults.MAX_CHECKSTYLE_ERRORS;
+    int maxCompileWarnings = GatingDefaults.MAX_COMPILE_WARNINGS;
     try {
       JsonNode gating = mapper.readTree(gatingConfigJson);
       if (gating.has(GatingConfigKeys.LINE_COVERAGE_PERCENT)) {
         coverageThreshold = gating.get(GatingConfigKeys.LINE_COVERAGE_PERCENT).asDouble();
       }
-      if (gating.has(GatingConfigKeys.CHECKSTYLE_MAX_ERRORS)) {
-        maxCheckstyleErrors = gating.get(GatingConfigKeys.CHECKSTYLE_MAX_ERRORS).asInt();
+      if (gating.has(GatingConfigKeys.MAX_COMPILE_WARNINGS)) {
+        maxCompileWarnings = gating.get(GatingConfigKeys.MAX_COMPILE_WARNINGS).asInt();
       }
     } catch (Exception ignored) {
       // use defaults
@@ -45,7 +53,8 @@ public final class FeedbackAggregator {
     Instant now = clock.instant();
 
     boolean testsPass =
-        result.tests().stream().allMatch(t -> TestOutcomeStatus.PASS.matches(t.status()));
+        !result.tests().isEmpty()
+            && result.tests().stream().allMatch(t -> TestOutcomeStatus.PASS.matches(t.status()));
     items.add(
         item(
             reportId,
@@ -55,57 +64,32 @@ public final class FeedbackAggregator {
             "correctness",
             now));
 
-    boolean coveragePass = result.coverage().linePercent() >= coverageThreshold;
+    double linePercent = result.coverage().linePercent();
+    boolean coverageOk = linePercent >= coverageThreshold;
     items.add(
         item(
             reportId,
             FeedbackCategory.COVERAGE,
-            coveragePass ? FeedbackStatus.pass : FeedbackStatus.fail,
-            "Line coverage "
-                + result.coverage().linePercent()
-                + "% (required "
-                + coverageThreshold
-                + "%)",
+            coverageOk ? FeedbackStatus.pass : FeedbackStatus.warn,
+            "Line coverage " + linePercent + "% (target " + coverageThreshold + "%)",
             "coverage",
             now));
 
-    boolean stylePass = result.checkstyle().errors() <= maxCheckstyleErrors;
-    items.add(
-        item(
-            reportId,
-            FeedbackCategory.STYLE,
-            stylePass ? FeedbackStatus.pass : FeedbackStatus.fail,
-            "Checkstyle errors: " + result.checkstyle().errors(),
-            "style",
-            now));
-
-    int checkstyleWarnings = result.checkstyle().warnings();
-    items.add(
-        item(
-            reportId,
-            FeedbackCategory.SECURITY,
-            checkstyleWarnings == 0 ? FeedbackStatus.pass : FeedbackStatus.warn,
-            checkstyleWarnings == 0
-                ? "No static-analysis security warnings"
-                : "Checkstyle reported " + checkstyleWarnings + " warning(s) — review imports and APIs",
-            "security",
-            now));
-
-    boolean readable =
-        checkstyleWarnings <= GatingDefaults.MAX_READABILITY_WARNINGS
-            && result.checkstyle().errors() == 0;
+    int compileWarnings = result.compile().warnings();
+    boolean readable = compileWarnings <= maxCompileWarnings;
     items.add(
         item(
             reportId,
             FeedbackCategory.READABILITY,
             readable ? FeedbackStatus.pass : FeedbackStatus.warn,
             readable
-                ? "Code structure looks readable"
-                : "Style issues may affect readability — simplify naming and formatting",
+                ? "No compiler warnings"
+                : "Compiler reported " + compileWarnings + " warning(s)",
             "readability",
             now));
 
-    boolean blocked = items.stream().anyMatch(i -> i.getStatus() == FeedbackStatus.fail);
+    // Only tests gate the submission. Coverage/readability are informational.
+    boolean blocked = !testsPass;
     String summary = buildSummary(mapper, result, blocked);
     SubmissionReportEntity report =
         new SubmissionReportEntity(reportId, submissionId, 1, summary, blocked, now);

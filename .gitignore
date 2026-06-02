@@ -178,3 +178,4 @@ workspace/
 sandboxes/
 runner-workspace/
 submissions-local/
+.ctl-lsp-warm-stamp

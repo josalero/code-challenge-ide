@@ -1,0 +1,17 @@
+slug: sqrt-integer-csharp
+title: Sqrt(x) (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  Return integer square root (floor).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "IntegerSquareRootOf8ShouldBe2"
+    description: "integer square root of 8 should be 2"
+  - name: "IntegerSquareRootOf0ShouldBe0"
+    description: "integer square root of 0 should be 0"

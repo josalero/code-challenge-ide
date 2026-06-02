@@ -1,0 +1,17 @@
+slug: truncate-pipe-angular
+title: Truncate Pipe (Angular)
+difficulty: easy
+language: angular
+default_runtime_version: "19"
+description_md: |
+  Standalone `TruncatePipe` — `transform(value, limit)` returns value if short else `value.slice(0, limit) + '...'`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "truncates"
+    description: "Truncates"
+  - name: "short_text"
+    description: "Short text"

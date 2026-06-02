@@ -1,0 +1,12 @@
+slug: chunk-array-typescript
+title: Chunk Array (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Split `items` into sub-arrays of length `size` (last chunk may be shorter).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10

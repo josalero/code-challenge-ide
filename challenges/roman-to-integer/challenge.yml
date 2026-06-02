@@ -1,0 +1,18 @@
+slug: roman-to-integer
+title: Roman to Integer
+difficulty: medium
+language: java
+default_runtime_version: "26"
+description_md: |
+  Convert a Roman numeral string to an integer. Implement `Solution.romanToInt(String s)`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_romantoint_iii_to_equal_3"
+    description: "Expect romanToInt(\"III\") to equal 3"
+  - name: "expect_romantoint_lviii_to_equal_58"
+    description: "Expect romanToInt(\"LVIII\") to equal 58"

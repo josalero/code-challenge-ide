@@ -1,0 +1,17 @@
+slug: counter-react
+title: Counter (React)
+difficulty: easy
+language: react
+default_runtime_version: "19"
+description_md: |
+  Implement `Counter` — a button showing `initial` count; each click increments by 1.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "shows_initial_count"
+    description: "Shows initial count"
+  - name: "increments_on_click"
+    description: "Increments on click"

@@ -1,0 +1,17 @@
+slug: bubble-sort-csharp
+title: Bubble Sort (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  Return a new array sorted ascending using bubble sort (stable).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "Bubblesort312ShouldReturn123"
+    description: "bubbleSort([3, 1, 2]) should return [1, 2, 3]"
+  - name: "Bubblesort1ShouldReturn1"
+    description: "bubbleSort([1]) should return [1]"

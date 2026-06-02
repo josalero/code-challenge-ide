@@ -1,5 +1,6 @@
 package com.codetraininglab.platform.persistence;
 
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,6 +31,10 @@ public class SubmissionEntity {
   @Column(nullable = false)
   private SubmissionStatus status;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private SubmissionKind kind;
+
   @Column(name = "solution_code", nullable = false, columnDefinition = "TEXT")
   private String solutionCode;
 
@@ -53,6 +58,7 @@ public class SubmissionEntity {
       UUID challengeId,
       UUID runtimeId,
       SubmissionStatus status,
+      SubmissionKind kind,
       String solutionCode,
       String customTestsCode,
       String idempotencyKey,
@@ -63,6 +69,7 @@ public class SubmissionEntity {
     this.challengeId = challengeId;
     this.runtimeId = runtimeId;
     this.status = status;
+    this.kind = kind;
     this.solutionCode = solutionCode;
     this.customTestsCode = customTestsCode;
     this.idempotencyKey = idempotencyKey;
@@ -92,6 +99,10 @@ public class SubmissionEntity {
 
   public void setStatus(SubmissionStatus status) {
     this.status = status;
+  }
+
+  public SubmissionKind getKind() {
+    return kind;
   }
 
   public String getSolutionCode() {

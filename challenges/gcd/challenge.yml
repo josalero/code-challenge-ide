@@ -1,0 +1,20 @@
+slug: gcd
+title: Greatest Common Divisor
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Implement `Solution.gcd(int a, int b)` returning the greatest common divisor (Euclidean algorithm).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_gcd_54_24_to_equal_6"
+    description: "Expect gcd(54, 24) to equal 6"
+  - name: "expect_gcd_17_13_to_equal_1"
+    description: "Expect gcd(17, 13) to equal 1"
+  - name: "expect_gcd_25_15_to_equal_5"
+    description: "Expect gcd(25, 15) to equal 5"

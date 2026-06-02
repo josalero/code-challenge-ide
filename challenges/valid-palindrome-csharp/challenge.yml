@@ -1,0 +1,17 @@
+slug: valid-palindrome-csharp
+title: Valid Palindrome (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  After removing non-alphanumeric characters and lowercasing, return whether the string is a palindrome.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "IspalindromeAManAPlanACanShouldBeTrue"
+    description: "isPalindrome(\"A man, a plan, a can…\") should be true"
+  - name: "IspalindromeRaceACarShouldBeFalse"
+    description: "isPalindrome(\"race a car\") should be false"

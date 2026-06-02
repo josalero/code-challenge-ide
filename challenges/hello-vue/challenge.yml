@@ -1,0 +1,15 @@
+slug: hello-vue
+title: Hello Vue
+difficulty: easy
+language: vue
+default_runtime_version: "3.5"
+description_md: |
+  Vue SFC greets `name` prop in an `<h1>` (vuejs/examples hello-world style).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "greets"
+    description: "Greets"

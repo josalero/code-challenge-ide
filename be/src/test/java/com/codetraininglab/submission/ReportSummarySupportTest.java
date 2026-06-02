@@ -28,4 +28,23 @@ class ReportSummarySupportTest {
                 "{\"tests\":1,\"blocked\":false}", JsonMapper.builder().build()))
         .isNull();
   }
+
+  @Test
+  void returnsNullForBlankSummary() {
+    assertThat(ReportSummarySupport.parseRunnerLogs(" ", JsonMapper.builder().build())).isNull();
+  }
+
+  @Test
+  void returnsNullForInvalidJson() {
+    assertThat(ReportSummarySupport.parseRunnerLogs("{bad", JsonMapper.builder().build())).isNull();
+  }
+
+  @Test
+  void returnsNullWhenLogsAreBlank() {
+    assertThat(
+            ReportSummarySupport.parseRunnerLogs(
+                "{\"logs\":{\"stdout_truncated\":\"\",\"stderr_truncated\":\"\"}}",
+                JsonMapper.builder().build()))
+        .isNull();
+  }
 }

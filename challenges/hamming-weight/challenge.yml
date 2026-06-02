@@ -1,0 +1,18 @@
+slug: hamming-weight
+title: Hamming Weight
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Count the number of `1` bits in the binary representation of `n`. `Solution.hammingWeight(int n)`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_hammingweight_11_to_equal_3"
+    description: "Expect hammingWeight(11) to equal 3"
+  - name: "expect_hammingweight_128_to_equal_1"
+    description: "Expect hammingWeight(128) to equal 1"

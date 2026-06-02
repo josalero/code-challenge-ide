@@ -1,0 +1,17 @@
+slug: gcd-python
+title: GCD (Python)
+difficulty: easy
+language: python
+default_runtime_version: "3.12"
+description_md: |
+  Greatest common divisor of `a` and `b`.
+gating_config:
+  line_coverage_percent: 80
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_gcd_sample"
+    description: "Checks that gcd sample"
+  - name: "test_gcd_coprime"
+    description: "Checks that gcd coprime"

@@ -1,8 +1,11 @@
+import "@ant-design/v5-patch-for-react-19";
+import "./monacoSetup";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App as AntApp, ConfigProvider, theme } from "antd";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
 import "./index.css";
@@ -39,13 +42,15 @@ createRoot(document.getElementById("root")!).render(
       }}
     >
       <QueryClientProvider client={queryClient}>
-        <AntApp>
-          <BrowserRouter>
-            <AuthProvider>
-              <App />
-            </AuthProvider>
-          </BrowserRouter>
-        </AntApp>
+        <TooltipProvider>
+          <AntApp>
+            <BrowserRouter>
+              <AuthProvider>
+                <App />
+              </AuthProvider>
+            </BrowserRouter>
+          </AntApp>
+        </TooltipProvider>
       </QueryClientProvider>
     </ConfigProvider>
   </StrictMode>,

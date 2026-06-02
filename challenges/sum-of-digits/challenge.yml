@@ -1,0 +1,17 @@
+slug: sum-of-digits
+title: Sum of Digits
+difficulty: easy
+language: python
+default_runtime_version: "3.12"
+description_md: |
+  Return sum of decimal digits of non-negative integer `n`.
+gating_config:
+  line_coverage_percent: 80
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_123"
+    description: "Checks that 123"
+  - name: "test_zero"
+    description: "Checks that zero"

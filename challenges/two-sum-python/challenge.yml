@@ -1,0 +1,17 @@
+slug: two-sum-python
+title: Two Sum (Python)
+difficulty: easy
+language: python
+default_runtime_version: "3.12"
+description_md: |
+  Return indices of two numbers that add to `target` (exactly one solution, use first valid pair).
+gating_config:
+  line_coverage_percent: 80
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_basic"
+    description: "Checks that basic"
+  - name: "test_later"
+    description: "Checks that later"

@@ -1,0 +1,15 @@
+slug: todo-list-vue
+title: Todo List (Vue)
+difficulty: medium
+language: vue
+default_runtime_version: "3.5"
+description_md: |
+  SFC `TodoList` — add todo on button click; list renders todo text.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "adds_todo"
+    description: "Adds todo"

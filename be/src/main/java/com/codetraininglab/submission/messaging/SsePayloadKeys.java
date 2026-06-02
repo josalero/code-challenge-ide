@@ -9,6 +9,8 @@ public final class SsePayloadKeys {
   public static final String REPORT_ID = "report_id";
   public static final String STDOUT = "stdout";
   public static final String STDERR = "stderr";
+  public static final String PASSED = "passed";
+  public static final String KIND = "kind";
 
   private SsePayloadKeys() {}
 }

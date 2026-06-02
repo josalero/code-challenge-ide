@@ -1,0 +1,17 @@
+slug: single-number-csharp
+title: Single Number (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  Every element appears twice except one; return that element.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "Singlenumber221ShouldEqual1"
+    description: "singleNumber([2, 2, 1]) should equal 1"
+  - name: "Singlenumber41212ShouldEqual4"
+    description: "singleNumber([4, 1, 2, 1, 2]) should equal 4"

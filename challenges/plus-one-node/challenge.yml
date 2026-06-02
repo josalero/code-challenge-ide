@@ -1,0 +1,17 @@
+slug: plus-one-node
+title: Plus One (Node.js)
+difficulty: easy
+language: node
+default_runtime_version: "22"
+description_md: |
+  Increment a non-negative integer stored as digit array (MSD first); return new digits.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "plusone_1_2_3_should_return_1_2_4"
+    description: "plusOne([1, 2, 3]) should return [1, 2, 4]"
+  - name: "plusone_9_should_return_1_0"
+    description: "plusOne([9]) should return [1, 0]"

@@ -1,0 +1,17 @@
+slug: armstrong-number
+title: Armstrong Number
+difficulty: medium
+language: python
+default_runtime_version: "3.12"
+description_md: |
+  Return `True` if `n` equals sum of its digits each raised to the power of digit count.
+gating_config:
+  line_coverage_percent: 80
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_153"
+    description: "Checks that 153"
+  - name: "test_10"
+    description: "Checks that 10"

@@ -1,0 +1,12 @@
+slug: omit-keys-typescript
+title: Omit Keys (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Return a shallow copy of `obj` without the listed `keys` (handbook-style utility).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10

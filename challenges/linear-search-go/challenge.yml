@@ -1,0 +1,17 @@
+slug: linear-search-go
+title: Linear Search (Go)
+difficulty: easy
+language: go
+default_runtime_version: "1.23"
+description_md: |
+  Return index of target in nums, or -1.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "public_1"
+    description: "linearSearch([2, 3, 4], 3) should return index 1"
+  - name: "public_2"
+    description: "linearSearch([1, 2], 5) should return index -1"

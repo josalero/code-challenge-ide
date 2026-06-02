@@ -1,0 +1,17 @@
+slug: reverse-string-csharp
+title: Reverse String (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  Return the reverse of the input string.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "ReversestringHelloShouldBeOlleh"
+    description: "reverseString(\"hello\") should be \"olleh\""
+  - name: "ReversestringShouldBe"
+    description: "reverseString(\"\") should be \"\""

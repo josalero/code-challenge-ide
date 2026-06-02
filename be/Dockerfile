@@ -30,6 +30,8 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=build /workspace/be/build/libs/be-*.jar /app/app.jar
 COPY challenges /challenges
+COPY scripts /app/scripts
+ENV CTL_REPO_ROOT=/app
 RUN chown -R app:app /app /challenges
 
 # Supplementary group for /var/run/docker.sock is set via compose group_add (DOCKER_GID).

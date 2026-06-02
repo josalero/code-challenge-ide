@@ -1,0 +1,15 @@
+slug: dark-mode-toggle-react
+title: Dark Mode Toggle (React)
+difficulty: easy
+language: react
+default_runtime_version: "19"
+description_md: |
+  Implement `ThemeToggle` — button toggles `data-theme` on `document.documentElement` between `light` and `dark`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "toggles_data_theme"
+    description: "Toggles data-theme"

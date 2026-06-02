@@ -1,0 +1,17 @@
+slug: reverse-string-rust
+title: Reverse String (Rust)
+difficulty: easy
+language: rust
+default_runtime_version: "1.84"
+description_md: |
+  Return the reverse of the input string.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "reversestring_hello_should_be_olleh"
+    description: "reverseString(\"hello\") should be \"olleh\""
+  - name: "reversestring_should_be"
+    description: "reverseString(\"\") should be \"\""

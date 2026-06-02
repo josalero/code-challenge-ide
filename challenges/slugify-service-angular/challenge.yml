@@ -1,0 +1,15 @@
+slug: slugify-service-angular
+title: Slugify Service (Angular)
+difficulty: easy
+language: angular
+default_runtime_version: "19"
+description_md: |
+  `SlugifyService.slugify(text)` — lowercase, spaces to hyphens, strip non-alphanumeric (RealWorld-style slug).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "slugifies"
+    description: "Slugifies"

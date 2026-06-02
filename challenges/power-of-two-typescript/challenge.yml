@@ -1,0 +1,17 @@
+slug: power-of-two-typescript
+title: Power of Two (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Return true if n is a power of two (n > 0).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "public_1"
+    description: "isPowerOfTwo(1) should be true"
+  - name: "public_2"
+    description: "isPowerOfTwo(3) should be false"

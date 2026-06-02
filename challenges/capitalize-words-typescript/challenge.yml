@@ -1,0 +1,12 @@
+slug: capitalize-words-typescript
+title: Capitalize Words (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Return `text` with the first character of each word uppercased (words separated by spaces).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10

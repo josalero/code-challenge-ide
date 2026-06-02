@@ -1,0 +1,12 @@
+slug: unique-values-typescript
+title: Unique Values (TypeScript)
+difficulty: easy
+language: typescript
+default_runtime_version: "5.7"
+description_md: |
+  Return array with duplicates removed (first occurrence order preserved).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10

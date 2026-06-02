@@ -90,6 +90,8 @@ jacocoTestReport {
                     '**/CodeTrainingLabApplication.class',
                     '**/persistence/*Entity.class',
                     '**/DockerRunnerClient.class',
+                    '**/RunnerOpsService.class',
+                    '**/RunnerOpsService$*.class',
                     '**/*Request.class',
                     '**/*Response.class',
                     '**/domain/**',

@@ -1,0 +1,18 @@
+slug: linear-search
+title: Linear Search
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Return index of `target` in `nums`, or `-1` if absent. `Solution.linearSearch(int[] nums, int target)`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_linearsearch_new_int_2_3_4_3_to_equal_1"
+    description: "Expect linearSearch(new int[] {2,3,4}, 3) to equal 1"
+  - name: "expect_linearsearch_new_int_1_2_5_to_equal_1"
+    description: "Expect linearSearch(new int[] {1,2}, 5) to equal -1"

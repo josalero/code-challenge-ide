@@ -1,0 +1,15 @@
+slug: searchable-list-react
+title: Searchable List (React)
+difficulty: easy
+language: react
+default_runtime_version: "19"
+description_md: |
+  Implement `SearchableList` — filter `items` by case-insensitive substring match on `query` input.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "filters_items"
+    description: "Filters items"

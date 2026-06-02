@@ -1,0 +1,18 @@
+slug: valid-anagram
+title: Valid Anagram
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Implement `Solution.isAnagram(String s, String t)` — `true` if `t` is an anagram of `s`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_isanagram_anagram_nagaram_to_equal_true"
+    description: "Expect isAnagram(\"anagram\", \"nagaram\") to equal true"
+  - name: "expect_isanagram_rat_car_to_equal_false"
+    description: "Expect isAnagram(\"rat\", \"car\") to equal false"

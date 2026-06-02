@@ -1,0 +1,16 @@
+slug: merge-sorted-arrays
+title: Merge Sorted Arrays
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Implement `Solution.merge(int[] nums1, int m, int[] nums2, int n)` merging `nums2` into `nums1` (length `m+n`, trailing zeros).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "verify_behavior_for_merge_sorted_arrays"
+    description: "Verify behavior for merge-sorted-arrays"

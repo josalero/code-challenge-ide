@@ -3,6 +3,7 @@ import { Collapse, Space, Tag, Typography } from "antd";
 import type { ChallengeDetail } from "../api/types";
 import CtlCard from "./ui/CtlCard";
 import { difficultyColor } from "../utils/difficulty";
+import { formatRuntimeLabel } from "../utils/languageRuntimes";
 
 type Props = {
   challenge: ChallengeDetail;
@@ -14,9 +15,9 @@ export default function ChallengeBriefCard({ challenge, runtimeVersion }: Props)
     <CtlCard title={challenge.title}>
       <Space wrap className="mb-3">
         <Tag color={difficultyColor(challenge.difficulty)}>{challenge.difficulty}</Tag>
-        <Tag color="blue">Java {runtimeVersion}</Tag>
+        <Tag color="blue">{formatRuntimeLabel(challenge.language, runtimeVersion)}</Tag>
         <Typography.Text className="!text-slate-400">
-          {challenge.publicTestNames.length} public · {challenge.hiddenTestCount} hidden
+          {challenge.publicTests.length} public · {challenge.hiddenTestCount} hidden
         </Typography.Text>
       </Space>
 
@@ -42,19 +43,24 @@ export default function ChallengeBriefCard({ challenge, runtimeVersion }: Props)
               </pre>
             ),
           },
-          ...(challenge.publicTestNames.length > 0
+          ...(challenge.publicTests.length > 0
             ? [
                 {
                   key: "public-tests",
                   label: (
                     <span className="text-slate-200">
-                      Public tests ({challenge.publicTestNames.length})
+                      Public tests ({challenge.publicTests.length})
                     </span>
                   ),
                   children: (
-                    <ul className="list-inside list-disc text-sm text-slate-300">
-                      {challenge.publicTestNames.map((name) => (
-                        <li key={name}>{name}</li>
+                    <ul className="m-0 list-none space-y-3 p-0 text-sm text-slate-300">
+                      {challenge.publicTests.map((test) => (
+                        <li key={test.name}>
+                          <span className="font-medium text-slate-200">{test.name}</span>
+                          {test.description ? (
+                            <p className="mb-0 mt-1 text-slate-400">{test.description}</p>
+                          ) : null}
+                        </li>
                       ))}
                     </ul>
                   ),

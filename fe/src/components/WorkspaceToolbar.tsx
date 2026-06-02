@@ -6,6 +6,7 @@ import {
 } from "@ant-design/icons";
 import { Button, Popconfirm, Select, Space, Tooltip, Typography } from "antd";
 import type { ChallengeDetail } from "../api/types";
+import { formatLanguageLabel, formatRuntimeLabel } from "../utils/languageRuntimes";
 
 type Props = {
   challenge: ChallengeDetail;
@@ -50,10 +51,13 @@ export default function WorkspaceToolbar({
             disabled={isRunning}
             options={challenge.runtimes
               .filter((r) => r.active)
-              .map((r) => ({ value: r.version, label: `Java ${r.version}` }))}
-            aria-label="Java runtime version"
+              .map((r) => ({
+                value: r.version,
+                label: formatRuntimeLabel(challenge.language, r.version),
+              }))}
+            aria-label={`${formatLanguageLabel(challenge.language)} runtime version`}
           />
-          <Tooltip title="Runs public + hidden tests, coverage, and Checkstyle in Docker (⌘/Ctrl + Enter)">
+          <Tooltip title="Runs public + hidden tests with coverage in Docker (⌘/Ctrl + Enter)">
             <Button
               type="primary"
               size="middle"

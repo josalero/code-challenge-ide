@@ -1,0 +1,17 @@
+slug: two-sum-csharp
+title: Two Sum (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  Return 0-based indices of two distinct elements that sum to `target` (exactly one solution).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "Twosum2711159ShouldReturn01"
+    description: "twoSum([2, 7, 11, 15], 9) should return [0, 1]"
+  - name: "Twosum3246ShouldReturn12"
+    description: "twoSum([3, 2, 4], 6) should return [1, 2]"

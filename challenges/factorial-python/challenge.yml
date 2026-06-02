@@ -1,0 +1,17 @@
+slug: factorial-python
+title: Factorial (Python)
+difficulty: easy
+language: python
+default_runtime_version: "3.12"
+description_md: |
+  Implement `factorial(n: int) -> int` returning `n!` for `n >= 0`.
+gating_config:
+  line_coverage_percent: 80
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_zero"
+    description: "Checks that zero"
+  - name: "test_five"
+    description: "Checks that five"

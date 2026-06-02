@@ -14,7 +14,7 @@ public class SubmissionJobListener {
     this.processor = processor;
   }
 
-  @RabbitListener(queues = RabbitMqConfig.SUBMISSION_QUEUE)
+  @RabbitListener(queues = RabbitMqConfig.SUBMISSION_QUEUE, concurrency = "2-4")
   public void onMessage(SubmissionJobMessage message) {
     processor.process(message.submissionId());
   }

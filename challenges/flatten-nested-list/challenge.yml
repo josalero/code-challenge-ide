@@ -1,0 +1,17 @@
+slug: flatten-nested-list
+title: Flatten Nested List
+difficulty: medium
+language: python
+default_runtime_version: "3.12"
+description_md: |
+  Flatten a list that may contain integers or nested lists of integers (one level deep).
+gating_config:
+  line_coverage_percent: 80
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_flat"
+    description: "Checks that flat"
+  - name: "test_empty"
+    description: "Checks that empty"

@@ -1,5 +1,6 @@
 package com.codetraininglab.platform.security;
 
+import com.codetraininglab.domain.UserRole;
 import com.codetraininglab.platform.config.CtlProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -28,12 +29,13 @@ public class JwtService {
     this.clock = clock;
   }
 
-  public String createToken(UUID userId, String email) {
+  public String createToken(UUID userId, String email, UserRole role) {
     Instant now = clock.instant();
     Instant expiry = now.plusSeconds(expirationHours * 3600L);
     return Jwts.builder()
         .subject(userId.toString())
         .claim("email", email)
+        .claim("role", role.name())
         .issuedAt(Date.from(now))
         .expiration(Date.from(expiry))
         .signWith(key)
@@ -43,6 +45,15 @@ public class JwtService {
   public UUID parseUserId(String token) {
     Claims claims = parseClaims(token);
     return UUID.fromString(claims.getSubject());
+  }
+
+  public UserRole parseRole(String token) {
+    Claims claims = parseClaims(token);
+    String role = claims.get("role", String.class);
+    if (role == null || role.isBlank()) {
+      return UserRole.USER;
+    }
+    return UserRole.valueOf(role);
   }
 
   private Claims parseClaims(String token) {

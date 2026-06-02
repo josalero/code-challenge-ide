@@ -18,6 +18,6 @@ class WorkspaceLayoutTest {
 
   @Test
   void defaultsUnknownLanguageToMaven() {
-    assertThat(WorkspaceLayout.forLanguage("go")).isEqualTo(WorkspaceLayout.MAVEN);
+    assertThat(WorkspaceLayout.forLanguage("kotlin")).isEqualTo(WorkspaceLayout.MAVEN);
   }
 }

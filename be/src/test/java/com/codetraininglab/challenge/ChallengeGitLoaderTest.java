@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.codetraininglab.platform.config.CtlProperties;
+import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.ChallengeHiddenTestRepository;
 import com.codetraininglab.platform.persistence.ChallengePublicTestRepository;
@@ -59,23 +59,7 @@ class ChallengeGitLoaderTest {
     when(challengeRepository.findBySlug("demo")).thenReturn(Optional.empty());
     when(challengeRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-    CtlProperties properties =
-        new CtlProperties(
-            true,
-            "test-jwt-secret-must-be-at-least-32-characters-long",
-            24,
-            "http://localhost:5173",
-            tempDir.toString(),
-            "runner",
-            "",
-            "lsp",
-            5,
-            24,
-            "openrouter",
-            "",
-            "model",
-            "http://localhost:11434",
-            "ollama", false, false);
+    var properties = CtlPropertiesTestFixtures.defaults(tempDir.toString());
     ChallengeGitLoader loader =
         new ChallengeGitLoader(
             properties,

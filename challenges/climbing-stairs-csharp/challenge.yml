@@ -1,0 +1,17 @@
+slug: climbing-stairs-csharp
+title: Climbing Stairs (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  Count ways to climb n steps (1 or 2 at a time).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "Climbstairs2ShouldEqual2"
+    description: "climbStairs(2) should equal 2"
+  - name: "Climbstairs3ShouldEqual3"
+    description: "climbStairs(3) should equal 3"

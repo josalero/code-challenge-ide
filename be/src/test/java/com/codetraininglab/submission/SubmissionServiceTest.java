@@ -11,8 +11,9 @@ import com.codetraininglab.submission.application.LanguageRuntimeResolver;
 import com.codetraininglab.submission.api.CreateSubmissionRequest;
 import com.codetraininglab.submission.api.SubmissionResponse;
 import com.codetraininglab.submission.messaging.SubmissionJobMessage;
-import com.codetraininglab.platform.config.CtlProperties;
+import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
 import com.codetraininglab.platform.config.RabbitMqConfig;
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.ChallengeRepository;
@@ -56,23 +57,7 @@ class SubmissionServiceTest {
 
   @BeforeEach
   void setUp() {
-    CtlProperties properties =
-        new CtlProperties(
-            true,
-            "test-jwt-secret-must-be-at-least-32-characters-long",
-            24,
-            "http://localhost:5173",
-            "challenges",
-            "runner",
-            "",
-            "lsp",
-            5,
-            24,
-            "openrouter",
-            "",
-            "model",
-            "http://localhost:11434",
-            "ollama", false, false);
+    var properties = CtlPropertiesTestFixtures.defaults();
     service =
         new SubmissionService(
             submissionRepository,
@@ -115,7 +100,7 @@ class SubmissionServiceTest {
 
     SubmissionResponse response =
         service.create(
-            userId, new CreateSubmissionRequest("slug", "26", "code", null), "key-1");
+            userId, new CreateSubmissionRequest("slug", "26", "code", null, null), "key-1");
 
     assertThat(response.status()).isEqualTo("PENDING");
     verify(rabbitTemplate)
@@ -132,6 +117,7 @@ class SubmissionServiceTest {
             challengeId,
             runtimeId,
             SubmissionStatus.COMPLETED,
+            SubmissionKind.SUBMIT,
             "c",
             null,
             null,

@@ -2,7 +2,8 @@ package com.codetraininglab.platform.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.codetraininglab.platform.config.CtlProperties;
+import com.codetraininglab.domain.UserRole;
+import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -13,26 +14,21 @@ class JwtServiceTest {
 
   @Test
   void roundTripsUserId() {
-    CtlProperties properties =
-        new CtlProperties(
-            true,
-            "test-jwt-secret-must-be-at-least-32-characters-long",
-            24,
-            "http://localhost:5173",
-            "challenges",
-            "runner",
-            "",
-            "lsp",
-            5,
-            24,
-            "openrouter",
-            "",
-            "model",
-            "http://localhost:11434",
-            "ollama", false, false);
-    JwtService jwtService = new JwtService(properties, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+    JwtService jwtService =
+        new JwtService(
+            CtlPropertiesTestFixtures.defaults(), Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
     UUID userId = UUID.randomUUID();
-    String token = jwtService.createToken(userId, "u@example.com");
+    String token = jwtService.createToken(userId, "u@example.com", UserRole.USER);
     assertThat(jwtService.parseUserId(token)).isEqualTo(userId);
+  }
+
+  @Test
+  void roundTripsRole() {
+    JwtService jwtService =
+        new JwtService(
+            CtlPropertiesTestFixtures.defaults(), Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+    UUID userId = UUID.randomUUID();
+    String token = jwtService.createToken(userId, "u@example.com", UserRole.ADMIN);
+    assertThat(jwtService.parseRole(token)).isEqualTo(UserRole.ADMIN);
   }
 }

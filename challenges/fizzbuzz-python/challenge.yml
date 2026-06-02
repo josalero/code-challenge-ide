@@ -10,3 +10,10 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "test_fizz_buzz_for_one"
+    description: "Checks that fizz buzz for one"
+  - name: "test_fizz_buzz_for_five"
+    description: "Checks that fizz buzz for five"
+  - name: "test_fizz_buzz_includes_fizzbuzz_at_fifteen"
+    description: "Checks that fizz buzz includes fizzbuzz at fifteen"

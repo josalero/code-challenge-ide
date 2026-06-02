@@ -1,0 +1,18 @@
+slug: contains-duplicate
+title: Contains Duplicate
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Implement `Solution.containsDuplicate(int[] nums)` — `true` if any value appears at least twice.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_containsduplicate_new_int_1_2_3_1_to_equa"
+    description: "Expect containsDuplicate(new int[] {1,2,3,1}) to equal true"
+  - name: "expect_containsduplicate_new_int_1_2_3_4_to_equa"
+    description: "Expect containsDuplicate(new int[] {1,2,3,4}) to equal false"

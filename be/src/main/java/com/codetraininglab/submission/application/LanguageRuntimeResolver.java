@@ -1,7 +1,7 @@
 package com.codetraininglab.submission.application;
 
+import com.codetraininglab.catalog.application.ChallengeLanguageSupport;
 import com.codetraininglab.domain.JavaRuntimeVersion;
-import com.codetraininglab.domain.LanguageCode;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.LanguageEntity;
 import com.codetraininglab.platform.persistence.LanguageRepository;
@@ -47,13 +47,9 @@ public class LanguageRuntimeResolver {
     if (requestedVersion != null && !requestedVersion.isBlank()) {
       return requestedVersion.trim();
     }
-    if (LanguageCode.JAVA.languageName().equalsIgnoreCase(languageName)) {
+    if ("java".equalsIgnoreCase(languageName)) {
       return JavaRuntimeVersion.DEFAULT;
     }
-    if (LanguageCode.PYTHON.languageName().equalsIgnoreCase(languageName)) {
-      return "3.12";
-    }
-    throw new ResponseStatusException(
-        HttpStatus.BAD_REQUEST, "Runtime version required for " + languageName);
+    return ChallengeLanguageSupport.defaultRuntimeVersion(languageName);
   }
 }

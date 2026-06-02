@@ -1,0 +1,16 @@
+slug: remove-duplicates-sorted
+title: Remove Duplicates from Sorted Array
+difficulty: easy
+language: java
+default_runtime_version: "26"
+description_md: |
+  Remove duplicates in-place from sorted `nums`. Return count of unique elements. `Solution.removeDuplicates(int[] nums)`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "expect_removeduplicates_a_to_equal_2"
+    description: "Expect removeDuplicates(a) to equal 2"

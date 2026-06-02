@@ -1,0 +1,17 @@
+slug: plus-one-csharp
+title: Plus One (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  Increment a non-negative integer stored as digit array (MSD first); return new digits.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "Plusone123ShouldReturn124"
+    description: "plusOne([1, 2, 3]) should return [1, 2, 4]"
+  - name: "Plusone9ShouldReturn10"
+    description: "plusOne([9]) should return [1, 0]"

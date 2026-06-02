@@ -1,0 +1,17 @@
+slug: valid-parentheses-python
+title: Valid Parentheses (Python)
+difficulty: easy
+language: python
+default_runtime_version: "3.12"
+description_md: |
+  Return whether bracket string `()` `{}` `[]` is valid and properly nested.
+gating_config:
+  line_coverage_percent: 80
+limits:
+  per_test_timeout_seconds: 10
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_simple"
+    description: "Checks that simple"
+  - name: "test_mixed"
+    description: "Checks that mixed"

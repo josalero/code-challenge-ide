@@ -1,0 +1,17 @@
+slug: bubble-sort-rust
+title: Bubble Sort (Rust)
+difficulty: easy
+language: rust
+default_runtime_version: "1.84"
+description_md: |
+  Return a new array sorted ascending using bubble sort (stable).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "bubblesort_3_1_2_should_return_1_2_3"
+    description: "bubbleSort([3, 1, 2]) should return [1, 2, 3]"
+  - name: "bubblesort_1_should_return_1"
+    description: "bubbleSort([1]) should return [1]"

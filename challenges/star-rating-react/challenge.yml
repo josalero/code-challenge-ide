@@ -1,0 +1,15 @@
+slug: star-rating-react
+title: Star Rating (React)
+difficulty: easy
+language: react
+default_runtime_version: "19"
+description_md: |
+  Implement `StarRating` with props `max` (default 5) and `value`; clicking star `n` sets value to `n`.
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "selects_third_star"
+    description: "Selects third star"

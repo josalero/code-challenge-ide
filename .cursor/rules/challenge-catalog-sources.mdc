@@ -1,0 +1,26 @@
+---
+description: Challenge catalog inspiration URLs and seed module layout
+globs: scripts/seed-challenges/**,challenges/**,docs/challenge-catalog*.md
+---
+
+# Challenge catalog sources
+
+When adding challenges, prefer ideas from the curated lists in `docs/challenge-catalog-sources.md`.
+
+**React:** florinpop17/app-ideas, greatfrontend/greatfrontend-projects, alan2207/bulletproof-react → `catalog_frontend*.py`
+
+**Vue:** app-ideas, vuejs/examples, vuejs/awesome-vue → `catalog_frontend*.py`
+
+**Angular:** gothinkster/realworld, learning-zone/angular-basics, PatrickJS/awesome-angular → `catalog_frontend*.py`
+
+**TypeScript:** type-challenges, TheAlgorithms/TypeScript, TS handbook → `catalog_multi*.py`, `catalog_typescript_extra.py`
+
+**C#:** TheAlgorithms/C-Sharp, ardalis/CleanArchitecture, dotnet-architecture/eShop
+
+**Go:** TheAlgorithms/Go, golang CodeReviewComments, avelino/awesome-go → `catalog_multi*.py`
+
+**Rust:** rustlings, TheAlgorithms/Rust, awesome-rust → `catalog_multi*.py`
+
+**C++:** TheAlgorithms/C-Plus-Plus, CppCoreGuidelines, project-based-learning
+
+Every public test needs `public_tests_meta` with a human-readable `description`. Regenerate with `python3 scripts/seed-challenges/generate.py`.

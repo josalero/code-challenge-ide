@@ -1,0 +1,19 @@
+slug: fibonacci-number-csharp
+title: Fibonacci Number (C#)
+difficulty: easy
+language: csharp
+default_runtime_version: "8.0"
+description_md: |
+  Return the n-th Fibonacci number (fib(0)=0, fib(1)=1).
+gating_config:
+  line_coverage_percent: 80
+  checkstyle_max_errors: 0
+limits:
+  per_test_timeout_seconds: 10
+public_tests_meta:
+  - name: "Fibonacci0ShouldEqual0"
+    description: "fibonacci(0) should equal 0"
+  - name: "Fibonacci1ShouldEqual1"
+    description: "fibonacci(1) should equal 1"
+  - name: "Fibonacci5ShouldEqual5"
+    description: "fibonacci(5) should equal 5"

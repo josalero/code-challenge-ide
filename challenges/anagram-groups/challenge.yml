@@ -13,3 +13,10 @@ gating_config:
 limits:
   per_test_timeout_seconds: 10
 starter_main_class: com.challenge.Solution
+public_tests_meta:
+  - name: "groups_classic_example"
+    description: "Groups Classic Example"
+  - name: "expect_groupanagrams_new_string_to_equal_list_of"
+    description: "Expect groupAnagrams(new String[] {}) to equal List.of()"
+  - name: "single_word_forms_one_group"
+    description: "Single Word Forms One Group"
