@@ -30,6 +30,9 @@ public class UserProgressEntity {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
+  @Column(name = "submitted_at")
+  private Instant submittedAt;
+
   protected UserProgressEntity() {}
 
   public UserProgressEntity(UUID id, UUID userId, UUID challengeId, ProgressState state, Instant updatedAt) {
@@ -62,5 +65,17 @@ public class UserProgressEntity {
 
   public void setUpdatedAt(Instant updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public Instant getSubmittedAt() {
+    return submittedAt;
+  }
+
+  public void setSubmittedAt(Instant submittedAt) {
+    this.submittedAt = submittedAt;
+  }
+
+  public boolean isSubmitted() {
+    return submittedAt != null;
   }
 }

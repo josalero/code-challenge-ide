@@ -5,26 +5,23 @@ import {
   Box,
   CheckCircle2,
   CircleAlert,
-  Container,
   Database,
   Flame,
   Loader2,
   RefreshCw,
-  Sparkles,
   Terminal,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch, ApiError } from "../api/client";
-import type { RunnerImageStatus, RunnerOpsJob, RunnerOpsStatus } from "../api/types";
+import type { RunnerImageStatus, RunnerOpsJob, RunnerOpsStatus, LanguageWarmStatus } from "../api/types";
 import AppLayout from "../components/AppLayout";
 import CtlCard from "../components/ui/CtlCard";
 import PageHeader from "../components/ui/PageHeader";
 import { ApiPaths } from "../domain/constants";
 import { cn } from "../lib/utils";
 
-const LSP_LABELS = ["java", "python", "go", "typescript", "csharp", "rust", "cpp"] as const;
-const RUNNER_WARM_LANGUAGES = [
+const WARM_LANGUAGES = [
   "java",
   "python",
   "go",
@@ -39,6 +36,7 @@ const RUNNER_WARM_LANGUAGES = [
 ] as const;
 
 const JOB_TYPE_LABELS: Record<string, string> = {
+  INFRA_WARM: "Runners & editor",
   RUNNER_POOL_WARM: "Runner pool smoke",
   MAVEN_WARM: "Maven cache",
   LSP_WARM: "Language servers",
@@ -60,6 +58,14 @@ function warmTag(warmed: boolean | null | undefined) {
     <Tag color="success">Preloaded</Tag>
   ) : (
     <Tag color="warning">Not preloaded</Tag>
+  );
+}
+
+function readyTag(ready: boolean) {
+  return ready ? (
+    <Tag color="success">Ready</Tag>
+  ) : (
+    <Tag color="warning">Needs warm</Tag>
   );
 }
 
@@ -147,28 +153,124 @@ function WorkflowSection({
   );
 }
 
+type LanguageWarmChipState = "ready" | "partial" | "cold" | "missing";
+
+function languageWarmChipState(
+  rows: LanguageWarmStatus[],
+  language: string,
+): LanguageWarmChipState {
+  const langRows = rows.filter((row) => row.language === language);
+  if (langRows.length === 0) {
+    return "missing";
+  }
+  if (langRows.every((row) => row.ready)) {
+    return "ready";
+  }
+  if (langRows.some((row) => row.runnerReady || row.editorReady)) {
+    return "partial";
+  }
+  return "cold";
+}
+
 function LanguageChipGrid({
   labels,
   disabled,
-  onSelect,
+  warmPending,
+  readinessByLanguage,
+  onWarmSelected,
 }: {
   labels: readonly string[];
   disabled: boolean;
-  onSelect: (label: string) => void;
+  warmPending?: boolean;
+  readinessByLanguage?: Map<string, LanguageWarmChipState>;
+  onWarmSelected: (selected: string[]) => void;
 }) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const selectedList = useMemo(() => [...selected].sort(), [selected]);
+
+  const toggle = (label: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  };
+
+  const clear = () => setSelected(new Set());
+
   return (
-    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Warm one language">
-      {labels.map((label) => (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
-          key={label}
+          type="primary"
           size="small"
-          disabled={disabled}
-          className="!text-xs"
-          onClick={() => onSelect(label)}
+          disabled={disabled || selectedList.length === 0}
+          loading={warmPending}
+          onClick={() => {
+            onWarmSelected(selectedList);
+            clear();
+          }}
         >
-          {label}
+          Warm selected
+          {selectedList.length > 0 ? ` (${selectedList.length})` : ""}
         </Button>
-      ))}
+        {selectedList.length > 0 && (
+          <Button size="small" disabled={disabled || warmPending} onClick={clear}>
+            Clear
+          </Button>
+        )}
+        <span className="text-xs text-slate-500">
+          Dots = warm state (green all runtimes, amber partial). Click chips to select for the next job.
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Select languages to warm">
+        {labels.map((label) => {
+          const isSelected = selected.has(label);
+          const readiness = readinessByLanguage?.get(label) ?? "cold";
+          const readinessLabel =
+            readiness === "ready"
+              ? "ready"
+              : readiness === "partial"
+                ? "partially warmed"
+                : readiness === "missing"
+                  ? "no runtime configured"
+                  : "not warmed";
+          return (
+            <Button
+              key={label}
+              size="small"
+              type={isSelected ? "primary" : "default"}
+              disabled={disabled}
+              className={cn(
+                "!text-xs",
+                isSelected && "!border-sky-500/50",
+                !isSelected && readiness === "ready" && "!border-emerald-500/40",
+                !isSelected && readiness === "partial" && "!border-amber-500/40",
+              )}
+              aria-pressed={isSelected}
+              aria-label={`${label}, ${readinessLabel}`}
+              onClick={() => toggle(label)}
+            >
+              <span
+                className={cn(
+                  "mr-1.5 inline-block size-1.5 shrink-0 rounded-full",
+                  readiness === "ready" && "bg-emerald-400",
+                  readiness === "partial" && "bg-amber-400",
+                  readiness === "cold" && "bg-slate-600",
+                  readiness === "missing" && "bg-red-400/80",
+                )}
+                aria-hidden
+              />
+              {label}
+            </Button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -226,45 +328,34 @@ export default function AdminOpsPage() {
       message.error(error instanceof ApiError ? error.message : "Could not start Maven warm"),
   });
 
-  const warmLsp = useMutation({
+  const warmInfra = useMutation({
     mutationFn: ({ force, only }: { force: boolean; only?: string[] }) =>
-      apiFetch<RunnerOpsJob>(ApiPaths.OPS_RUNNERS_WARM_LSP, {
+      apiFetch<RunnerOpsJob>(ApiPaths.OPS_RUNNERS_WARM_INFRA, {
         method: "POST",
         body: JSON.stringify({ force, only: only ?? [] }),
       }),
     onSuccess: (job) => {
       setActiveJobId(job.id);
-      message.info("LSP warm started");
+      message.info("Warm-up started (runners + editor)");
+      void queryClient.refetchQueries({ queryKey: ["ops", "runners", "status"] });
+    },
+    onSettled: () => {
+      void queryClient.refetchQueries({ queryKey: ["ops", "runners", "status"] });
     },
     onError: (error) =>
-      message.error(error instanceof ApiError ? error.message : "Could not start LSP warm"),
-  });
-
-  const warmRunnerPool = useMutation({
-    mutationFn: ({ force, only }: { force: boolean; only?: string[] }) =>
-      apiFetch<RunnerOpsJob>(ApiPaths.OPS_RUNNERS_WARM_POOL, {
-        method: "POST",
-        body: JSON.stringify({ force, only: only ?? [] }),
-      }),
-    onSuccess: (job) => {
-      setActiveJobId(job.id);
-      message.info("Runner pool warm started");
-    },
-    onError: (error) =>
-      message.error(
-        error instanceof ApiError ? error.message : "Could not start runner pool warm",
-      ),
+      message.error(error instanceof ApiError ? error.message : "Could not start warm-up"),
   });
 
   const job = jobQuery.data;
   const jobRunning = job?.status === "RUNNING";
-  const warmActionPending =
-    warmMaven.isPending || warmLsp.isPending || warmRunnerPool.isPending;
+  const warmActionPending = warmMaven.isPending || warmInfra.isPending;
 
   const statusQuery = useQuery({
     queryKey: ["ops", "runners", "status"],
     queryFn: () => apiFetch<RunnerOpsStatus>(ApiPaths.OPS_RUNNERS_STATUS),
-    refetchInterval: jobRunning || warmActionPending ? 3000 : false,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: jobRunning || warmActionPending ? 2000 : 5000,
   });
 
   useEffect(() => {
@@ -278,36 +369,40 @@ export default function AdminOpsPage() {
     if (!job || job.status === "RUNNING") {
       return;
     }
-    void queryClient.invalidateQueries({ queryKey: ["ops", "runners", "status"] });
+    void queryClient.refetchQueries({ queryKey: ["ops", "runners", "status"] });
   }, [job?.status, job?.id, queryClient]);
 
   const status = statusQuery.data;
-  const busy =
-    warmMaven.isPending
-    || warmLsp.isPending
-    || warmRunnerPool.isPending
-    || job?.status === "RUNNING";
+  const busy = warmMaven.isPending || warmInfra.isPending || job?.status === "RUNNING";
 
   const dockerReady = Boolean(status?.dockerAvailable && status.dockerEnabled);
-  const runnerStats = useMemo(() => {
-    const images = status?.runnerImages ?? [];
-    const built = images.filter((r) => r.present);
+  const languageStats = useMemo(() => {
+    const rows = status?.languages ?? [];
+    const readyLanguages = WARM_LANGUAGES.filter((lang) => {
+      const langRows = rows.filter((row) => row.language === lang);
+      if (langRows.length === 0) {
+        return false;
+      }
+      return langRows.every((row) => row.ready);
+    });
+    const partialLanguages = WARM_LANGUAGES.filter((lang) => {
+      const state = languageWarmChipState(rows, lang);
+      return state === "partial";
+    });
     return {
-      built: built.length,
-      warm: built.filter((r) => r.warmed).length,
-      total: images.length,
+      total: WARM_LANGUAGES.length,
+      ready: readyLanguages.length,
+      partial: partialLanguages.length,
+      rows,
     };
-  }, [status?.runnerImages]);
+  }, [status?.languages]);
 
-  const lspStats = useMemo(() => {
-    const images = status?.lspImages ?? [];
-    const built = images.filter((r) => r.present);
-    return {
-      built: built.length,
-      warm: built.filter((r) => r.warmed).length,
-      total: images.length,
-    };
-  }, [status?.lspImages]);
+  const readinessByLanguage = useMemo(() => {
+    const rows = status?.languages ?? [];
+    return new Map(
+      WARM_LANGUAGES.map((lang) => [lang, languageWarmChipState(rows, lang)] as const),
+    );
+  }, [status?.languages]);
 
   return (
     <AppLayout>
@@ -315,8 +410,8 @@ export default function AdminOpsPage() {
         title="Infrastructure warm-up"
         description={
           <>
-            Preload Docker runners and language servers so the first <strong className="text-slate-300">Run tests</strong>{" "}
-            click and editor IntelliSense feel fast. Each workflow targets a different part of the stack.
+            Preload <strong className="text-slate-300">Run tests</strong> runners and editor IntelliSense together —
+            one warm-up per language, one combined status.
           </>
         }
         extra={
@@ -363,32 +458,25 @@ export default function AdminOpsPage() {
             tone={status.dockerAvailable && status.dockerEnabled ? "ok" : "bad"}
           />
           <HealthTile
-            icon={<Container className="size-3.5" />}
-            label="Submission runners"
+            icon={<Flame className="size-3.5" />}
+            label="Languages"
             value={
-              runnerStats.built > 0
-                ? `${runnerStats.warm} / ${runnerStats.built} preloaded`
-                : "No images built"
+              languageStats.total > 0
+                ? `${languageStats.ready} / ${languageStats.total} ready`
+                : "—"
             }
-            detail={`${runnerStats.built} of ${runnerStats.total} runner images local`}
+            detail={
+              languageStats.partial > 0
+                ? `${languageStats.partial} partially warmed — status refreshes every few seconds`
+                : "Runner + editor both preloaded on every runtime"
+            }
             tone={
-              runnerStats.built > 0 && runnerStats.warm === runnerStats.built
+              languageStats.ready === languageStats.total && languageStats.total > 0
                 ? "ok"
-                : runnerStats.warm > 0
+                : languageStats.ready > 0 || languageStats.partial > 0
                   ? "warn"
                   : "neutral"
             }
-          />
-          <HealthTile
-            icon={<Sparkles className="size-3.5" />}
-            label="Editor (LSP)"
-            value={
-              lspStats.built > 0
-                ? `${lspStats.warm} / ${lspStats.built} preloaded`
-                : "No images built"
-            }
-            detail={status.lspScriptsAvailable ? "Warm script available" : "Warm script missing"}
-            tone={lspStats.warm > 0 ? "ok" : status.lspScriptsAvailable ? "warn" : "bad"}
           />
           <HealthTile
             icon={<Database className="size-3.5" />}
@@ -401,64 +489,63 @@ export default function AdminOpsPage() {
       )}
 
       <div className="mb-4 rounded-lg border border-sky-500/20 bg-sky-500/5 px-4 py-3">
-        <p className="text-sm font-medium text-sky-200">Recommended order</p>
-        <ol className="mt-1.5 list-inside list-decimal space-y-0.5 text-sm text-slate-400">
-          <li>
-            <strong className="font-medium text-slate-300">Runner pool smoke</strong> — biggest win for Run tests (starts pool + fake submit).
-          </li>
-          <li>
-            <strong className="font-medium text-slate-300">Maven cache</strong> — optional; runner warm auto-runs this for Java when needed.
-          </li>
-          <li>
-            <strong className="font-medium text-slate-300">Language servers</strong> — editor autocomplete only; does not affect test runs.
-          </li>
-        </ol>
+        <p className="text-sm text-slate-400">
+          <strong className="font-medium text-sky-200">Warm languages</strong> runs submission-runner smoke{" "}
+          <em>and</em> editor (LSP) preload in a single job. Java also triggers Maven cache when needed.
+        </p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
         <div className="space-y-4">
-          <CtlCard title="Warm-up workflows" className="!border-slate-800/80">
+          <CtlCard title="Warm languages" className="!border-slate-800/80">
             <WorkflowSection
               icon={<Flame className="size-4" />}
-              title="1. Runner pool smoke"
-              subtitle="Starts pooled containers and runs one smoke submission per language — same path as Run tests."
-              affects="First Run tests click (all languages)"
+              title="Runners + editor"
+              subtitle="One job per selection: pooled runner smoke, then LSP warm for the matching editor stack."
+              affects="Run tests and IntelliSense for each language"
             >
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="primary"
                   icon={<Flame className="size-4" aria-hidden />}
                   disabled={busy || !dockerReady}
-                  loading={warmRunnerPool.isPending}
-                  onClick={() => warmRunnerPool.mutate({ force: false })}
+                  loading={warmInfra.isPending}
+                  onClick={() => warmInfra.mutate({ force: false })}
                 >
-                  Warm all runners
+                  Warm all languages
                 </Button>
                 <Button
                   disabled={busy || !dockerReady}
-                  loading={warmRunnerPool.isPending}
-                  onClick={() => warmRunnerPool.mutate({ force: true })}
+                  loading={warmInfra.isPending}
+                  onClick={() => warmInfra.mutate({ force: true })}
                 >
-                  Force re-warm
+                  Force re-warm all
                 </Button>
               </div>
-              <p className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-slate-500">
-                One language
-              </p>
               <LanguageChipGrid
-                labels={RUNNER_WARM_LANGUAGES}
+                labels={WARM_LANGUAGES}
                 disabled={busy || !dockerReady}
-                onSelect={(label) => warmRunnerPool.mutate({ force: false, only: [label] })}
+                warmPending={warmInfra.isPending}
+                readinessByLanguage={readinessByLanguage}
+                onWarmSelected={(only) => warmInfra.mutate({ force: false, only })}
               />
+              {!status?.lspScriptsAvailable && (
+                <Alert
+                  className="mt-4"
+                  type="info"
+                  showIcon
+                  message="LSP step needs scripts/lsp_warm.py on the API host (CTL_REPO_ROOT). Runner warm still runs."
+                />
+              )}
             </WorkflowSection>
 
             <div className="my-5 border-t border-slate-800/80" />
 
             <WorkflowSection
               icon={<Database className="size-4" />}
-              title="2. Maven dependency cache"
-              subtitle="Copies pre-baked JARs into the shared volume so Java compiles skip downloads."
-              affects="Java runner cold start (helper — runner warm includes this when needed)"
+              title="Advanced: Maven cache only"
+              subtitle="Optional — combined warm already runs this before Java when the cache is cold."
+              affects="Java compile downloads"
             >
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -477,48 +564,6 @@ export default function AdminOpsPage() {
                 </Button>
               </div>
             </WorkflowSection>
-
-            <div className="my-5 border-t border-slate-800/80" />
-
-            <WorkflowSection
-              icon={<Sparkles className="size-4" />}
-              title="3. Language servers (LSP)"
-              subtitle="Runs the LSP initialize handshake so Monaco autocomplete is ready in the editor."
-              affects="Editor IntelliSense only — not test execution"
-            >
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  disabled={busy || !dockerReady || !status?.lspScriptsAvailable}
-                  loading={warmLsp.isPending}
-                  onClick={() => warmLsp.mutate({ force: false })}
-                >
-                  Warm all LSP
-                </Button>
-                <Button
-                  disabled={busy || !dockerReady || !status?.lspScriptsAvailable}
-                  loading={warmLsp.isPending}
-                  onClick={() => warmLsp.mutate({ force: true })}
-                >
-                  Force re-warm
-                </Button>
-              </div>
-              <p className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-slate-500">
-                One language
-              </p>
-              <LanguageChipGrid
-                labels={LSP_LABELS}
-                disabled={busy || !dockerReady || !status?.lspScriptsAvailable}
-                onSelect={(label) => warmLsp.mutate({ force: false, only: [label] })}
-              />
-              {!status?.lspScriptsAvailable && (
-                <Alert
-                  className="mt-4"
-                  type="info"
-                  showIcon
-                  message="LSP warm needs scripts/lsp_warm.py on the API host. Set CTL_REPO_ROOT when using bootRun."
-                />
-              )}
-            </WorkflowSection>
           </CtlCard>
 
           {status && (
@@ -534,11 +579,65 @@ export default function AdminOpsPage() {
                 </span>
               </div>
               <Tabs
-                defaultActiveKey="runners"
+                defaultActiveKey="languages"
                 items={[
                   {
+                    key: "languages",
+                    label: `By runtime (${languageStats.ready}/${languageStats.total} languages)`,
+                    children: (
+                      <Table
+                        size="small"
+                        pagination={false}
+                        rowKey={(row) => `${row.language}-${row.version ?? "none"}-${row.runnerImage ?? row.label}`}
+                        dataSource={languageStats.rows}
+                        columns={[
+                          {
+                            title: "Language",
+                            dataIndex: "language",
+                            key: "language",
+                            width: 100,
+                            render: (lang: string) => (
+                              <span className="font-medium capitalize text-slate-200">{lang}</span>
+                            ),
+                          },
+                          {
+                            title: "Runtime",
+                            dataIndex: "label",
+                            key: "label",
+                            width: 120,
+                            render: (label: string) => (
+                              <span className="text-slate-300">{label}</span>
+                            ),
+                          },
+                          {
+                            title: "Run tests",
+                            dataIndex: "runnerReady",
+                            key: "runnerReady",
+                            width: 120,
+                            render: (v: boolean | null, row: LanguageWarmStatus) =>
+                              row.runnerPresent ? warmTag(v) : <Tag color="error">No image</Tag>,
+                          },
+                          {
+                            title: "Editor",
+                            dataIndex: "editorReady",
+                            key: "editorReady",
+                            width: 120,
+                            render: (v: boolean | null) => warmTag(v),
+                          },
+                          {
+                            title: "Status",
+                            dataIndex: "ready",
+                            key: "ready",
+                            width: 110,
+                            render: (ready: boolean) => readyTag(ready),
+                          },
+                        ]}
+                      />
+                    ),
+                  },
+                  {
                     key: "runners",
-                    label: `Runners (${runnerStats.warm}/${runnerStats.built})`,
+                    label: "Runner images",
                     children: (
                       <Table
                         size="small"
@@ -551,12 +650,12 @@ export default function AdminOpsPage() {
                   },
                   {
                     key: "lsp",
-                    label: `LSP (${lspStats.warm}/${lspStats.built})`,
+                    label: "LSP images",
                     children: (
                       <Table
                         size="small"
                         pagination={false}
-                        rowKey="image"
+                        rowKey={(row) => `${row.label}-${row.image}`}
                         dataSource={status.lspImages}
                         columns={imageTableColumns("lsp")}
                       />
@@ -599,13 +698,13 @@ export default function AdminOpsPage() {
                 {job.status === "COMPLETED" && (
                   <p className="inline-flex items-center gap-1.5 text-xs text-emerald-400">
                     <CheckCircle2 className="size-3.5" aria-hidden />
-                    Inventory updated — smoke warm state reflects the latest job.
+                    Job finished — chips and inventory tables sync from the server automatically.
                   </p>
                 )}
                 {job.status === "FAILED" && (
                   <p className="inline-flex items-center gap-1.5 text-xs text-red-400">
                     <XCircle className="size-3.5" aria-hidden />
-                    Check the log below for details.
+                    Job failed — languages that passed smoke before the error may still show amber (partial).
                   </p>
                 )}
                 {job.logTail ? (
@@ -625,8 +724,11 @@ export default function AdminOpsPage() {
           </CtlCard>
 
           {status && (
-            <p className="mt-3 break-all text-[10px] leading-relaxed text-slate-600">
-              Warm stamp dir: {status.opsDataDir}
+            <p className="mt-3 text-[10px] leading-relaxed text-slate-600">
+              Warm inventory is persisted in Postgres (
+              <code className="text-slate-500">runner_pool_warm_state</code>,{" "}
+              <code className="text-slate-500">lsp_warm_state</code>). Legacy stamp files under{" "}
+              <span className="break-all text-slate-500">{status.opsDataDir}</span> are imported once on startup.
             </p>
           )}
         </aside>

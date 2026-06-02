@@ -19,7 +19,8 @@
 
 | I want to… | Start here |
 | --- | --- |
-| Run the app locally | [../README.md](../README.md) |
+| Run the app locally (prerequisites) | [../README.md#prerequisites](../README.md#prerequisites) |
+| Run the app locally (steps) | [../README.md](../README.md) |
 | Add a new code challenge | [adding-challenges.md](./adding-challenges.md) |
 | Bulk-seed from catalog | [adding-challenges.md#method-1--seed-catalog-bulk](./adding-challenges.md) + `scripts/seed-challenges/` |
 | Create one challenge (admin) | [adding-challenges.md#method-2--admin-ui](./adding-challenges.md) |

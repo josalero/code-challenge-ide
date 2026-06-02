@@ -55,10 +55,10 @@ public class MeController {
             .findById(entity.getChallengeId())
             .map(c -> c.getSlug())
             .orElse("unknown");
-    return new ProgressEntry(slug, entity.getState().name());
+    return new ProgressEntry(slug, entity.getState().name(), entity.isSubmitted());
   }
 
   public record MeResponse(UUID id, String email, String role) {}
 
-  public record ProgressEntry(String challengeSlug, String state) {}
+  public record ProgressEntry(String challengeSlug, String state, boolean submitted) {}
 }

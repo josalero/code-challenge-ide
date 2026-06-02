@@ -8,6 +8,7 @@ import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
 import com.codetraininglab.domain.FeedbackCategory;
 import com.codetraininglab.domain.FeedbackStatus;
 import com.codetraininglab.domain.SubmissionStatus;
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.platform.persistence.FeedbackItemEntity;
 import com.codetraininglab.platform.persistence.SubmissionEntity;
 import com.codetraininglab.platform.persistence.SubmissionReportEntity;
@@ -80,6 +81,8 @@ class SubmissionServiceAdditionalTest {
                     UUID.randomUUID(),
                     UUID.randomUUID(),
                     SubmissionStatus.COMPLETED,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
+                    SubmissionKind.SUBMIT,
                     "c",
                     null,
                     null,
@@ -109,6 +112,8 @@ class SubmissionServiceAdditionalTest {
                     UUID.randomUUID(),
                     UUID.randomUUID(),
                     SubmissionStatus.COMPLETED,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
+                    SubmissionKind.SUBMIT,
                     "c",
                     null,
                     null,
@@ -142,6 +147,8 @@ class SubmissionServiceAdditionalTest {
             UUID.randomUUID(),
             UUID.randomUUID(),
             SubmissionStatus.PENDING,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
+            SubmissionKind.SUBMIT,
             "c",
             null,
             null,

@@ -2,6 +2,7 @@ package com.codetraininglab.operations.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.codetraininglab.domain.RunnerStatus;
 import com.codetraininglab.integration.runner.RunnerContainerPool;
@@ -10,7 +11,6 @@ import com.codetraininglab.platform.config.CtlProperties;
 import com.codetraininglab.platform.persistence.LanguageRepository;
 import com.codetraininglab.platform.persistence.LanguageRuntimeRepository;
 import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +23,8 @@ class RunnerPoolWarmExecutorTest {
   @TempDir Path tempDir;
 
   @Test
-  void warmSkipsWhenRunnerPoolDisabled() throws Exception {
-    Path dir = tempDir;
-    var base = CtlPropertiesTestFixtures.defaults(dir.resolve("challenges").toString());
+  void warmSkipsWhenRunnerPoolDisabled() {
+    var base = CtlPropertiesTestFixtures.defaults(tempDir.resolve("challenges").toString());
     CtlProperties properties =
         new CtlProperties(
             base.registrationEnabled(),
@@ -48,34 +47,22 @@ class RunnerPoolWarmExecutorTest {
             base.dockerEnabled(),
             base.lspEnabled(),
             base.runnerPoolWarmOnStartup());
+    RunnerWarmStateStore warmStateStore = mock(RunnerWarmStateStore.class);
+    when(warmStateStore.runnerPoolStampByImage()).thenReturn(Map.of());
     var executor =
         new RunnerPoolWarmExecutor(
             properties,
             mock(LanguageRuntimeRepository.class),
             mock(LanguageRepository.class),
             mock(RunnerContainerPool.class),
+            warmStateStore,
             JsonMapper.builder().build());
     var log = new StringBuilder();
 
-    Map<String, String> stamp = executor.warm(false, List.of(), log::append, dir.resolve("stamp"));
+    Map<String, String> stamp = executor.warm(false, List.of(), log::append);
 
     assertThat(stamp).isEmpty();
     assertThat(log).contains("Runner pool disabled");
-  }
-
-  @Test
-  void loadStampReturnsEmptyForMissingOrInvalidFile() throws Exception {
-    Path dir = tempDir;
-    JsonMapper mapper = JsonMapper.builder().build();
-    Path stamp = dir.resolve("stamp.json");
-
-    assertThat(RunnerPoolWarmExecutor.loadStamp(stamp, mapper)).isEmpty();
-
-    Files.writeString(stamp, "   ");
-    assertThat(RunnerPoolWarmExecutor.loadStamp(stamp, mapper)).isEmpty();
-
-    Files.writeString(stamp, "{\"img\":\"id\"}");
-    assertThat(RunnerPoolWarmExecutor.loadStamp(stamp, mapper)).containsEntry("img", "id");
   }
 
   @Test
@@ -99,5 +86,22 @@ class RunnerPoolWarmExecutorTest {
 
     assertThat(RunnerPoolWarmExecutor.isInfrastructureFailure(infra)).isTrue();
     assertThat(RunnerPoolWarmExecutor.isInfrastructureFailure(testFail)).isFalse();
+  }
+
+  @Test
+  void formatWarmResultDetailIncludesFirstFailureMessage() {
+    RunnerResult result =
+        new RunnerResult(
+            RunnerStatus.FAILED.name(),
+            List.of(
+                new RunnerResult.TestOutcome(
+                    "runner", "FAIL", "pytest failed: tests not found", 0)),
+            new RunnerResult.CoverageOutcome(0, 0),
+            new RunnerResult.CompileOutcome(0, List.of()),
+            null,
+            null);
+
+    assertThat(RunnerPoolWarmExecutor.formatWarmResultDetail(result))
+        .contains("pytest failed");
   }
 }

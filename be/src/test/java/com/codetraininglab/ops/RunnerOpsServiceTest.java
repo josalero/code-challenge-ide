@@ -5,13 +5,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import com.codetraininglab.operations.api.LanguageWarmStatusResponse;
 import com.codetraininglab.platform.config.CtlProperties;
+import com.codetraininglab.platform.persistence.LanguageEntity;
 import com.codetraininglab.platform.persistence.LanguageRepository;
+import com.codetraininglab.platform.persistence.LanguageRuntimeEntity;
 import com.codetraininglab.platform.persistence.LanguageRuntimeRepository;
 import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +33,7 @@ class RunnerOpsServiceTest {
   @Mock private LanguageRepository languageRepository;
   @Mock private Environment environment;
   @Mock private ObjectProvider<RunnerPoolWarmExecutor> runnerPoolWarmExecutor;
+  @Mock private RunnerWarmStateStore warmStateStore;
 
   private final JsonMapper jsonMapper = JsonMapper.builder().build();
   private RunnerOpsService service;
@@ -59,6 +64,8 @@ class RunnerOpsServiceTest {
             false);
     lenient().when(runtimeRepository.findAllOrdered()).thenReturn(List.of());
     lenient().when(languageRepository.findAll()).thenReturn(List.of());
+    lenient().when(warmStateStore.runnerPoolStampByImage()).thenReturn(java.util.Map.of());
+    lenient().when(warmStateStore.lspStampByScopeKey()).thenReturn(java.util.Map.of());
     service =
         new RunnerOpsService(
             properties,
@@ -66,6 +73,7 @@ class RunnerOpsServiceTest {
             runtimeRepository,
             languageRepository,
             jsonMapper,
+            warmStateStore,
             runnerPoolWarmExecutor);
   }
 
@@ -73,6 +81,37 @@ class RunnerOpsServiceTest {
   void statusReportsDockerDisabled() {
     var status = service.status();
     assertThat(status.dockerEnabled()).isFalse();
+    assertThat(status.languages()).isNotNull();
+  }
+
+  @Test
+  void statusListsEachActiveRuntimeInLanguageInventory() {
+    UUID javaId = UUID.randomUUID();
+    LanguageEntity java = new LanguageEntity(javaId, "java", "Java");
+    LanguageRuntimeEntity java17 =
+        new LanguageRuntimeEntity(
+            UUID.randomUUID(), javaId, "17", "code-challenge-ide-runner-java-17:local", true);
+    LanguageRuntimeEntity java26 =
+        new LanguageRuntimeEntity(
+            UUID.randomUUID(), javaId, "26", "code-challenge-ide-runner-java-26:local", true);
+    when(languageRepository.findAll()).thenReturn(List.of(java));
+    when(runtimeRepository.findAllOrdered()).thenReturn(List.of(java17, java26));
+
+    var status = service.status();
+
+    assertThat(status.languages().stream().filter(row -> "java".equals(row.language())))
+        .extracting(LanguageWarmStatusResponse::label)
+        .containsExactly("java 17", "java 26");
+  }
+
+  @Test
+  void mapsRunnerLanguagesToLspLabels() {
+    assertThat(RunnerOpsService.mapRunnerLanguagesToLspLabels(List.of("java", "go")))
+        .containsExactly("java", "go");
+    assertThat(RunnerOpsService.mapRunnerLanguagesToLspLabels(List.of("node", "react")))
+        .containsExactly("typescript");
+    assertThat(RunnerOpsService.mapRunnerLanguagesToLspLabels(List.of("vue")))
+        .containsExactly("typescript", "vue");
   }
 
   @Test
@@ -122,6 +161,7 @@ class RunnerOpsServiceTest {
             runtimeRepository,
             languageRepository,
             jsonMapper,
+            warmStateStore,
             runnerPoolWarmExecutor);
 
     var job = dockerEnabledService.startRunnerWarm(false, List.of("java"));
@@ -163,6 +203,7 @@ class RunnerOpsServiceTest {
             runtimeRepository,
             languageRepository,
             jsonMapper,
+            warmStateStore,
             runnerPoolWarmExecutor);
 
     assertThatThrownBy(() -> dockerEnabledService.startRunnerWarm(false, List.of("kotlin")))
@@ -201,6 +242,7 @@ class RunnerOpsServiceTest {
             runtimeRepository,
             languageRepository,
             jsonMapper,
+            warmStateStore,
             runnerPoolWarmExecutor);
     when(environment.getProperty("ctl.repo-root", "")).thenReturn(repoRoot().toString());
 

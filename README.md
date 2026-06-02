@@ -4,6 +4,77 @@ Multi-language code challenge platform.
 
 **Docs:** [docs/README.md](docs/README.md) · **Backend:** [be/ARCHITECTURE.md](be/ARCHITECTURE.md) · **Agents:** [AGENTS.md](AGENTS.md)
 
+## Prerequisites
+
+Pick **one** workflow below. You do not need every tool on every path.
+
+### Option A — Full stack in Docker (simplest)
+
+Run Postgres, RabbitMQ, API, frontend, and runner orchestration without installing JDK or Node on the host.
+
+| Requirement | Version / notes |
+| --- | --- |
+| **Docker Engine** | 24+ with **Compose v2** (`docker compose`, not legacy `docker-compose`) |
+| **Disk space** | ~15–25 GB free for images (DB, API, FE, 11 runner images, 7 LSP images, Maven cache volume) |
+| **Git** | Clone this repo |
+| **Make** | Optional but recommended (`make up`, `make runners`, …) |
+
+**Linux:** set `DOCKER_GID` in `.env` to the group that owns `/var/run/docker.sock` (see [.env.example](.env.example)). **macOS** (Docker Desktop): `DOCKER_GID=0` is usually fine.
+
+**Not required on the host:** JDK, Node.js, Gradle, Python.
+
+---
+
+### Option B — Local development (API + UI on host, infra in Docker)
+
+Best for backend/frontend iteration with fast reload. **Run** and **Submit** in the workspace need **runner images** built on the host (`make runners`).
+
+| Requirement | Version / notes |
+| --- | --- |
+| **JDK** | **26** (matches `be/build.gradle` toolchain). [Eclipse Temurin](https://adoptium.net/) recommended. Verify: `java -version` |
+| **Gradle** | **Not installed separately** — repo includes `./gradlew` (Gradle **9.4.1** wrapper) |
+| **Node.js** | **20 LTS or 22 LTS** (npm included). Verify: `node -v` / `npm -v` |
+| **Docker Engine** | 24+ with Compose v2 — Postgres, RabbitMQ, and **all language runners** |
+| **Git** | Clone this repo |
+| **Make** | Optional (`make infra`, `make runners`, …) |
+
+**Optional but useful:**
+
+| Tool | Purpose |
+| --- | --- |
+| **jenv** / **SDKMAN** | Pin JDK 26 per shell (`jenv shell 26`) |
+| **Python 3.10+** | Challenge catalog seed scripts only (`scripts/seed-challenges/`) |
+| **AI provider key** | OpenRouter or Ollama for coach feedback — see `.env` / `be/src/main/resources/application.yml` |
+
+**Linux:** same `DOCKER_GID` note as Option A if the API cannot access `docker.sock`.
+
+**First-time setup checklist (Option B):**
+
+```bash
+java -version          # openjdk 26 …
+node -v && npm -v      # v20+ or v22+
+docker compose version # Compose v2.x
+cp .env.example .env   # set PG_PASSWORD, RMQ_PASSWORD, JWT_SECRET (≥32 chars)
+```
+
+---
+
+### Shared configuration
+
+Copy [.env.example](.env.example) to `.env` before `make up`, `make infra`, or host `bootRun`.
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `PG_PASSWORD` | Yes | PostgreSQL |
+| `RMQ_PASSWORD` | Yes | RabbitMQ |
+| `JWT_SECRET` | Yes | API auth (min 32 characters) |
+| `DOCKER_GID` | Linux | API spawns runner/LSP containers |
+| `OPENROUTER_API_KEY` | Optional | AI coach (or configure Ollama in `.env`) |
+
+Flyway migrations run on API startup (including warm-state tables). Reset local DB: `make down-infra` or `make reset`.
+
+---
+
 ## Make commands
 
 The [Makefile](Makefile) wraps common Docker and runner tasks. There is **no single `make` target** for host-based local dev (infra in Docker, API + UI on the host) — run those steps below. For a **one-command full stack in Docker**, use `make up`.
@@ -30,7 +101,7 @@ The [Makefile](Makefile) wraps common Docker and runner tasks. There is **no sin
 
 ## Local development (infra in Docker, API + UI on host)
 
-JDK **26**, **Node**, and **Gradle** on the host; Postgres and RabbitMQ in Docker:
+Uses **Option B** prerequisites above. Postgres and RabbitMQ run in Docker; API and UI run on the host:
 
 ```bash
 cp .env.example .env
@@ -48,7 +119,7 @@ cd fe && npm run dev           # http://localhost:5173 (proxies /api → 8080)
 
 `docker-compose.local.yml` runs **postgres** and **rabbitmq** only — not `api`, `fe`, or runners.
 
-When you click **Run tests**, the API reuses **pooled runner containers** (one per runner image; see [docs/runner-ops.md](docs/runner-ops.md)). Configure with `RUNNER_POOL_ENABLED` (default `true`) and `RUNNER_MAVEN_CACHE_VOLUME=ctl-runner-m2-cache` in `.env`. Run `make runners` after changing runner Dockerfiles or `run.py`.
+**Run** (practice) and **Submit** (final, locks editing) both execute in **pooled runner containers** — see [docs/runner-ops.md](docs/runner-ops.md). Configure with `RUNNER_POOL_ENABLED` (default `true`) and `RUNNER_MAVEN_CACHE_VOLUME=ctl-runner-m2-cache` in `.env`. Rebuild after runner changes: `make runners`.
 
 **IntelliSense** (Monaco + LSP for all 11 languages) uses the same Docker host: `make runners` builds LSP images; run `make lsp-warm` (or Admin Ops) to warm them. Details: [docs/frontend.md](docs/frontend.md#intellisense-lsp).
 
@@ -58,7 +129,7 @@ Stop infra (wipes DB): `make down-infra`
 
 ## Run the full stack (Docker only)
 
-**You only need Docker** on the host — no JDK, Node, or Gradle required to run the app.
+Uses **Option A** prerequisites — Docker (+ Compose v2) and `.env` only; no host JDK, Node, or Gradle.
 
 ```bash
 cp .env.example .env

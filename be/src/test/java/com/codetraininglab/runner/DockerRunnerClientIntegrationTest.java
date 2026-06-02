@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.codetraininglab.platform.config.CtlProperties;
 import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
 import com.codetraininglab.domain.SubmissionStatus;
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.platform.persistence.ChallengeHiddenTestEntity;
 import com.codetraininglab.platform.persistence.LanguageEntity;
 import com.codetraininglab.platform.persistence.LanguageRepository;
@@ -158,6 +159,7 @@ class DockerRunnerClientIntegrationTest {
         UUID.randomUUID(),
         UUID.randomUUID(),
         SubmissionStatus.PENDING,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
         code,
         null,
         null,

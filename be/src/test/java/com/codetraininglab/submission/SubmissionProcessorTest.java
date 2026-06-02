@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.codetraininglab.domain.SubmissionStatus;
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.integration.runner.RunnerClient;
 import com.codetraininglab.integration.runner.RunnerResult;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
@@ -67,6 +68,7 @@ class SubmissionProcessorTest {
             challengeId,
             UUID.randomUUID(),
             SubmissionStatus.PENDING,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
             "code",
             null,
             null,
@@ -120,6 +122,7 @@ class SubmissionProcessorTest {
             challengeId,
             UUID.randomUUID(),
             SubmissionStatus.PENDING,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
             "code",
             null,
             null,
@@ -295,6 +298,7 @@ class SubmissionProcessorTest {
             challengeId,
             UUID.randomUUID(),
             SubmissionStatus.PENDING,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
             "code",
             null,
             null,

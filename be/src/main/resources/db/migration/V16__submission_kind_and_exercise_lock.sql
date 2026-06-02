@@ -1,0 +1,5 @@
+ALTER TABLE submissions
+    ADD COLUMN kind VARCHAR(16) NOT NULL DEFAULT 'SUBMIT';
+
+ALTER TABLE user_progress
+    ADD COLUMN submitted_at TIMESTAMPTZ;

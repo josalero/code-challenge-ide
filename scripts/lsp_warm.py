@@ -19,7 +19,14 @@ from typing import Callable
 
 HEADER_END = b"\r\n\r\n"
 ROOT = Path(__file__).resolve().parent.parent
-STAMP_FILE = ROOT / ".ctl-lsp-warm-stamp"
+STAMP_NAME = ".ctl-lsp-warm-stamp"
+
+
+def stamp_path() -> Path:
+    """Match Java RunnerOpsPaths: ctl.ops-data-dir when set, else repo root."""
+    ops = os.environ.get("CTL_OPS_DATA_DIR", "").strip()
+    base = Path(ops).expanduser().resolve() if ops else ROOT
+    return base / STAMP_NAME
 
 
 def frame(message: dict) -> bytes:
@@ -202,22 +209,68 @@ class WarmTarget:
     default_image: str
     timeout_seconds: int = 45
     smoke: bool = False
+    smoke_entrypoint: str = ""
+    smoke_args: tuple[str, ...] = ()
 
 
 # One target per unique image. Vue shares lsp-typescript (entrypoint switch only) — skipped by default.
 WARM_TARGETS: tuple[WarmTarget, ...] = (
     WarmTarget("java", "java", "LSP_JAVA_IMAGE", "code-challenge-ide-lsp-java:local", 90),
     WarmTarget("python", "python", "LSP_PYTHON_IMAGE", "code-challenge-ide-lsp-python:local", 30),
-    # gopls initialize can hang when stderr is not drained; smoke check is enough for warm.
-    WarmTarget("go", "go", "LSP_GO_IMAGE", "code-challenge-ide-lsp-go:local", 20, smoke=True),
+    WarmTarget(
+        "go",
+        "go",
+        "LSP_GO_IMAGE",
+        "code-challenge-ide-lsp-go:local",
+        20,
+        smoke=True,
+        smoke_entrypoint="gopls",
+        smoke_args=("version",),
+    ),
     WarmTarget("typescript", "typescript", "LSP_TYPESCRIPT_IMAGE", "code-challenge-ide-lsp-typescript:local", 45),
-    WarmTarget("csharp", "csharp", "LSP_DOTNET_IMAGE", "code-challenge-ide-lsp-dotnet:local", 60),
-    WarmTarget("rust", "rust", "LSP_RUST_IMAGE", "code-challenge-ide-lsp-rust:local", 30),
-    WarmTarget("cpp", "cpp", "LSP_CPP_IMAGE", "code-challenge-ide-lsp-cpp:local", 30),
+    WarmTarget(
+        "csharp",
+        "csharp",
+        "LSP_DOTNET_IMAGE",
+        "code-challenge-ide-lsp-dotnet:local",
+        20,
+        smoke=True,
+        smoke_entrypoint="csharp-ls",
+        smoke_args=("--version",),
+    ),
+    WarmTarget(
+        "rust",
+        "rust",
+        "LSP_RUST_IMAGE",
+        "code-challenge-ide-lsp-rust:local",
+        20,
+        smoke=True,
+        smoke_entrypoint="rust-analyzer",
+        smoke_args=("--version",),
+    ),
+    WarmTarget(
+        "cpp",
+        "cpp",
+        "LSP_CPP_IMAGE",
+        "code-challenge-ide-lsp-cpp:local",
+        20,
+        smoke=True,
+        smoke_entrypoint="clangd-14",
+        smoke_args=("--version",),
+    ),
 )
 
 OPTIONAL_WARM_TARGETS: tuple[WarmTarget, ...] = (
-    WarmTarget("vue", "vue", "LSP_TYPESCRIPT_IMAGE", "code-challenge-ide-lsp-typescript:local", 45),
+    WarmTarget(
+        "vue",
+        "vue",
+        "LSP_TYPESCRIPT_IMAGE",
+        "code-challenge-ide-lsp-typescript:local",
+        20,
+        smoke=True,
+        smoke_entrypoint="vue-language-server",
+        smoke_args=("--version",),
+    ),
 )
 
 
@@ -244,16 +297,23 @@ def current_stamp(targets: tuple[WarmTarget, ...]) -> dict[str, str]:
 
 
 def load_stamp() -> dict[str, str] | None:
-    if not STAMP_FILE.exists():
+    path = stamp_path()
+    if not path.is_file():
         return None
     try:
-        return json.loads(STAMP_FILE.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
     except (json.JSONDecodeError, OSError):
         return None
 
 
-def save_stamp(stamp: dict[str, str]) -> None:
-    STAMP_FILE.write_text(json.dumps(stamp, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+def merge_and_save_stamp(new_entries: dict[str, str]) -> None:
+    """Merge into existing stamp so partial --only warms do not erase other languages."""
+    existing = load_stamp() or {}
+    merged = {**existing, **new_entries}
+    path = stamp_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(merged, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def cleanup_orphan_warm_containers() -> None:
@@ -330,6 +390,8 @@ def stop_process(
 
 def smoke_warm_one(target: WarmTarget, image: str, dry_run: bool) -> tuple[str, float]:
     started = time.monotonic()
+    if not target.smoke_entrypoint:
+        raise ValueError(f"smoke warm target {target.label} missing smoke_entrypoint")
     command = [
         "docker",
         "run",
@@ -339,10 +401,12 @@ def smoke_warm_one(target: WarmTarget, image: str, dry_run: bool) -> tuple[str, 
         "ctl.lsp-warm=true",
         "--network",
         "none",
+        "--stop-timeout",
+        "2",
         "--entrypoint",
-        "gopls",
+        target.smoke_entrypoint,
         image,
-        "version",
+        *target.smoke_args,
     ]
     if dry_run:
         print(f"[dry-run] {' '.join(command)}")
@@ -514,7 +578,7 @@ def main() -> int:
     parser.add_argument(
         "--parallel",
         type=int,
-        default=int(os.environ.get("CTL_LSP_WARM_PARALLEL", "4")),
+        default=int(os.environ.get("CTL_LSP_WARM_PARALLEL", "2")),
         help="Concurrent warm workers (default: 4, or CTL_LSP_WARM_PARALLEL).",
     )
     parser.add_argument("--dry-run", action="store_true", help="Print docker commands only.")
@@ -540,7 +604,7 @@ def main() -> int:
             recorded = load_stamp()
             if recorded == expected:
                 print("LSP images already warm (unchanged since last run). Skipping.")
-                print(f"  stamp: {STAMP_FILE}")
+                print(f"  stamp: {stamp_path()}")
                 print("  Force: make lsp-warm-force  or  CTL_FORCE_LSP_WARM=1 make lsp-warm")
                 return 0
         except subprocess.CalledProcessError:
@@ -555,7 +619,7 @@ def main() -> int:
         return 1
 
     if not args.dry_run:
-        save_stamp(current_stamp(tuple(targets)))
+        merge_and_save_stamp(current_stamp(tuple(targets)))
     print("All LSP images warmed.")
     return 0
 

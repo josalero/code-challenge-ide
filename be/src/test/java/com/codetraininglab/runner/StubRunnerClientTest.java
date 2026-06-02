@@ -3,6 +3,7 @@ package com.codetraininglab.integration.runner;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.codetraininglab.domain.SubmissionStatus;
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.platform.persistence.SubmissionEntity;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -37,6 +38,7 @@ class StubRunnerClientTest {
         UUID.randomUUID(),
         UUID.randomUUID(),
         SubmissionStatus.PENDING,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
         code,
         null,
         null,

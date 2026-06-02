@@ -11,6 +11,7 @@ import com.codetraininglab.coach.application.AiCoachService;
 import com.codetraininglab.domain.FeedbackActionStatus;
 import com.codetraininglab.domain.FeedbackActionType;
 import com.codetraininglab.domain.SubmissionStatus;
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.platform.persistence.SubmissionEntity;
 import com.codetraininglab.platform.persistence.SubmissionFeedbackActionEntity;
 import com.codetraininglab.platform.persistence.SubmissionFeedbackActionRepository;
@@ -136,6 +137,7 @@ class FeedbackActionServiceTest {
         UUID.randomUUID(),
         UUID.randomUUID(),
         SubmissionStatus.COMPLETED,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
         "code",
         null,
         null,

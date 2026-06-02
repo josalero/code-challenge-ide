@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.codetraininglab.domain.SubmissionStatus;
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.platform.config.RabbitMqConfig;
 import com.codetraininglab.platform.persistence.SubmissionEntity;
 import com.codetraininglab.platform.persistence.SubmissionRepository;
@@ -50,6 +51,7 @@ class SubmissionPendingRecoveryTest {
             UUID.randomUUID(),
             UUID.randomUUID(),
             SubmissionStatus.PENDING,
+            SubmissionKind.SUBMIT,
             "code",
             null,
             null,

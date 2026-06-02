@@ -13,6 +13,7 @@ import com.codetraininglab.platform.persistence.SubmissionRepository;
 import com.codetraininglab.platform.persistence.UserProgressEntity;
 import com.codetraininglab.platform.persistence.UserProgressRepository;
 import com.codetraininglab.domain.ProgressState;
+import com.codetraininglab.domain.SubmissionKind;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -91,6 +92,10 @@ public class SubmissionService {
             .findBySlug(request.challengeSlug())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
     LanguageRuntimeEntity runtime = runtimeResolver.resolve(challenge, request.runtimeVersion());
+    SubmissionKind kind = resolveKind(request.kind());
+    if (kind == SubmissionKind.SUBMIT) {
+      ensureExerciseNotLocked(userId, challenge.getId());
+    }
     Instant now = clock.instant();
     SubmissionEntity entity =
         new SubmissionEntity(
@@ -99,6 +104,7 @@ public class SubmissionService {
             challenge.getId(),
             runtime.getId(),
             SubmissionStatus.PENDING,
+            kind,
             request.solutionCode(),
             request.customTestsCode(),
             idempotencyKey,
@@ -110,13 +116,14 @@ public class SubmissionService {
         RabbitMqConfig.SUBMISSION_QUEUE, new SubmissionJobMessage(entity.getId()));
     Map<String, Object> queued = new HashMap<>();
     queued.put(SsePayloadKeys.STATUS, SubmissionStatus.PENDING.name());
+    queued.put(SsePayloadKeys.KIND, kind.name());
     queued.put(
         SsePayloadKeys.MESSAGE,
-        "Queued — "
+        (kind == SubmissionKind.RUN ? "Practice run" : "Final submit")
+            + " queued — "
             + challenge.getLanguage()
             + " "
-            + runtime.getVersion()
-            + " run will start shortly");
+            + runtime.getVersion());
     eventHub.publish(entity.getId(), SubmissionEventType.STATUS.eventName(), queued);
     return toResponse(entity);
   }
@@ -203,6 +210,26 @@ public class SubmissionService {
                         UUID.randomUUID(), userId, challengeId, ProgressState.ATTEMPTED, now)));
   }
 
+  private static SubmissionKind resolveKind(String raw) {
+    try {
+      return SubmissionKind.fromRequest(raw);
+    } catch (IllegalArgumentException ex) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+  }
+
+  private void ensureExerciseNotLocked(UUID userId, UUID challengeId) {
+    progressRepository
+        .findByUserIdAndChallengeId(userId, challengeId)
+        .filter(UserProgressEntity::isSubmitted)
+        .ifPresent(
+            ignored -> {
+              throw new ResponseStatusException(
+                  HttpStatus.CONFLICT,
+                  "This exercise was already submitted. Use Redo to start a new attempt.");
+            });
+  }
+
   private SubmissionResponse toResponse(SubmissionEntity entity) {
     UUID reportId =
         reportRepository
@@ -210,6 +237,10 @@ public class SubmissionService {
             .map(r -> r.getId())
             .orElse(null);
     return new SubmissionResponse(
-        entity.getId(), entity.getStatus().name(), reportId, entity.getCreatedAt());
+        entity.getId(),
+        entity.getStatus().name(),
+        entity.getKind().name(),
+        reportId,
+        entity.getCreatedAt());
   }
 }

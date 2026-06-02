@@ -6,6 +6,7 @@ import { apiFetch, ApiError } from "../api/client";
 import type {
   ChallengeDetail,
   CustomTestsResponse,
+  ProgressEntry,
   ReportResponse,
   RunnerLogs,
   SubmissionResponse,
@@ -19,9 +20,10 @@ import {
   ApiPaths,
   JavaRuntimeVersion,
   SsePayloadKeys,
+  SubmissionKind,
   SubmissionStatus,
 } from "../domain/constants";
-import type { SubmissionStatusValue } from "../domain/constants";
+import type { SubmissionKindValue, SubmissionStatusValue } from "../domain/constants";
 import {
   deriveWorkspaceRunPhase,
 } from "../domain/workspaceRunState";
@@ -61,6 +63,9 @@ export default function ChallengeWorkspacePage() {
   const [streamReconnecting, setStreamReconnecting] = useState(false);
   const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
   const [attempts, setAttempts] = useState<AttemptRecord[]>([]);
+  const [activeSubmissionKind, setActiveSubmissionKind] =
+    useState<SubmissionKindValue | null>(null);
+  const [lastRunPassed, setLastRunPassed] = useState<boolean | null>(null);
 
   const appendActivity = useCallback((msg: string) => {
     setActivityLog((prev) => [
@@ -74,6 +79,14 @@ export default function ChallengeWorkspacePage() {
     queryFn: () => apiFetch<ChallengeDetail>(ApiPaths.challenge(slug)),
     enabled: Boolean(slug),
   });
+
+  const progressQuery = useQuery({
+    queryKey: ["me", "progress"],
+    queryFn: () => apiFetch<ProgressEntry[]>(ApiPaths.ME_PROGRESS),
+  });
+
+  const exerciseLocked =
+    progressQuery.data?.find((entry) => entry.challengeSlug === slug)?.submitted ?? false;
 
   const customTestsQuery = useQuery({
     queryKey: ["custom-tests", slug],
@@ -141,19 +154,9 @@ export default function ChallengeWorkspacePage() {
       message.error(e instanceof ApiError ? e.message : "Could not save custom tests"),
   });
 
-  const submitMutation = useMutation({
-    mutationFn: async () =>
-      apiFetch<SubmissionResponse>(ApiPaths.SUBMISSIONS, {
-        method: "POST",
-        headers: { "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({
-          challengeSlug: slug,
-          runtimeVersion,
-          solutionCode,
-          customTestsCode: customTestsCode.trim() || null,
-        }),
-      }),
-    onMutate: () => {
+  const beginExecution = useCallback(
+    (kind: SubmissionKindValue) => {
+      setActiveSubmissionKind(kind);
       setSubmitError(null);
       setReport(null);
       setReportLoading(false);
@@ -163,11 +166,37 @@ export default function ChallengeWorkspacePage() {
       setStreamReconnecting(false);
       setRunStartedAt(Date.now());
       setBottomTab("tests");
+      if (kind === SubmissionKind.RUN) {
+        setLastRunPassed(null);
+      }
       if (challengeQuery.data) {
         setTrackedTests(buildInitialTrackedTests(challengeQuery.data));
       }
       setSubmissionStatus(SubmissionStatus.PENDING);
-      appendActivity("Submitting solution to the API…");
+      appendActivity(
+        kind === SubmissionKind.RUN
+          ? "Starting practice run…"
+          : "Submitting final solution…",
+      );
+    },
+    [appendActivity, challengeQuery.data],
+  );
+
+  const submitMutation = useMutation({
+    mutationFn: async (kind: SubmissionKindValue) =>
+      apiFetch<SubmissionResponse>(ApiPaths.SUBMISSIONS, {
+        method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({
+          challengeSlug: slug,
+          runtimeVersion,
+          solutionCode,
+          customTestsCode: customTestsCode.trim() || null,
+          kind,
+        }),
+      }),
+    onMutate: (kind) => {
+      beginExecution(kind);
     },
     onSuccess: (submission) => {
       setActiveSubmissionId(submission.id);
@@ -184,12 +213,31 @@ export default function ChallengeWorkspacePage() {
       ]);
     },
     onError: (e) => {
-      const msg = e instanceof ApiError ? e.message : "Submit failed";
+      const msg = e instanceof ApiError ? e.message : "Execution failed";
       setSubmitError(msg);
       setSubmissionStatus(null);
       setActiveSubmissionId(null);
+      setActiveSubmissionKind(null);
       message.error(msg);
     },
+  });
+
+  const redoMutation = useMutation({
+    mutationFn: () =>
+      apiFetch<void>(ApiPaths.challengeRedo(slug), { method: "POST" }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["me", "progress"] });
+      setReport(null);
+      setSubmitError(null);
+      setSubmissionStatus(null);
+      setActiveSubmissionId(null);
+      setActiveSubmissionKind(null);
+      setLastRunPassed(null);
+      setTrackedTests([]);
+      message.success("Exercise unlocked — you can edit and submit again");
+    },
+    onError: (e) =>
+      message.error(e instanceof ApiError ? e.message : "Could not redo exercise"),
   });
 
   const loadReport = useCallback(
@@ -227,9 +275,9 @@ export default function ChallengeWorkspacePage() {
     }
     lastToastReportId.current = report.id;
     if (report.blocked) {
-      message.warning("Run complete — some checks still need work");
+      message.warning("Submission complete — review feedback for next steps");
     } else {
-      message.success("Run complete — challenge passed!");
+      message.success("Submitted — all checks passed!");
     }
   }, [report, message]);
 
@@ -289,7 +337,28 @@ export default function ChallengeWorkspacePage() {
       setSubmissionStatus((prev) =>
         prev === SubmissionStatus.FAILED ? prev : SubmissionStatus.COMPLETED);
       setTrackedTests((prev) => finalizeTrackedTestsOnComplete(prev));
-      appendActivity("Run finished — loading coach report…");
+      const kind =
+        (payload[SsePayloadKeys.KIND] as SubmissionKindValue | undefined)
+        ?? activeSubmissionKind
+        ?? SubmissionKind.SUBMIT;
+      if (kind === SubmissionKind.RUN) {
+        const passed = payload[SsePayloadKeys.PASSED] === "true";
+        setLastRunPassed(passed);
+        appendActivity(
+          payload[SsePayloadKeys.MESSAGE]
+            ?? (passed ? "Practice run: all tests passed" : "Practice run: some tests failed"),
+        );
+        if (passed) {
+          message.success("All tests passed — keep editing or submit when ready");
+        } else {
+          message.warning("Some tests failed — fix and run again, or submit for full feedback");
+        }
+        setActiveSubmissionId(null);
+        setActiveSubmissionKind(null);
+        setRunStartedAt(null);
+        return;
+      }
+      appendActivity("Submit finished — loading coach report…");
       const rawReportId =
         payload[SsePayloadKeys.REPORT_ID] ?? payload.reportId;
       const reportId =
@@ -302,10 +371,13 @@ export default function ChallengeWorkspacePage() {
         } else if (activeSubmissionId) {
           await pollSubmission(activeSubmissionId);
         }
+        void queryClient.invalidateQueries({ queryKey: ["me", "progress"] });
+        setBottomTab("feedback");
       } catch {
         // loadReport / pollSubmission already surface errors
       }
       setActiveSubmissionId(null);
+      setActiveSubmissionKind(null);
       setRunStartedAt(null);
     },
     onError: (errorMessage, logs) => {
@@ -363,12 +435,18 @@ export default function ChallengeWorkspacePage() {
     || submitMutation.isPending;
 
   const runTests = useCallback(() => {
-    if (!isRunning) {
-      submitMutation.mutate();
+    if (!isRunning && !exerciseLocked) {
+      submitMutation.mutate(SubmissionKind.RUN);
     }
-  }, [isRunning, submitMutation]);
+  }, [isRunning, exerciseLocked, submitMutation]);
 
-  useRunTestsShortcut(Boolean(challenge) && !isRunning, runTests);
+  const submitSolution = useCallback(() => {
+    if (!isRunning && !exerciseLocked) {
+      submitMutation.mutate(SubmissionKind.SUBMIT);
+    }
+  }, [isRunning, exerciseLocked, submitMutation]);
+
+  useRunTestsShortcut(Boolean(challenge) && !isRunning && !exerciseLocked, runTests);
 
   const showLiveRun = isRunning;
   const isTerminal =
@@ -384,6 +462,8 @@ export default function ChallengeWorkspacePage() {
     report,
     trackedTests,
     runnerLogs,
+    lastRunPassed,
+    exerciseLocked,
   });
 
   return (
@@ -415,7 +495,10 @@ export default function ChallengeWorkspacePage() {
             runPhase={runPhase}
             autosaveStatus={autosaveStatus}
             onRunTests={runTests}
-            onSubmit={runTests}
+            onSubmit={submitSolution}
+            exerciseLocked={exerciseLocked}
+            onRedo={() => redoMutation.mutate()}
+            redoLoading={redoMutation.isPending}
             onCancel={
               activeSubmissionId
                 ? () => cancelMutation.mutate(activeSubmissionId)

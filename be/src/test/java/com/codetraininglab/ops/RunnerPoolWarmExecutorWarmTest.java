@@ -37,6 +37,7 @@ class RunnerPoolWarmExecutorWarmTest {
   @Mock private LanguageRuntimeRepository runtimeRepository;
   @Mock private LanguageRepository languageRepository;
   @Mock private RunnerContainerPool runnerContainerPool;
+  @Mock private RunnerWarmStateStore warmStateStore;
 
   private RunnerPoolWarmExecutor executor;
   private Path repoRoot;
@@ -54,7 +55,7 @@ class RunnerPoolWarmExecutorWarmTest {
 
         public class Solution {
             public static String reverse(String input) {
-                return new StringBuilder(input).reverse().toString();
+                throw new UnsupportedOperationException("TODO");
             }
         }
         """);
@@ -80,12 +81,14 @@ class RunnerPoolWarmExecutorWarmTest {
             true,
             false,
             false);
+    when(warmStateStore.runnerPoolStampByImage()).thenReturn(new java.util.LinkedHashMap<>());
     executor =
         new RunnerPoolWarmExecutor(
             properties,
             runtimeRepository,
             languageRepository,
             runnerContainerPool,
+            warmStateStore,
             JsonMapper.builder().build());
   }
 
@@ -111,14 +114,16 @@ class RunnerPoolWarmExecutorWarmTest {
         .thenReturn(
             new RunnerResult(
                 RunnerStatus.COMPLETED.name(),
-                List.of(new RunnerResult.TestOutcome("t", "FAIL", "expected", 0)),
+                List.of(new RunnerResult.TestOutcome("t", "PASS", null, 1)),
                 new RunnerResult.CoverageOutcome(0, 0),
                 new RunnerResult.CompileOutcome(0, List.of()),
                 null,
                 null));
 
     var log = new StringBuilder();
-    executor.warm(true, List.of("java"), log::append, repoRoot.resolve(".ctl-runner-pool-warm-stamp"));
+    executor.warm(true, List.of("java"), log::append);
+
+    verify(warmStateStore).recordRunnerPoolWarm(eq("code-challenge-ide-runner-java-26:local"), any());
 
     ArgumentCaptor<String> jobCaptor = ArgumentCaptor.forClass(String.class);
     verify(runnerContainerPool)
@@ -129,6 +134,30 @@ class RunnerPoolWarmExecutorWarmTest {
             jobCaptor.capture(),
             any(RunnerJobPayload.RunnerLimits.class));
     assertThat(jobCaptor.getValue()).contains("reverse-string");
+    assertThat(jobCaptor.getValue()).contains("StringBuilder");
+    assertThat(jobCaptor.getValue()).doesNotContain("UnsupportedOperationException");
+    assertThat(jobCaptor.getValue()).contains("\"hidden_tests\":[]");
     assertThat(log.toString()).contains("Smoke warm java 26");
+  }
+
+  @Test
+  void warmRecordsColdWhenDockerImageMissing() {
+    UUID languageId = UUID.randomUUID();
+    LanguageEntity language = new LanguageEntity(languageId, "python", "Python");
+    LanguageRuntimeEntity runtime =
+        new LanguageRuntimeEntity(
+            UUID.randomUUID(),
+            languageId,
+            "3.12",
+            "code-challenge-ide-runner-missing-image:local",
+            true);
+    when(languageRepository.findAll()).thenReturn(List.of(language));
+    when(runtimeRepository.findAllOrdered()).thenReturn(List.of(runtime));
+
+    var log = new StringBuilder();
+    executor.warm(false, List.of("python"), log::append);
+
+    verify(warmStateStore).recordRunnerPoolCold("code-challenge-ide-runner-missing-image:local");
+    assertThat(log.toString()).contains("image missing");
   }
 }

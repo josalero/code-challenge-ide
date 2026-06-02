@@ -13,6 +13,7 @@ import com.codetraininglab.submission.api.SubmissionResponse;
 import com.codetraininglab.submission.messaging.SubmissionJobMessage;
 import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
 import com.codetraininglab.platform.config.RabbitMqConfig;
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.ChallengeRepository;
@@ -99,7 +100,7 @@ class SubmissionServiceTest {
 
     SubmissionResponse response =
         service.create(
-            userId, new CreateSubmissionRequest("slug", "26", "code", null), "key-1");
+            userId, new CreateSubmissionRequest("slug", "26", "code", null, null), "key-1");
 
     assertThat(response.status()).isEqualTo("PENDING");
     verify(rabbitTemplate)
@@ -116,6 +117,7 @@ class SubmissionServiceTest {
             challengeId,
             runtimeId,
             SubmissionStatus.COMPLETED,
+            SubmissionKind.SUBMIT,
             "c",
             null,
             null,

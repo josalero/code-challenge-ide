@@ -38,6 +38,7 @@ class OpsControllerTest {
                 "ctl-runner-m2-cache",
                 List.of(),
                 List.of(),
+                List.of(),
                 null));
     assertThat(controller.runnerStatus().dockerAvailable()).isTrue();
   }

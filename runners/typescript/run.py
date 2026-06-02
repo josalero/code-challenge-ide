@@ -38,10 +38,7 @@ def _write_solution(job: dict) -> None:
         write_file(TESTS_DIR / "custom.test.ts", custom)
 
 
-def _write_all_sources(job: dict) -> None:
-    write_file(WORKSPACE / "package.json", '{"type":"module"}\n')
-    _write_solution(job)
-
+def _write_test_sources(job: dict) -> None:
     if TESTS_DIR.is_dir():
         shutil.rmtree(TESTS_DIR)
     TESTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -60,9 +57,40 @@ def _write_all_sources(job: dict) -> None:
             write_file(TESTS_DIR / name, source)
 
 
+def _write_all_sources(job: dict) -> None:
+    write_file(WORKSPACE / "package.json", '{"type":"module"}\n')
+    _write_solution(job)
+    _write_test_sources(job)
+
+
+def _invalidate_test_outputs() -> None:
+    for path in (WORKSPACE / "junit.xml", WORKSPACE / "coverage"):
+        if path.is_file():
+            path.unlink(missing_ok=True)
+        elif path.is_dir():
+            shutil.rmtree(path, ignore_errors=True)
+    c8_tmp = WORKSPACE / ".c8_tmp"
+    if c8_tmp.is_dir():
+        shutil.rmtree(c8_tmp, ignore_errors=True)
+
+
+def _is_warm_smoke(job: dict) -> bool:
+    return (job.get("submission_id") or "").startswith("warm-")
+
+
 def setup_workspace(job: dict) -> None:
     slug = (job.get("challenge_slug") or "").strip()
     pooled = os.environ.get("CTL_RUNNER_POOLED") == "1"
+    warm_smoke = _is_warm_smoke(job)
+
+    if warm_smoke:
+        if WORKSPACE.exists():
+            shutil.rmtree(WORKSPACE)
+        WORKSPACE.mkdir(parents=True)
+        _write_all_sources(job)
+        if pooled and slug:
+            STAMP.write_text(slug, encoding="utf-8")
+        return
 
     if (
         pooled
@@ -73,6 +101,8 @@ def setup_workspace(job: dict) -> None:
         and (WORKSPACE / "solution.ts").is_file()
     ):
         _write_solution(job)
+        _write_test_sources(job)
+        _invalidate_test_outputs()
         return
 
     if WORKSPACE.exists():
@@ -91,6 +121,9 @@ def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:
 
 def run_tests(wall_seconds: int) -> tuple[int, str, str]:
     junit = WORKSPACE / "junit.xml"
+    test_files = sorted(TESTS_DIR.glob("*.test.ts"))
+    if not test_files:
+        return 1, "", "no test files under tests/"
     cmd = [
         "c8",
         "--reporter=json-summary",
@@ -103,7 +136,7 @@ def run_tests(wall_seconds: int) -> tuple[int, str, str]:
         "junit",
         "--test-reporter-destination",
         str(junit),
-        "tests/*.test.ts",
+        *[str(path.relative_to(WORKSPACE)) for path in test_files],
     ]
     proc = subprocess.run(
         cmd,
@@ -115,29 +148,43 @@ def run_tests(wall_seconds: int) -> tuple[int, str, str]:
     return proc.returncode, proc.stdout, proc.stderr
 
 
+def _iter_junit_cases(root: ET.Element) -> list[ET.Element]:
+    cases: list[ET.Element] = []
+    if root.tag == "testsuites":
+        cases.extend(root.findall("testcase"))
+        for suite in root.findall("testsuite"):
+            cases.extend(suite.findall("testcase"))
+    elif root.tag == "testsuite":
+        cases.extend(root.findall("testcase"))
+    return cases
+
+
 def parse_junit() -> list[dict]:
     xml_path = WORKSPACE / "junit.xml"
     tests: list[dict] = []
     if not xml_path.is_file():
         return tests
     root = ET.parse(xml_path).getroot()
-    for suite in root.findall("testsuite"):
-        for case in suite.findall("testcase"):
-            name = case.attrib.get("name", "unknown")
-            duration_ms = int(float(case.attrib.get("time", "0")) * 1000)
-            failure = case.find("failure")
-            error = case.find("error")
-            skipped = case.find("skipped")
-            if failure is not None or error is not None:
-                node = failure if failure is not None else error
-                message = (node.attrib.get("message") or node.text or "failed").strip()
-                tests.append(
-                    {"name": name, "status": "FAIL", "message": message, "duration_ms": duration_ms}
-                )
-            elif skipped is not None:
-                tests.append({"name": name, "status": "SKIP", "message": None, "duration_ms": duration_ms})
-            else:
-                tests.append({"name": name, "status": "PASS", "message": None, "duration_ms": duration_ms})
+    for case in _iter_junit_cases(root):
+        name = case.attrib.get("name", "unknown")
+        raw_time = case.attrib.get("time", "0")
+        try:
+            duration_ms = int(float(raw_time) * 1000)
+        except ValueError:
+            duration_ms = 0
+        failure = case.find("failure")
+        error = case.find("error")
+        skipped = case.find("skipped")
+        if failure is not None or error is not None:
+            node = failure if failure is not None else error
+            message = (node.attrib.get("message") or node.text or "failed").strip()
+            tests.append(
+                {"name": name, "status": "FAIL", "message": message, "duration_ms": duration_ms}
+            )
+        elif skipped is not None:
+            tests.append({"name": name, "status": "SKIP", "message": None, "duration_ms": duration_ms})
+        else:
+            tests.append({"name": name, "status": "PASS", "message": None, "duration_ms": duration_ms})
     return tests
 
 

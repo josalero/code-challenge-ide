@@ -68,6 +68,14 @@ public class OpsController {
     return runnerOpsService.startRunnerWarm(force, only);
   }
 
+  @PostMapping(ApiPaths.OPS_RUNNERS_WARM_INFRA)
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public RunnerOpsJobResponse warmInfra(@RequestBody(required = false) RunnerWarmRequest request) {
+    boolean force = request != null && request.force();
+    List<String> only = request == null ? List.of() : request.only();
+    return runnerOpsService.startInfraWarm(force, only);
+  }
+
   @GetMapping(ApiPaths.OPS_RUNNERS_JOBS + "/{jobId}")
   public RunnerOpsJobResponse runnerJob(@PathVariable UUID jobId) {
     return runnerOpsService

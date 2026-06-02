@@ -1,7 +1,9 @@
 package com.codetraininglab.submission.application;
 
 import com.codetraininglab.domain.ProgressState;
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
+import com.codetraininglab.domain.TestOutcomeStatus;
 import com.codetraininglab.feedback.application.FeedbackAggregator;
 import com.codetraininglab.integration.runner.RunnerResult;
 import com.codetraininglab.platform.config.CtlProperties;
@@ -126,11 +128,48 @@ public class SubmissionProcessingStateWriter {
     submission.setUpdatedAt(clock.instant());
     submissionRepository.save(submission);
 
-    updateProgress(submission, aggregated.blocked());
+    updateProgress(submission, aggregated.blocked(), SubmissionKind.SUBMIT);
     eventHub.publish(
         submissionId,
         SubmissionEventType.DONE.eventName(),
-        Map.of(SsePayloadKeys.SUBMISSION_ID, submissionId, SsePayloadKeys.REPORT_ID, reportId));
+        Map.of(
+            SsePayloadKeys.SUBMISSION_ID,
+            submissionId,
+            SsePayloadKeys.KIND,
+            SubmissionKind.SUBMIT.name(),
+            SsePayloadKeys.REPORT_ID,
+            reportId));
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public void finalizeRun(UUID submissionId, RunnerResult result) {
+    SubmissionEntity submission =
+        submissionRepository.findById(submissionId).orElse(null);
+    if (submission == null || submission.getStatus() == SubmissionStatus.CANCELLED) {
+      return;
+    }
+
+    publishTestResults(submissionId, result);
+    boolean allTestsPassed =
+        result.tests() != null
+            && !result.tests().isEmpty()
+            && result.tests().stream()
+                .allMatch(test -> TestOutcomeStatus.PASS.name().equals(test.status()));
+
+    submission.setStatus(SubmissionStatus.COMPLETED);
+    submission.setUpdatedAt(clock.instant());
+    submissionRepository.save(submission);
+
+    HashMap<String, Object> done = new HashMap<>();
+    done.put(SsePayloadKeys.SUBMISSION_ID, submissionId);
+    done.put(SsePayloadKeys.KIND, SubmissionKind.RUN.name());
+    done.put(SsePayloadKeys.PASSED, allTestsPassed);
+    done.put(
+        SsePayloadKeys.MESSAGE,
+        allTestsPassed
+            ? "All tests passed — you can keep editing or submit when ready."
+            : "Some tests failed — fix your solution and run again, or submit for full feedback.");
+    eventHub.publish(submissionId, SubmissionEventType.DONE.eventName(), done);
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -190,7 +229,11 @@ public class SubmissionProcessingStateWriter {
     }
   }
 
-  private void updateProgress(SubmissionEntity submission, boolean blocked) {
+  private void updateProgress(
+      SubmissionEntity submission, boolean blocked, SubmissionKind kind) {
+    if (kind != SubmissionKind.SUBMIT) {
+      return;
+    }
     UUID userId = submission.getUserId();
     UUID challengeId = submission.getChallengeId();
     UserProgressEntity progress =
@@ -204,6 +247,7 @@ public class SubmissionProcessingStateWriter {
                     ProgressState.NOT_STARTED,
                     clock.instant()));
     progress.setState(blocked ? ProgressState.FAILED : ProgressState.PASSED);
+    progress.setSubmittedAt(clock.instant());
     progress.setUpdatedAt(clock.instant());
     progressRepository.save(progress);
   }

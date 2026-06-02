@@ -32,6 +32,7 @@ public final class ApiPaths {
   public static final String OPS_RUNNERS_WARM_MAVEN = OPS + "/runners/warm/maven";
   public static final String OPS_RUNNERS_WARM_LSP = OPS + "/runners/warm/lsp";
   public static final String OPS_RUNNERS_WARM_POOL = OPS + "/runners/warm/pool";
+  public static final String OPS_RUNNERS_WARM_INFRA = OPS + "/runners/warm/infra";
 
   public static final String SUBMISSION_EVENTS_PATTERN = ".*/api/v1/submissions/[^/]+/events";
 

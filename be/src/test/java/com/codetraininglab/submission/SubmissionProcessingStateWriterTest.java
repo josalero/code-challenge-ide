@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.codetraininglab.domain.ProgressState;
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
 import com.codetraininglab.integration.runner.RunnerResult;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
@@ -254,6 +255,7 @@ class SubmissionProcessingStateWriterTest {
         challengeId,
         runtimeId,
         status,
+        SubmissionKind.SUBMIT,
         "code",
         null,
         null,

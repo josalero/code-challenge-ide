@@ -39,8 +39,7 @@ def _write_solution(job: dict) -> None:
         write_file(WORKSPACE / "tests" / "custom_tests.py", custom)
 
 
-def _write_all_sources(job: dict) -> None:
-    _write_solution(job)
+def _write_tests(job: dict) -> None:
     tests_dir = WORKSPACE / "tests"
     if tests_dir.is_dir():
         shutil.rmtree(tests_dir)
@@ -60,9 +59,28 @@ def _write_all_sources(job: dict) -> None:
             write_file(tests_dir / name, source)
 
 
+def _write_all_sources(job: dict) -> None:
+    _write_solution(job)
+    _write_tests(job)
+
+
+def _is_warm_smoke(job: dict) -> bool:
+    return (job.get("submission_id") or "").startswith("warm-")
+
+
 def setup_workspace(job: dict) -> None:
     slug = (job.get("challenge_slug") or "").strip()
     pooled = os.environ.get("CTL_RUNNER_POOLED") == "1"
+    warm_smoke = _is_warm_smoke(job)
+
+    if warm_smoke:
+        if WORKSPACE.exists():
+            shutil.rmtree(WORKSPACE)
+        WORKSPACE.mkdir(parents=True)
+        _write_all_sources(job)
+        if pooled and slug:
+            STAMP.write_text(slug, encoding="utf-8")
+        return
 
     if (
         pooled
@@ -73,6 +91,8 @@ def setup_workspace(job: dict) -> None:
         and (WORKSPACE / "solution.py").is_file()
     ):
         _write_solution(job)
+        # Pooled containers can reuse /tmp/workspace without tests/ (e.g. partial cleanup).
+        _write_tests(job)
         return
 
     if WORKSPACE.exists():
@@ -89,24 +109,37 @@ def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:
     return text[: limit - 3] + "..."
 
 
-def run_pytest(wall_seconds: int) -> tuple[int, str, str]:
+def run_pytest(wall_seconds: int, *, collect_coverage: bool) -> tuple[int, str, str]:
     cmd = [
         "python",
         "-m",
         "pytest",
         "tests",
         "-q",
-        "--tb=short",
-        "--cov=solution",
-        "--cov-report=xml:/tmp/workspace/coverage.xml",
+        "--tb=line",
         "--junitxml=/tmp/workspace/junit.xml",
     ]
+    env = os.environ.copy()
+    if collect_coverage:
+        cmd.extend(
+            [
+                "--cov=solution",
+                "--cov-report=xml:/tmp/workspace/coverage.xml",
+            ]
+        )
+        # Faster tracing on Python 3.12+ (coverage.py sysmon core).
+        env.setdefault("COVERAGE_CORE", "sysmon")
+    else:
+        # Pool warm / smoke: skip pytest-cov hooks — often 3–10× faster for small suites.
+        cmd.extend(["-p", "no:pytest_cov"])
+
     proc = subprocess.run(
         cmd,
         cwd=WORKSPACE,
         capture_output=True,
         text=True,
         timeout=wall_seconds,
+        env=env,
     )
     return proc.returncode, proc.stdout, proc.stderr
 
@@ -190,8 +223,11 @@ def main() -> int:
             return 0
         limits = job.get("limits") or {}
         wall_seconds = int(limits.get("wall_seconds", 120))
+        warm_smoke = _is_warm_smoke(job)
         setup_workspace(job)
-        code, stdout_log, stderr_log = run_pytest(wall_seconds)
+        code, stdout_log, stderr_log = run_pytest(
+            wall_seconds, collect_coverage=not warm_smoke
+        )
         tests = parse_junit()
         if not tests and code != 0:
             emit(

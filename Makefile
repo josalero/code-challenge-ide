@@ -1,4 +1,4 @@
-.PHONY: up down infra down-infra reset-infra runners lsp-warm lsp-warm-force logs ps reset config cursor-vendors
+.PHONY: up down infra down-infra reset-infra runners lsp-warm lsp-warm-force test-warm-all logs ps reset config cursor-vendors
 
 up:
 	@./scripts/compose-up.sh
@@ -14,6 +14,9 @@ lsp-warm:
 
 lsp-warm-force:
 	@CTL_FORCE_LSP_WARM=1 ./scripts/warm-lsp-images.sh --force
+
+test-warm-all:
+	@./scripts/test-warm-all.sh
 
 cursor-vendors:
 	@./scripts/install-cursor-vendors.sh

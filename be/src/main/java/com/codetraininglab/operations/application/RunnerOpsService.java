@@ -1,5 +1,6 @@
 package com.codetraininglab.operations.application;
 
+import com.codetraininglab.operations.api.LanguageWarmStatusResponse;
 import com.codetraininglab.operations.api.RunnerImageStatusResponse;
 import com.codetraininglab.operations.api.RunnerOpsJobResponse;
 import com.codetraininglab.operations.api.RunnerOpsStatusResponse;
@@ -32,7 +33,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
 @Service
@@ -40,7 +40,7 @@ public class RunnerOpsService {
 
   private static final int LOG_TAIL_MAX = 8000;
   private static final List<String> LSP_WARM_LABELS =
-      List.of("java", "python", "go", "typescript", "csharp", "rust", "cpp");
+      List.of("java", "python", "go", "typescript", "csharp", "rust", "cpp", "vue");
   private static final List<String> RUNNER_WARM_LANGUAGES =
       List.of(
           "java",
@@ -60,6 +60,7 @@ public class RunnerOpsService {
   private final LanguageRuntimeRepository runtimeRepository;
   private final LanguageRepository languageRepository;
   private final JsonMapper jsonMapper;
+  private final RunnerWarmStateStore warmStateStore;
   private final ObjectProvider<RunnerPoolWarmExecutor> runnerPoolWarmExecutor;
   private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
   private final ConcurrentHashMap<UUID, JobState> jobs = new ConcurrentHashMap<>();
@@ -71,26 +72,28 @@ public class RunnerOpsService {
       LanguageRuntimeRepository runtimeRepository,
       LanguageRepository languageRepository,
       JsonMapper jsonMapper,
+      RunnerWarmStateStore warmStateStore,
       ObjectProvider<RunnerPoolWarmExecutor> runnerPoolWarmExecutor) {
     this.properties = properties;
     this.environment = environment;
     this.runtimeRepository = runtimeRepository;
     this.languageRepository = languageRepository;
     this.jsonMapper = jsonMapper;
+    this.warmStateStore = warmStateStore;
     this.runnerPoolWarmExecutor = runnerPoolWarmExecutor;
   }
 
   public RunnerOpsStatusResponse status() {
     Path repoRoot = RunnerOpsPaths.resolveRepoRoot(environment);
     Path opsDataDir = RunnerOpsPaths.resolveOpsDataDir(environment);
-    Path poolWarmStampFile = RunnerOpsPaths.poolWarmStampFile(environment);
-    Path lspWarmStampFile = RunnerOpsPaths.lspWarmStampFile(environment);
     boolean dockerAvailable = isDockerAvailable();
     boolean mavenCacheWarm = isMavenCacheWarm();
-    Map<String, String> lspWarmStamp = loadLspWarmStamp(lspWarmStampFile);
-    Map<String, String> poolWarmStamp = RunnerPoolWarmExecutor.loadStamp(poolWarmStampFile, jsonMapper);
+    Map<String, String> lspWarmStamp = warmStateStore.lspStampByScopeKey();
+    Map<String, String> poolWarmStamp = warmStateStore.runnerPoolStampByImage();
     List<RunnerImageStatusResponse> runnerImages = runnerImageStatuses(poolWarmStamp);
     List<RunnerImageStatusResponse> lspImages = lspImageStatuses(lspWarmStamp);
+    persistWarmInventoryToDatabase(runnerImages, lspImages);
+    List<LanguageWarmStatusResponse> languages = languageWarmStatuses(poolWarmStamp, lspImages);
     return new RunnerOpsStatusResponse(
         dockerAvailable,
         properties.dockerEnabled(),
@@ -103,6 +106,7 @@ public class RunnerOpsService {
         mavenCacheVolume(),
         runnerImages,
         lspImages,
+        languages,
         activeJobId);
   }
 
@@ -166,6 +170,44 @@ public class RunnerOpsService {
         });
   }
 
+  /** Warms submission runners and editor LSP for the same language set in one job. */
+  public RunnerOpsJobResponse startInfraWarm(boolean force, List<String> only) {
+    ensureDockerReady();
+    if (!properties.runnerPoolEnabled()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Runner pool is disabled (RUNNER_POOL_ENABLED=false).");
+    }
+    RunnerPoolWarmExecutor executor = runnerPoolWarmExecutor.getIfAvailable();
+    if (executor == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Runner warm requires Docker integration.");
+    }
+    List<String> runnerLanguages = normalizeRunnerWarmLanguages(only);
+    List<String> lspLabels = mapRunnerLanguagesToLspLabels(runnerLanguages);
+    Path repoRoot = RunnerOpsPaths.resolveRepoRoot(environment);
+    Path lspScript = repoRoot.resolve("scripts/lsp_warm.py");
+    boolean lspAvailable = Files.isRegularFile(lspScript);
+    return startJob(
+        "INFRA_WARM",
+        () -> {
+          try {
+            requireActiveJob().appendLog("=== Runner pool smoke ===\n");
+            runRunnerPoolWarm(force, runnerLanguages, executor);
+            if (lspAvailable && !lspLabels.isEmpty()) {
+              requireActiveJob().appendLog("\n=== Editor (LSP) ===\n");
+              runLspWarm(lspScript, force, lspLabels);
+            } else if (!lspAvailable) {
+              requireActiveJob()
+                  .appendLog(
+                      "\nSkipping LSP warm — scripts/lsp_warm.py not found (set CTL_REPO_ROOT).\n");
+            }
+          } catch (IOException | InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(ex.getMessage(), ex);
+          }
+        });
+  }
+
   public Optional<RunnerOpsJobResponse> job(UUID jobId) {
     JobState state = jobs.get(jobId);
     return state == null ? Optional.empty() : Optional.of(state.toResponse());
@@ -188,6 +230,11 @@ public class RunnerOpsService {
           } catch (Exception ex) {
             job.fail(ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage());
           } finally {
+            try {
+              persistWarmInventoryFromDocker();
+            } catch (Exception syncEx) {
+              // Best-effort: ops UI still works from live docker inspect on next status poll.
+            }
             if (job.id.equals(activeJobId)) {
               activeJobId = null;
             }
@@ -258,6 +305,20 @@ public class RunnerOpsService {
       command.add(label);
     }
     runProcess(job, command, script.getParent().getParent());
+    warmStateStore.importLspStampFromFile(RunnerOpsPaths.lspWarmStampFile(environment));
+  }
+
+  private void persistWarmInventoryFromDocker() {
+    Map<String, String> poolWarmStamp = warmStateStore.runnerPoolStampByImage();
+    Map<String, String> lspWarmStamp = warmStateStore.lspStampByScopeKey();
+    persistWarmInventoryToDatabase(
+        runnerImageStatuses(poolWarmStamp), lspImageStatuses(lspWarmStamp));
+  }
+
+  private void persistWarmInventoryToDatabase(
+      List<RunnerImageStatusResponse> runnerImages, List<RunnerImageStatusResponse> lspImages) {
+    warmStateStore.syncRunnerPoolFromStatuses(runnerImages);
+    warmStateStore.syncLspFromStatuses(lspImages);
   }
 
   private void runRunnerPoolWarm(boolean force, List<String> only, RunnerPoolWarmExecutor executor)
@@ -267,8 +328,7 @@ public class RunnerOpsService {
       job.appendLog("Maven cache is cold — warming before Java smoke runs…\n");
       runMavenWarm(force);
     }
-    Path stampFile = RunnerOpsPaths.poolWarmStampFile(environment);
-    executor.warm(force, only, job::appendLog, stampFile);
+    executor.warm(force, only, job::appendLog);
   }
 
   private boolean needsJavaWarm(List<String> only) {
@@ -293,6 +353,7 @@ public class RunnerOpsService {
     ProcessBuilder builder = new ProcessBuilder(command);
     builder.directory(workDir.toFile());
     builder.redirectErrorStream(true);
+    builder.environment().put("CTL_OPS_DATA_DIR", RunnerOpsPaths.resolveOpsDataDir(environment).toString());
     Process process = builder.start();
     try (BufferedReader reader =
         new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
@@ -325,6 +386,132 @@ public class RunnerOpsService {
     return labels;
   }
 
+  static List<String> mapRunnerLanguagesToLspLabels(List<String> runnerLanguages) {
+    LinkedHashSet<String> labels = new LinkedHashSet<>();
+    for (String language : runnerLanguages) {
+      if (language == null || language.isBlank()) {
+        continue;
+      }
+      switch (language.trim().toLowerCase()) {
+        case "java" -> labels.add("java");
+        case "python" -> labels.add("python");
+        case "go" -> labels.add("go");
+        case "node", "typescript", "react", "angular" -> labels.add("typescript");
+        case "vue" -> {
+          labels.add("typescript");
+          labels.add("vue");
+        }
+        case "csharp" -> labels.add("csharp");
+        case "rust" -> labels.add("rust");
+        case "cpp" -> labels.add("cpp");
+        default -> {
+          // Unknown runner language — skip LSP mapping.
+        }
+      }
+    }
+    return labels.stream().filter(LSP_WARM_LABELS::contains).toList();
+  }
+
+  private List<LanguageWarmStatusResponse> languageWarmStatuses(
+      Map<String, String> poolWarmStamp, List<RunnerImageStatusResponse> lspImages) {
+    Map<String, RunnerImageStatusResponse> lspByLabel =
+        lspImages.stream()
+            .collect(Collectors.toMap(RunnerImageStatusResponse::label, image -> image, (a, b) -> a));
+    Map<UUID, LanguageEntity> languages =
+        languageRepository.findAll().stream()
+            .collect(Collectors.toMap(LanguageEntity::getId, language -> language));
+    List<LanguageWarmStatusResponse> rows = new ArrayList<>();
+    LinkedHashSet<String> languagesWithRuntimes = new LinkedHashSet<>();
+
+    for (LanguageRuntimeEntity runtime : runtimeRepository.findAllOrdered()) {
+      if (!runtime.isActive()) {
+        continue;
+      }
+      LanguageEntity language = languages.get(runtime.getLanguageId());
+      if (language == null) {
+        continue;
+      }
+      String languageName = language.getName().toLowerCase();
+      if (!RUNNER_WARM_LANGUAGES.contains(languageName)) {
+        continue;
+      }
+      languagesWithRuntimes.add(languageName);
+      String label = languageName + " " + runtime.getVersion();
+      RunnerImageStatusResponse runner =
+          inspectRunnerImage(label, runtime.getDockerImage(), poolWarmStamp);
+      Boolean runnerReady = runnerReadyFromImage(runner);
+      Boolean editorReady = editorReadyForLanguage(languageName, lspByLabel);
+      boolean ready = Boolean.TRUE.equals(runnerReady) && Boolean.TRUE.equals(editorReady);
+      rows.add(
+          new LanguageWarmStatusResponse(
+              languageName,
+              runtime.getVersion(),
+              label,
+              runtime.getDockerImage(),
+              runner.present(),
+              runnerReady,
+              editorReady,
+              ready));
+    }
+
+    for (String languageName : RUNNER_WARM_LANGUAGES) {
+      if (languagesWithRuntimes.contains(languageName)) {
+        continue;
+      }
+      Boolean editorReady = editorReadyForLanguage(languageName, lspByLabel);
+      rows.add(
+          new LanguageWarmStatusResponse(
+              languageName, null, languageName, null, false, null, editorReady, false));
+    }
+
+    return rows.stream()
+        .sorted(
+            Comparator.comparing(LanguageWarmStatusResponse::language)
+                .thenComparing(
+                    row -> row.version() == null ? "" : row.version(), Comparator.naturalOrder()))
+        .toList();
+  }
+
+  private static Boolean runnerReadyFromImage(RunnerImageStatusResponse runner) {
+    if (!runner.present()) {
+      return false;
+    }
+    if (runner.warmed() == null || !runner.warmed()) {
+      return false;
+    }
+    return true;
+  }
+
+  private static Boolean editorReadyForLanguage(
+      String language, Map<String, RunnerImageStatusResponse> lspByLabel) {
+    RunnerImageStatusResponse primary = lspByLabel.get(lspLabelForRunnerLanguage(language));
+    if (primary != null) {
+      return primary.present() ? Boolean.TRUE.equals(primary.warmed()) : false;
+    }
+    if ("vue".equals(language)) {
+      RunnerImageStatusResponse typescript = lspByLabel.get("typescript");
+      if (typescript == null) {
+        return null;
+      }
+      return typescript.present() && Boolean.TRUE.equals(typescript.warmed());
+    }
+    return null;
+  }
+
+  private static String lspLabelForRunnerLanguage(String language) {
+    return switch (language) {
+      case "java" -> "java";
+      case "python" -> "python";
+      case "go" -> "go";
+      case "node", "typescript", "react", "angular" -> "typescript";
+      case "vue" -> "vue";
+      case "csharp" -> "csharp";
+      case "rust" -> "rust";
+      case "cpp" -> "cpp";
+      default -> language;
+    };
+  }
+
   private List<String> normalizeRunnerWarmLanguages(List<String> only) {
     if (only == null || only.isEmpty()) {
       return RUNNER_WARM_LANGUAGES;
@@ -349,6 +536,9 @@ public class RunnerOpsService {
             .collect(Collectors.toMap(LanguageEntity::getId, language -> language));
     LinkedHashMap<String, RunnerImageStatusResponse> unique = new LinkedHashMap<>();
     for (LanguageRuntimeEntity runtime : runtimeRepository.findAllOrdered()) {
+      if (!runtime.isActive()) {
+        continue;
+      }
       LanguageEntity language = languages.get(runtime.getLanguageId());
       String label =
           (language == null ? "unknown" : language.getName()) + " " + runtime.getVersion();
@@ -362,11 +552,10 @@ public class RunnerOpsService {
   }
 
   private List<RunnerImageStatusResponse> lspImageStatuses(Map<String, String> lspWarmStamp) {
-    LinkedHashSet<String> seen = new LinkedHashSet<>();
     List<RunnerImageStatusResponse> statuses = new ArrayList<>();
     for (String label : LSP_WARM_LABELS) {
       String image = properties.lspImageFor(label);
-      if (image == null || image.isBlank() || !seen.add(image)) {
+      if (image == null || image.isBlank()) {
         continue;
       }
       statuses.add(inspectLspImage(label, image, lspWarmStamp));
@@ -425,19 +614,6 @@ public class RunnerOpsService {
     } catch (IOException | InterruptedException ex) {
       Thread.currentThread().interrupt();
       return new ImageInspect(false, null);
-    }
-  }
-
-  private Map<String, String> loadLspWarmStamp(Path stampFile) {
-    if (!Files.isRegularFile(stampFile)) {
-      return Map.of();
-    }
-    try {
-      Map<String, String> stamp =
-          jsonMapper.readValue(Files.readString(stampFile), new TypeReference<>() {});
-      return stamp == null ? Map.of() : stamp;
-    } catch (IOException ex) {
-      return Map.of();
     }
   }
 

@@ -15,4 +15,5 @@ public record RunnerOpsStatusResponse(
     String mavenCacheVolume,
     List<RunnerImageStatusResponse> runnerImages,
     List<RunnerImageStatusResponse> lspImages,
+    List<LanguageWarmStatusResponse> languages,
     UUID activeJobId) {}

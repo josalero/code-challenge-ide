@@ -1,5 +1,12 @@
 /** Mirrors backend enums — use these instead of string literals in UI code. */
 
+export const SubmissionKind = {
+  RUN: "RUN",
+  SUBMIT: "SUBMIT",
+} as const;
+
+export type SubmissionKindValue = (typeof SubmissionKind)[keyof typeof SubmissionKind];
+
 export const SubmissionStatus = {
   PENDING: "PENDING",
   RUNNING: "RUNNING",
@@ -58,6 +65,8 @@ export const SsePayloadKeys = {
   STATUS: "status",
   SUBMISSION_ID: "submission_id",
   REPORT_ID: "report_id",
+  KIND: "kind",
+  PASSED: "passed",
   MESSAGE: "message",
   STDOUT: "stdout",
   STDERR: "stderr",
@@ -80,8 +89,10 @@ export const ApiPaths = {
   OPS_RUNNERS_WARM_MAVEN: "/api/v1/ops/runners/warm/maven",
   OPS_RUNNERS_WARM_LSP: "/api/v1/ops/runners/warm/lsp",
   OPS_RUNNERS_WARM_POOL: "/api/v1/ops/runners/warm/pool",
+  OPS_RUNNERS_WARM_INFRA: "/api/v1/ops/runners/warm/infra",
   opsRunnerJob: (jobId: string) => `/api/v1/ops/runners/jobs/${jobId}`,
   challenge: (slug: string) => `/api/v1/challenges/${slug}`,
+  challengeRedo: (slug: string) => `/api/v1/challenges/${slug}/redo`,
   challengeCustomTests: (slug: string) => `/api/v1/challenges/${slug}/custom-tests`,
   challengeAlternatives: (slug: string) => `/api/v1/challenges/${slug}/alternatives`,
   submission: (id: string) => `/api/v1/submissions/${id}`,

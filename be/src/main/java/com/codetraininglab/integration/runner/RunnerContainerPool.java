@@ -72,6 +72,9 @@ public class RunnerContainerPool {
         try {
           ensureContainerRunning(pooled, workspaceLayout, limits);
           syncChallengeIfNeeded(pooled, challengeDir);
+          if (isWarmSmokeJob(jobJson)) {
+            prepareWarmWorkspace(pooled.containerId.get());
+          }
           return execJob(pooled, jobJson, limits);
         } catch (RunnerPoolException ex) {
           log.warn(
@@ -225,14 +228,63 @@ public class RunnerContainerPool {
     pooled.lastChallengeDir.set(challengeKey);
   }
 
-  /** Drops incremental-workspace stamp only; run.py reuses Maven target when the challenge changes. */
+  /**
+   * Pool smoke warm must not reuse a prior submission workspace (stale tests, Surefire XML, or
+   * starter bytecode). Submission ids for warm jobs are prefixed with {@code warm-}.
+   */
+  private boolean isWarmSmokeJob(String jobJson) {
+    try {
+      var node = jsonMapper.readTree(jobJson);
+      var submissionId = node.get("submission_id");
+      if (submissionId == null || submissionId.isNull()) {
+        return false;
+      }
+      return submissionId.asString("").startsWith("warm-");
+    } catch (Exception ex) {
+      return false;
+    }
+  }
+
+  private void prepareWarmWorkspace(String containerId) throws RunnerPoolException {
+    if (containerId == null || containerId.isBlank()) {
+      return;
+    }
+    clearWorkspaceStamp(containerId);
+    try {
+      runDocker(
+          "docker",
+          "exec",
+          "-u",
+          "0",
+          containerId,
+          "sh",
+          "-c",
+          "rm -rf /tmp/workspace/src "
+              + "/tmp/workspace/tests "
+              + "/tmp/workspace/junit.xml "
+              + "/tmp/workspace/coverage "
+              + "/tmp/workspace/.c8_tmp "
+              + "/tmp/workspace/target/classes "
+              + "/tmp/workspace/target/test-classes "
+              + "/tmp/workspace/target/surefire-reports");
+    } catch (IOException | InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      throw new RunnerPoolException("Could not reset pooled workspace for warm smoke", ex);
+    }
+  }
+
+  /**
+   * Drops incremental-workspace stamp when the synced challenge changes. Uses root because only
+   * Java runner images define a {@code runner} user; other runners run as root and pool exec does
+   * not drop privileges.
+   */
   private void clearWorkspaceStamp(String containerId) throws RunnerPoolException {
     try {
       runDocker(
           "docker",
           "exec",
           "-u",
-          "runner",
+          "0",
           containerId,
           "rm",
           "-f",
@@ -319,16 +371,15 @@ public class RunnerContainerPool {
   private void destroyContainer(PooledRunner pooled) {
     pooled.lastChallengeDir.set(null);
     String containerId = pooled.containerId.getAndSet(null);
-    if (containerId == null) {
-      removeContainerByName(pooled.containerName);
-      return;
+    if (containerId != null) {
+      try {
+        Process process = new ProcessBuilder("docker", "rm", "-f", containerId).start();
+        process.waitFor(30, TimeUnit.SECONDS);
+      } catch (Exception ex) {
+        log.debug("Could not remove pooled runner container {}: {}", containerId, ex.getMessage());
+      }
     }
-    try {
-      Process process = new ProcessBuilder("docker", "rm", "-f", containerId).start();
-      process.waitFor(30, TimeUnit.SECONDS);
-    } catch (Exception ex) {
-      log.debug("Could not remove pooled runner container {}: {}", containerId, ex.getMessage());
-    }
+    removeContainerByName(pooled.containerName);
   }
 
   private void removeContainerByName(String containerName) {
@@ -360,11 +411,13 @@ public class RunnerContainerPool {
 
   private static void runDocker(String... command) throws IOException, InterruptedException {
     Process process = new ProcessBuilder(command).start();
+    String stderr =
+        new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8).trim();
     process.getInputStream().transferTo(java.io.OutputStream.nullOutputStream());
-    process.getErrorStream().transferTo(java.io.OutputStream.nullOutputStream());
     boolean finished = process.waitFor(60, TimeUnit.SECONDS);
     if (!finished || process.exitValue() != 0) {
-      throw new IOException("docker command failed: " + String.join(" ", command));
+      String detail = stderr.isBlank() ? "exit " + process.exitValue() : stderr;
+      throw new IOException("docker command failed (" + detail + "): " + String.join(" ", command));
     }
   }
 

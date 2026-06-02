@@ -4,6 +4,7 @@ import com.codetraininglab.integration.runner.RunnerClient;
 import com.codetraininglab.integration.runner.RunnerResult;
 import com.codetraininglab.platform.persistence.ChallengeHiddenTestRepository;
 import com.codetraininglab.domain.RunnerStatus;
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
 import java.time.Clock;
 import java.time.Duration;
@@ -103,8 +104,12 @@ public class SubmissionProcessor {
     }
 
     try {
-      stateWriter.finalizeSuccess(
-          submissionId, result, context.challenge().getGatingConfig());
+      if (context.submission().getKind() == SubmissionKind.RUN) {
+        stateWriter.finalizeRun(submissionId, result);
+      } else {
+        stateWriter.finalizeSuccess(
+            submissionId, result, context.challenge().getGatingConfig());
+      }
     } catch (Exception e) {
       log.error("Failed to finalize submission {}", submissionId, e);
       stateWriter.markInfrastructureFailure(submissionId, "Submission processing failed", null);

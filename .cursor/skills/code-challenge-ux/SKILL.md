@@ -39,11 +39,12 @@ description: >-
 
 | Action | Role | Keyboard |
 | --- | --- | --- |
-| **Run tests** | Secondary — execute against Docker runner | ⌘/Ctrl + Enter |
-| **Submit** | Primary — same pipeline, emphasized as final attempt | — |
+| **Run** | Practice check — same Docker runner, **does not lock** editing; shows pass/fail advice | ⌘/Ctrl + Enter |
+| **Submit** | Final attempt — runs tests + coach report, **locks** editor until **Redo** | — |
+| **Redo exercise** | Shown after submit — clears lock (`POST /challenges/{slug}/redo`) | — |
 | **Cancel run** | Visible while PENDING/RUNNING | — |
 
-Both Run and Submit call the submission API today; distinguish visually for future split.
+`POST /api/v1/submissions` body includes `kind`: `"RUN"` or `"SUBMIT"`.
 
 ## Autosave
 

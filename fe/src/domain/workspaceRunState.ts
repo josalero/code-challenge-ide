@@ -11,6 +11,8 @@ export type WorkspaceRunPhase =
   | "failed-test"
   | "timeout"
   | "service-unavailable"
+  | "run-passed"
+  | "run-failed"
   | "successful-submission";
 
 export function deriveWorkspaceRunPhase(input: {
@@ -21,6 +23,8 @@ export function deriveWorkspaceRunPhase(input: {
   report: ReportResponse | null;
   trackedTests: TrackedTest[];
   runnerLogs: RunnerLogs | null;
+  lastRunPassed: boolean | null;
+  exerciseLocked: boolean;
 }): WorkspaceRunPhase {
   if (input.challengeLoading) {
     return "loading";
@@ -62,8 +66,20 @@ export function deriveWorkspaceRunPhase(input: {
     return "failed-test";
   }
 
-  if (input.report && !input.report.blocked) {
+  if (input.exerciseLocked && input.report && !input.report.blocked) {
     return "successful-submission";
+  }
+
+  if (input.exerciseLocked && input.report?.blocked) {
+    return "failed-test";
+  }
+
+  if (!input.isRunning && input.lastRunPassed === true) {
+    return "run-passed";
+  }
+
+  if (!input.isRunning && input.lastRunPassed === false) {
+    return "run-failed";
   }
 
   if (
@@ -91,5 +107,7 @@ export const RUN_PHASE_LABELS: Record<WorkspaceRunPhase, string> = {
   "failed-test": "Tests failed",
   timeout: "Run timed out",
   "service-unavailable": "Service unavailable",
-  "successful-submission": "Submission passed",
+  "run-passed": "Tests passing",
+  "run-failed": "Tests failing",
+  "successful-submission": "Submitted — passed",
 };

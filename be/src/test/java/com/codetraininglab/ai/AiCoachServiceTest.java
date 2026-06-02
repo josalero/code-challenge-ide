@@ -17,6 +17,7 @@ import com.codetraininglab.platform.persistence.SubmissionReportEntity;
 import com.codetraininglab.platform.persistence.SubmissionReportRepository;
 import com.codetraininglab.platform.persistence.SubmissionRepository;
 import com.codetraininglab.domain.SubmissionStatus;
+import com.codetraininglab.domain.SubmissionKind;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -81,6 +82,7 @@ class AiCoachServiceTest {
                     challengeId,
                     UUID.randomUUID(),
                     SubmissionStatus.COMPLETED,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
                     "c",
                     null,
                     null,
@@ -138,6 +140,7 @@ class AiCoachServiceTest {
                     challengeId,
                     UUID.randomUUID(),
                     SubmissionStatus.COMPLETED,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
                     "c",
                     null,
                     null,
@@ -194,6 +197,7 @@ class AiCoachServiceTest {
                     UUID.randomUUID(),
                     UUID.randomUUID(),
                     SubmissionStatus.COMPLETED,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
                     "c",
                     null,
                     null,
@@ -262,6 +266,7 @@ class AiCoachServiceTest {
                     challengeId,
                     UUID.randomUUID(),
                     SubmissionStatus.COMPLETED,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
                     "code",
                     null,
                     null,
@@ -291,6 +296,7 @@ class AiCoachServiceTest {
                     challengeId,
                     UUID.randomUUID(),
                     SubmissionStatus.COMPLETED,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
                     "class Solution {}",
                     null,
                     null,

@@ -21,6 +21,7 @@ export type RegistrationInfoResponse = {
 export type ProgressEntry = {
   challengeSlug: string;
   state: string;
+  submitted: boolean;
 };
 
 export type ChallengeSummary = {
@@ -93,6 +94,7 @@ export type ChallengeDetail = {
 export type SubmissionResponse = {
   id: string;
   status: string;
+  kind: string;
   reportId: string | null;
   createdAt: string;
 };
@@ -156,6 +158,17 @@ export type RunnerImageStatus = {
   warmed: boolean | null;
 };
 
+export type LanguageWarmStatus = {
+  language: string;
+  version: string | null;
+  label: string;
+  runnerImage: string | null;
+  runnerPresent: boolean;
+  runnerReady: boolean | null;
+  editorReady: boolean | null;
+  ready: boolean;
+};
+
 export type RunnerOpsStatus = {
   dockerAvailable: boolean;
   dockerEnabled: boolean;
@@ -168,6 +181,7 @@ export type RunnerOpsStatus = {
   mavenCacheVolume: string;
   runnerImages: RunnerImageStatus[];
   lspImages: RunnerImageStatus[];
+  languages: LanguageWarmStatus[];
   activeJobId: string | null;
 };
 

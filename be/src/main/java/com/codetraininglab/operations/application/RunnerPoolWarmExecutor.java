@@ -23,7 +23,6 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
 @Component
@@ -34,6 +33,7 @@ public class RunnerPoolWarmExecutor {
   private final LanguageRuntimeRepository runtimeRepository;
   private final LanguageRepository languageRepository;
   private final RunnerContainerPool runnerContainerPool;
+  private final RunnerWarmStateStore warmStateStore;
   private final JsonMapper jsonMapper;
 
   public RunnerPoolWarmExecutor(
@@ -41,20 +41,20 @@ public class RunnerPoolWarmExecutor {
       LanguageRuntimeRepository runtimeRepository,
       LanguageRepository languageRepository,
       RunnerContainerPool runnerContainerPool,
+      RunnerWarmStateStore warmStateStore,
       JsonMapper jsonMapper) {
     this.properties = properties;
     this.runtimeRepository = runtimeRepository;
     this.languageRepository = languageRepository;
     this.runnerContainerPool = runnerContainerPool;
+    this.warmStateStore = warmStateStore;
     this.jsonMapper = jsonMapper;
   }
 
-  public Map<String, String> warm(
-      boolean force, List<String> onlyLanguages, Consumer<String> log, Path stampFile)
-      throws IOException {
+  public Map<String, String> warm(boolean force, List<String> onlyLanguages, Consumer<String> log) {
     if (!properties.runnerPoolEnabled()) {
       log.accept("Runner pool disabled — skipping smoke warm.\n");
-      return loadStamp(stampFile);
+      return warmStateStore.runnerPoolStampByImage();
     }
 
     Map<UUID, LanguageEntity> languages =
@@ -63,8 +63,7 @@ public class RunnerPoolWarmExecutor {
                 java.util.stream.Collectors.toMap(
                     LanguageEntity::getId, language -> language));
     LinkedHashSet<String> filters = normalizeLanguageFilters(onlyLanguages);
-    Map<String, String> stamp = loadStamp(stampFile);
-    Map<String, String> updated = new LinkedHashMap<>(stamp);
+    Map<String, String> updated = new LinkedHashMap<>(warmStateStore.runnerPoolStampByImage());
 
     for (LanguageRuntimeEntity runtime : runtimeRepository.findAllOrdered()) {
       if (!runtime.isActive()) {
@@ -83,10 +82,12 @@ public class RunnerPoolWarmExecutor {
       ImageIdentity identity = inspectImage(image);
       if (!identity.present()) {
         log.accept("Skipping " + label + " — image missing: " + image + "\n");
+        warmStateStore.recordRunnerPoolCold(image);
         continue;
       }
       if (!force && identity.imageId() != null && identity.imageId().equals(updated.get(image))) {
         log.accept("Skipping " + label + " — already warmed for " + image + "\n");
+        warmStateStore.recordRunnerPoolWarm(image, identity.imageId());
         continue;
       }
 
@@ -111,6 +112,7 @@ public class RunnerPoolWarmExecutor {
           runnerContainerPool.execute(
               image, plan.challengeDir(), plan.workspaceLayout(), jobJson, job.limits());
 
+      String warmDetail = formatWarmResultDetail(result);
       log.accept(
           "  → status="
               + result.status()
@@ -118,6 +120,7 @@ public class RunnerPoolWarmExecutor {
               + result.tests().size()
               + ", compileWarnings="
               + (result.compile() == null ? 0 : result.compile().warnings())
+              + warmDetail
               + "\n");
 
       if (isInfrastructureFailure(result)) {
@@ -132,13 +135,41 @@ public class RunnerPoolWarmExecutor {
                     .orElse("runner error"));
       }
 
+      if (!RunnerStatus.COMPLETED.name().equals(result.status())
+          || result.tests().stream().anyMatch(test -> "FAIL".equals(test.status()))) {
+        String detail =
+            result.tests().stream()
+                .filter(test -> "FAIL".equals(test.status()))
+                .map(RunnerResult.TestOutcome::message)
+                .filter(msg -> msg != null && !msg.isBlank())
+                .findFirst()
+                .orElse(
+                    RunnerStatus.COMPLETED.name().equals(result.status())
+                        ? "one or more smoke tests failed"
+                        : "runner smoke failed");
+        throw new IllegalStateException("Smoke warm tests did not pass for " + label + ": " + detail);
+      }
+
       if (identity.imageId() != null) {
         updated.put(image, identity.imageId());
-        saveStamp(stampFile, updated);
+        warmStateStore.recordRunnerPoolWarm(image, identity.imageId());
       }
     }
 
     return updated;
+  }
+
+  static String formatWarmResultDetail(RunnerResult result) {
+    if (result == null || result.tests() == null || result.tests().isEmpty()) {
+      return "";
+    }
+    return result.tests().stream()
+        .filter(test -> "FAIL".equals(test.status()))
+        .map(RunnerResult.TestOutcome::message)
+        .filter(msg -> msg != null && !msg.isBlank())
+        .findFirst()
+        .map(msg -> ", detail=" + msg)
+        .orElse("");
   }
 
   static boolean isInfrastructureFailure(RunnerResult result) {
@@ -165,12 +196,21 @@ public class RunnerPoolWarmExecutor {
       return null;
     }
     try {
+      String solution = RunnerWarmSolutions.solutionFor(slug).orElse(Files.readString(starter));
+      if (containsStarterStub(solution)) {
+        throw new IllegalStateException(
+            "Warm smoke for "
+                + label
+                + " would run challenge starter stub for "
+                + slug
+                + " — add a passing entry to RunnerWarmSolutions");
+      }
       return new WarmPlan(
           slug,
           challengeDir,
           files.workspaceLayout().id(),
-          Files.readString(starter),
-          loadHiddenTests(challengeDir));
+          solution,
+          List.of());
     } catch (IOException ex) {
       throw new IllegalStateException("Could not read starter for " + label + ": " + starter, ex);
     }
@@ -191,32 +231,6 @@ public class RunnerPoolWarmExecutor {
       throw new IllegalStateException("Could not read hidden tests under " + hiddenDir, ex);
     }
     return List.copyOf(tests);
-  }
-
-  Map<String, String> loadStamp(Path stampFile) {
-    return loadStamp(stampFile, jsonMapper);
-  }
-
-  static Map<String, String> loadStamp(Path stampFile, JsonMapper jsonMapper) {
-    if (!Files.isRegularFile(stampFile)) {
-      return new LinkedHashMap<>();
-    }
-    try {
-      String raw = Files.readString(stampFile);
-      if (raw.isBlank()) {
-        return new LinkedHashMap<>();
-      }
-      Map<String, String> stamp =
-          jsonMapper.readValue(raw, new TypeReference<LinkedHashMap<String, String>>() {});
-      return stamp == null ? new LinkedHashMap<>() : new LinkedHashMap<>(stamp);
-    } catch (IOException ex) {
-      return new LinkedHashMap<>();
-    }
-  }
-
-  void saveStamp(Path stampFile, Map<String, String> stamp) throws IOException {
-    Files.createDirectories(stampFile.getParent());
-    Files.writeString(stampFile, jsonMapper.writeValueAsString(stamp));
   }
 
   private static LinkedHashSet<String> normalizeLanguageFilters(List<String> onlyLanguages) {
@@ -249,6 +263,16 @@ public class RunnerPoolWarmExecutor {
       Thread.currentThread().interrupt();
       return new ImageIdentity(false, null);
     }
+  }
+
+  private static boolean containsStarterStub(String solution) {
+    if (solution == null || solution.isBlank()) {
+      return true;
+    }
+    return solution.contains("UnsupportedOperationException")
+        || solution.contains("NotImplementedError")
+        || solution.contains("throw new Error(\"TODO\")")
+        || solution.contains("panic(\"TODO\")");
   }
 
   private record WarmPlan(

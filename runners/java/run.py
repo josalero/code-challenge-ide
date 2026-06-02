@@ -65,9 +65,7 @@ def _write_solution(job: dict) -> None:
         write_file(WORKSPACE / java_test_path(custom), custom)
 
 
-def _write_all_test_sources(job: dict) -> None:
-    _write_solution(job)
-
+def _write_test_sources(job: dict) -> None:
     test_root = WORKSPACE / "src/test/java"
     if test_root.is_dir():
         shutil.rmtree(test_root)
@@ -83,6 +81,20 @@ def _write_all_test_sources(job: dict) -> None:
         source = hidden.get("source") or ""
         if source.strip():
             write_file(WORKSPACE / java_test_path(source), source)
+
+
+def _write_all_test_sources(job: dict) -> None:
+    _write_solution(job)
+    _write_test_sources(job)
+
+
+def _invalidate_compiled_outputs() -> None:
+    """Drop stale bytecode and Surefire XML so incremental pool runs do not reuse prior results."""
+    target = WORKSPACE / "target"
+    for sub in ("classes", "test-classes", "surefire-reports"):
+        compiled = target / sub
+        if compiled.is_dir():
+            shutil.rmtree(compiled)
 
 
 def _bootstrap_workspace(pom_text: str) -> None:
@@ -104,12 +116,17 @@ def _reset_workspace_sources() -> None:
         shutil.rmtree(src)
 
 
+def _is_warm_smoke(job: dict) -> bool:
+    return (job.get("submission_id") or "").startswith("warm-")
+
+
 def setup_workspace(job: dict) -> None:
     os.environ["HOME"] = "/tmp/home"
     ensure_m2_repository()
 
     slug = (job.get("challenge_slug") or "").strip()
     pooled = os.environ.get("CTL_RUNNER_POOLED") == "1"
+    warm_smoke = _is_warm_smoke(job)
 
     pom_src = OPT / "pom-template.xml"
     pom_text = pom_src.read_text(encoding="utf-8")
@@ -117,20 +134,33 @@ def setup_workspace(job: dict) -> None:
         major = os.environ.get("JAVA_MAJOR", "26")
         pom_text = pom_text.replace("__JAVA_MAJOR__", major)
 
+    if warm_smoke and pooled and _pooled_maven_cache_ready():
+        _reset_workspace_sources()
+        _write_all_test_sources(job)
+        _invalidate_compiled_outputs()
+        if slug:
+            STAMP.write_text(slug, encoding="utf-8")
+        return
+
     if (
         pooled
+        and not warm_smoke
         and slug
         and STAMP.is_file()
         and STAMP.read_text(encoding="utf-8") == slug
         and _pooled_maven_cache_ready()
     ):
         _write_solution(job)
+        # Pool warm sends hidden_tests=[] but a prior submission may have left hidden tests on disk.
+        _write_test_sources(job)
+        _invalidate_compiled_outputs()
         return
 
     if pooled and _pooled_maven_cache_ready():
         # Same pooled container, different challenge: keep Maven target/deps, swap sources only.
         _reset_workspace_sources()
         _write_all_test_sources(job)
+        _invalidate_compiled_outputs()
         if slug:
             STAMP.write_text(slug, encoding="utf-8")
         return
