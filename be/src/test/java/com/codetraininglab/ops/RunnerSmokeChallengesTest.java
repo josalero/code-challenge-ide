@@ -2,14 +2,38 @@ package com.codetraininglab.operations.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class RunnerSmokeChallengesTest {
 
-  @Test
-  void mapsLanguagesToSmokeSlugs() {
-    assertThat(RunnerSmokeChallenges.slugFor("java")).isEqualTo("reverse-string");
-    assertThat(RunnerSmokeChallenges.slugFor("go")).isEqualTo("anagram-check-go");
-    assertThat(RunnerSmokeChallenges.slugFor("react")).isEqualTo("accordion-react");
+  @ParameterizedTest(name = "{0} → {1}")
+  @MethodSource("expectedSmokeSlugs")
+  void mapsLanguageToCanonicalSmokeSlug(String language, String slug) {
+    assertThat(RunnerSmokeChallenges.slugFor(language)).isEqualTo(slug);
+  }
+
+  static Stream<Arguments> expectedSmokeSlugs() {
+    return Stream.of(
+        Arguments.of("java", "reverse-string"),
+        Arguments.of("python", "armstrong-number"),
+        Arguments.of("go", "anagram-check-go"),
+        Arguments.of("node", "anagram-check-node"),
+        Arguments.of("typescript", "anagram-check-typescript"),
+        Arguments.of("csharp", "anagram-check-csharp"),
+        Arguments.of("rust", "anagram-check-rust"),
+        Arguments.of("cpp", "anagram-check-cpp"),
+        Arguments.of("react", "accordion-react"),
+        Arguments.of("vue", "computed-filter-vue"),
+        Arguments.of("angular", "double-service-angular"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("expectedSmokeSlugs")
+  void slugForIsStableAcrossCasing(String language, String slug) {
+    assertThat(RunnerSmokeChallenges.slugFor(language.toUpperCase())).isEqualTo(slug);
+    assertThat(RunnerSmokeChallenges.slugFor("  " + language + "  ")).isEqualTo(slug);
   }
 }
