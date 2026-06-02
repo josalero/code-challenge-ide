@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -93,6 +94,9 @@ class RunnerPoolWarmExecutorWarmTest {
   }
 
   @Test
+  @Disabled(
+      "Requires local Docker image code-challenge-ide-runner-java-26:local; covered by"
+          + " RunnerPoolWarmExecutorLanguageTest without Docker")
   void warmRunsSmokeSubmissionForActiveJavaRuntime() throws Exception {
     UUID languageId = UUID.randomUUID();
     LanguageEntity language = new LanguageEntity(languageId, "java", "Java");
