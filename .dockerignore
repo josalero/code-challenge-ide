@@ -8,7 +8,7 @@
 **/.gradle
 *.md
 docs/
-scripts/
+# scripts/ must stay in context — be/Dockerfile copies scripts/ for LSP warm (CTL_REPO_ROOT=/app)
 .env
 .env.*
 !/.env.example
