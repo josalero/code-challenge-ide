@@ -4,14 +4,25 @@ difficulty: easy
 language: rust
 default_runtime_version: "1.84"
 description_md: |
+  ## What to do
   Return true if n is a power of two (n > 0).
+  
+  Return whether `n` is a power of two (including `1 = 2^0`).
+  
+  
+  ## Examples
+  - `1` → `true`
+  - `3` → `false`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
 public_tests_meta:
-  - name: "public_1"
+  - name: "ispoweroftwo_1_should_be_true"
     description: "isPowerOfTwo(1) should be true"
-  - name: "public_2"
+  - name: "ispoweroftwo_3_should_be_false"
     description: "isPowerOfTwo(3) should be false"

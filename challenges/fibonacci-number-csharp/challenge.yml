@@ -4,7 +4,19 @@ difficulty: easy
 language: csharp
 default_runtime_version: "8.0"
 description_md: |
+  ## What to do
   Return the n-th Fibonacci number (fib(0)=0, fib(1)=1).
+  
+  Use the standard definition: `F(0) = 0`, `F(1) = 1`, and `F(n) = F(n-1) + F(n-2)`.
+  
+  
+  ## Examples
+  - `0` → `0`
+  - `1` → `1`
+  - `5` → `5`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

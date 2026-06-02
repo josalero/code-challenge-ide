@@ -2,7 +2,7 @@
 
 Multi-language code challenge platform.
 
-**Docs:** [docs/README.md](docs/README.md) · **Backend:** [be/ARCHITECTURE.md](be/ARCHITECTURE.md) · **Agents:** [AGENTS.md](AGENTS.md)
+**Docs:** [docs/README.md](docs/README.md) · **User guide:** [docs/user-guide.md](docs/user-guide.md) · **Backend:** [be/ARCHITECTURE.md](be/ARCHITECTURE.md) · **Agents:** [AGENTS.md](AGENTS.md)
 
 ## Prerequisites
 
@@ -75,6 +75,12 @@ Flyway migrations run on API startup (including warm-state tables). Reset local 
 
 ---
 
+## Using the platform
+
+Sign-up, challenge workspace (**Run** / **Submit**), admin **Ops** warm-up, and troubleshooting are documented in **[docs/user-guide.md](docs/user-guide.md)**.
+
+---
+
 ## Make commands
 
 The [Makefile](Makefile) wraps common Docker and runner tasks. There is **no single `make` target** for host-based local dev (infra in Docker, API + UI on the host) — run those steps below. For a **one-command full stack in Docker**, use `make up`.
@@ -95,7 +101,7 @@ The [Makefile](Makefile) wraps common Docker and runner tasks. There is **no sin
 | **`make config`** | Print resolved compose config. |
 | **`make cursor-vendors`** | Install Cursor vendor assets (`scripts/install-cursor-vendors.sh`). |
 
-**Admin UI:** signed-in admins can open **Ops** at `/admin/ops` — runner/LSP **Built** vs **Warm** status, on-demand Maven/LSP warm. Details: [docs/runner-ops.md](docs/runner-ops.md).
+**Admin Ops:** warm runners and LSP from the UI — [docs/user-guide.md#administrator-flows](docs/user-guide.md#administrator-flows). Backend details: [docs/runner-ops.md](docs/runner-ops.md).
 
 ---
 
@@ -178,7 +184,7 @@ See [docs/coolify.md](docs/coolify.md) for self-hosted deployment, runner image 
 | --- | --- |
 | **`be/`** | Java 26, Spring Boot 4, PostgreSQL, RabbitMQ |
 | **`fe/`** | React 19, Vite, TypeScript, Monaco, shadcn/ui, Ant Design, Tailwind — [docs/frontend.md](docs/frontend.md) |
-| **`runners/java/`** | Java Maven/JUnit/JaCoCo sandbox (17/21/25/26) |
+| **`runners/java/`** | Java Maven/JUnit/JaCoCo sandbox (25/26) |
 | **`runners/python/`** | Python 3.12 pytest/coverage/ruff sandbox |
 | **`runners/go/`** | Go 1.23 `go test` + vet |
 | **`runners/node/`** | Node 22 `node:test` + ESLint + c8 |

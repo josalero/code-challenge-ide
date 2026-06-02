@@ -38,6 +38,16 @@ class LspWorkspaceSupportTest {
   }
 
   @Test
+  void populateUpdatesExistingWorkspace() throws Exception {
+    var root = Files.createTempDirectory("ctl-lsp-populate-");
+    LspWorkspaceSupport.populate(root, "python", "x = 1\n");
+    assertThat(Files.readString(root.resolve("solution.py"))).contains("x = 1");
+    LspWorkspaceSupport.populate(root, "python", "y = 2\n");
+    assertThat(Files.readString(root.resolve("solution.py"))).contains("y = 2");
+    deleteRecursively(root);
+  }
+
+  @Test
   void createsMavenWorkspaceWithSolution() throws Exception {
     var root =
         LspWorkspaceSupport.create(

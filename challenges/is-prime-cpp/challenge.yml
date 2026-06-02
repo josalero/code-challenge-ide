@@ -4,16 +4,28 @@ difficulty: easy
 language: cpp
 default_runtime_version: "20"
 description_md: |
+  ## What to do
   Return true if n >= 2 is prime.
+  
+  A prime number is an integer greater than `1` with no positive divisors other than `1` and itself.
+  
+  
+  ## Examples
+  - `1` → `false`
+  - `2` → `true`
+  - `17` → `true`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
 public_tests_meta:
-  - name: "public_1"
+  - name: "isprime_1_should_be_false"
     description: "isPrime(1) should be false"
-  - name: "public_2"
+  - name: "isprime_2_should_be_true"
     description: "isPrime(2) should be true"
-  - name: "public_3"
+  - name: "isprime_17_should_be_true"
     description: "isPrime(17) should be true"

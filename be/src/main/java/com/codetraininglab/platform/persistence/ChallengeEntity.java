@@ -89,6 +89,14 @@ public class ChallengeEntity {
     return descriptionMd;
   }
 
+  public void setDescriptionMd(String descriptionMd) {
+    this.descriptionMd = descriptionMd;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
+  }
+
   public String getStarterCode() {
     return starterCode;
   }

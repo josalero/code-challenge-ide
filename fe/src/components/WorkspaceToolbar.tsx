@@ -6,7 +6,11 @@ import {
 } from "@ant-design/icons";
 import { Button, Popconfirm, Select, Space, Tooltip, Typography } from "antd";
 import type { ChallengeDetail } from "../api/types";
-import { formatLanguageLabel, formatRuntimeLabel } from "../utils/languageRuntimes";
+import {
+  formatLanguageLabel,
+  formatRuntimeLabel,
+  sortRuntimesByVersionDesc,
+} from "../utils/languageRuntimes";
 
 type Props = {
   challenge: ChallengeDetail;
@@ -49,9 +53,7 @@ export default function WorkspaceToolbar({
             value={runtimeVersion}
             onChange={onRuntimeChange}
             disabled={isRunning}
-            options={challenge.runtimes
-              .filter((r) => r.active)
-              .map((r) => ({
+            options={sortRuntimesByVersionDesc(challenge.runtimes.filter((r) => r.active)).map((r) => ({
                 value: r.version,
                 label: formatRuntimeLabel(challenge.language, r.version),
               }))}

@@ -12,7 +12,7 @@ When this doc disagrees with code, trust **`DockerRunnerClient`**, **`RunnerCont
 | --- | --- | --- |
 | Purpose | Compile & run tests | IntelliSense in Monaco |
 | Trigger | User clicks **Run tests** | Opening a challenge workspace |
-| Containers | `ctl-runner-pool-{image}` (pooled) or one-shot `docker run --rm` | `code-challenge-ide-lsp-*` (per WebSocket session) |
+| Containers | `ctl-runner-pool-{image}` (pooled) or one-shot `docker run --rm` | `ctl-lsp-pool-{user}-{language}` (pooled per user; `docker exec` per editor session) |
 | Warm in Admin Ops | **Runner pool smoke** + **Maven cache** | LSP **Warm** |
 
 **Built** = Docker image exists locally.
@@ -48,11 +48,12 @@ Set `RUNNER_POOL_ENABLED=false` to fall back to one-shot `docker run --rm` per s
 ### Cleanup
 
 ```bash
-# Pooled runner containers (API-managed)
+# Pooled runner containers (API-managed; not Compose — remove-orphans does not touch these)
 docker rm -f $(docker ps -aq --filter label=ctl.runner-pool=true) 2>/dev/null
 
-# Orphan compose build containers after make runners
-docker compose -f docker-compose.local.yml up -d --remove-orphans   # make infra
+# Orphan Compose runner services (e.g. removed java-17/java-21) — automatic on:
+#   make runners   (down --remove-orphans for runner project)
+#   make up        (compose up --remove-orphans)
 ```
 
 Rebuild images after changing `runners/*/run.py` or Dockerfiles:

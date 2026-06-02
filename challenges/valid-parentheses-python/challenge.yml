@@ -4,7 +4,19 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Return whether bracket string `()` `{}` `[]` is valid and properly nested.
+  
+  A string is valid when every opening bracket has a matching closing bracket of the same type and pairs are properly nested. Ignore all other characters.
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `()`
 gating_config:
   line_coverage_percent: 80
 limits:

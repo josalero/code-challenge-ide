@@ -4,7 +4,19 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Given lowercase words separated by spaces, return dict mapping word -> count.
+  
+  Read the task and signature carefully. Use the public examples to clarify edge cases before submitting.
+  
+  
+  ## Examples
+  - `\"a a b\"` → `{\"a\": 2, \"b\": 1}`
+  - `\"\"` → `{}`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +24,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_two_words"
-    description: "Checks that two words"
+    description: "Expect word_frequency(\"a a b\") to equal {\"a\": 2, \"b\": 1}"
   - name: "test_empty"
-    description: "Checks that empty"
+    description: "Expect word_frequency(\"\") to equal {}"

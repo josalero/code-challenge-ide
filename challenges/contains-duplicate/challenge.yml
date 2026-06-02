@@ -4,7 +4,24 @@ difficulty: easy
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Implement `Solution.containsDuplicate(int[] nums)` — `true` if any value appears at least twice.
+  
+  Return `true` if any value appears at least twice in the array.
+  
+  
+  ## Examples
+  - `[1, 2, 3, 1]` → `true`
+  - `[1, 2, 3, 4]` → `false`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  - Arrays may be empty unless examples show otherwise.
+  
+  ## Method to implement
+  
+  `Solution.containsDuplicate(int[] nums)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

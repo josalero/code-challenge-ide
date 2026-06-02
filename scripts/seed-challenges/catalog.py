@@ -1,12 +1,17 @@
 """
-Curated challenge catalog inspired by:
-- TheAlgorithms (Java, Python, Go, Rust, C++, TypeScript, C-Sharp)
-- kunal-kushwaha/DSA-Bootcamp-Java
-- Asabeneh/30-Days-Of-Python
-- florinpop17/app-ideas, project-based-learning (exercise themes)
+Curated challenge catalog inspired by (see docs/challenge-catalog-sources.md):
+- https://github.com/TheAlgorithms/Java
+- https://github.com/TheAlgorithms/Python
+- https://github.com/TheAlgorithms/Go
+- https://github.com/TheAlgorithms/C-Sharp
+- https://github.com/TheAlgorithms/Rust
+- https://github.com/TheAlgorithms/C-Plus-Plus
+- https://github.com/type-challenges/type-challenges
+- https://github.com/florinpop17/app-ideas
+- https://github.com/gothinkster/realworld
 
-Java and Python are defined here. Go, Node, TypeScript, C#, and Rust are in catalog_multi.py.
-Run: python3 scripts/seed-challenges/generate.py
+Java and Python are defined here. Go, Node, TypeScript, C#, Rust, C++ are in catalog_multi*.py.
+Frontend tracks: catalog_frontend*.py. Run: python3 scripts/seed-challenges/generate.py
 """
 
 JAVA_CHALLENGES = [

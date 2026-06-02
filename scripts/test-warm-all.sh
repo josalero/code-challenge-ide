@@ -27,7 +27,7 @@ run_step() {
 }
 
 run_step "Runner smoke (11 languages, ephemeral docker run)" "${ROOT}/scripts/smoke-runners.sh"
-run_step "Runner pool warm (all runtimes + Java 17/21/25/26)" python3 "${ROOT}/scripts/runner_pool_warm.py"
+run_step "Runner pool warm (all runtimes + Java 25/26)" python3 "${ROOT}/scripts/runner_pool_warm.py"
 run_step "LSP warm (all servers + Vue)" \
   env CTL_FORCE_LSP_WARM=1 python3 "${ROOT}/scripts/lsp_warm.py" --force --include-vue --parallel 2
 

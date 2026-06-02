@@ -4,7 +4,19 @@ difficulty: medium
 language: node
 default_runtime_version: "22"
 description_md: |
+  ## What to do
   Return the largest sum of any contiguous subarray (Kadane).
+  
+  Find the contiguous subarray with the largest sum and return that sum (Kadane's algorithm is the classic approach).
+  
+  
+  ## Examples
+  - `[-2, 1, -3, 4, -1, 2, 1, -4, 3]` → `6`
+  - `[1]` → `1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Aim for an efficient solution; brute force may time out on large hidden inputs.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

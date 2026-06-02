@@ -26,14 +26,6 @@ jobs:
           - component: fe
             context: fe
             dockerfile: fe/Dockerfile
-          - component: runner-java-17
-            context: runners/java
-            dockerfile: runners/java/Dockerfile
-            build-args: JAVA_MAJOR=17
-          - component: runner-java-21
-            context: runners/java
-            dockerfile: runners/java/Dockerfile
-            build-args: JAVA_MAJOR=21
           - component: runner-java-25
             context: runners/java
             dockerfile: runners/java/Dockerfile

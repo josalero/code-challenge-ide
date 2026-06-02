@@ -4,7 +4,23 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Return `True` if any value appears at least twice in `nums`.
+  
+  Return `true` if any value appears at least twice in the array.
+  
+  
+  ## Examples
+  - `[1, 2, 3, 1]` → `true`
+  - `[1, 2, 3]` → `false`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `True`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +28,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_dup"
-    description: "Checks that dup"
+    description: "Expect contains_duplicate([1, 2, 3, 1]) to be true"
   - name: "test_unique"
-    description: "Checks that unique"
+    description: "Expect contains_duplicate([1, 2, 3]) to be false"

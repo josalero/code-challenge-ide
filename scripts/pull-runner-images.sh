@@ -17,8 +17,6 @@ TAG="${CTL_IMAGE_TAG:-latest}"
 PREFIX="${REGISTRY}/${OWNER}/code-challenge-ide"
 
 COMPONENTS=(
-  runner-java-17
-  runner-java-21
   runner-java-25
   runner-java-26
   runner-python-312

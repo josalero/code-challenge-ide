@@ -19,6 +19,11 @@ fi
 echo "Building runner images (all languages + LSP)…"
 docker compose "${COMPOSE_FILES[@]}" build
 
+echo "Removing orphaned runner compose containers (dropped services, e.g. old Java tracks)…"
+for project in code-training-lab-local code-training-lab; do
+  docker compose -p "${project}" -f docker-compose.runners.yml down --remove-orphans 2>/dev/null || true
+done
+
 echo "Runner images ready."
 echo "  Warm Maven cache: Admin Ops → Warm Maven, or:"
 echo "    docker compose ${COMPOSE_FILES[*]} run --rm runner-m2-warm"

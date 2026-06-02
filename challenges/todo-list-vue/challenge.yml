@@ -4,7 +4,20 @@ difficulty: medium
 language: vue
 default_runtime_version: "3.5"
 description_md: |
+  ## What to do
   SFC `TodoList` — add todo on button click; list renders todo text.
+  
+  Implement the component or module described above so it passes the Vitest tests. Focus on rendering, user interaction, and predictable state — not routing or backend APIs.
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Export the component/service/pipe expected by the Vitest suite.
+  - Aim for an efficient solution; brute force may time out on large hidden inputs.
+  
+  ## Method to implement
+  
+  `TodoList`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

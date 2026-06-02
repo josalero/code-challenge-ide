@@ -4,7 +4,23 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Return sum of decimal digits of non-negative integer `n`.
+  
+  Read the task and signature carefully. Use the public examples to clarify edge cases before submitting.
+  
+  
+  ## Examples
+  - `123` → `6`
+  - `0` → `0`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `n`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +28,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_123"
-    description: "Checks that 123"
+    description: "Expect sum_of_digits(123) to equal 6"
   - name: "test_zero"
-    description: "Checks that zero"
+    description: "Expect sum_of_digits(0) to equal 0"

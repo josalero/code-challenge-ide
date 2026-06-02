@@ -4,7 +4,22 @@ difficulty: easy
 language: node
 default_runtime_version: "22"
 description_md: |
+  ## What to do
   Return whether `()`, `[]`, and `{}` brackets are balanced and properly nested.
+  
+  A string is valid when every opening bracket has a matching closing bracket of the same type and pairs are properly nested. Ignore all other characters.
+  
+  
+  ## Examples
+  - `\"()\"` → `true`
+  - `\"()[]{}\"` → `true`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  
+  ## Method to implement
+  
+  `()`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

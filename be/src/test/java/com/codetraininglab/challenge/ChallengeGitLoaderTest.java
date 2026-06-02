@@ -17,6 +17,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
@@ -75,5 +76,73 @@ class ChallengeGitLoaderTest {
     assertThat(captor.getValue().getSlug()).isEqualTo("demo");
     verify(publicRepo).save(any());
     verify(hiddenRepo).save(any());
+  }
+
+  @Test
+  void syncsDescriptionWhenChallengeAlreadyExists() throws Exception {
+    Path challengeDir = tempDir.resolve("demo");
+    Files.createDirectories(challengeDir.resolve("starter"));
+    Files.createDirectories(challengeDir.resolve("public/tests"));
+    Files.createDirectories(challengeDir.resolve("hidden/tests"));
+    Files.writeString(
+        challengeDir.resolve("challenge.yml"),
+        """
+        slug: demo
+        title: Demo
+        difficulty: easy
+        description_md: |
+          ## What to do
+          Updated narrative for learners.
+        gating_config:
+          line_coverage_percent: 80
+        """);
+    Files.writeString(
+        challengeDir.resolve("starter/Solution.java"), "package com.challenge; class Solution {}");
+    Files.writeString(
+        challengeDir.resolve("public/tests/DemoTest.java"),
+        "package com.challenge.public_; class DemoTest {}");
+    Files.writeString(
+        challengeDir.resolve("hidden/tests/DemoHiddenTest.java"),
+        "package com.challenge.hidden; class DemoHiddenTest {}");
+
+    ChallengeEntity existing =
+        new ChallengeEntity(
+            UUID.randomUUID(),
+            "demo",
+            "Demo",
+            "Old description",
+            "package com.challenge; class Solution {}",
+            "{\"line_coverage_percent\":80}",
+            "git",
+            "easy",
+            "java",
+            Instant.EPOCH,
+            Instant.EPOCH);
+
+    ChallengeRepository challengeRepository = org.mockito.Mockito.mock(ChallengeRepository.class);
+    ChallengePublicTestRepository publicRepo =
+        org.mockito.Mockito.mock(ChallengePublicTestRepository.class);
+    ChallengeHiddenTestRepository hiddenRepo =
+        org.mockito.Mockito.mock(ChallengeHiddenTestRepository.class);
+    when(challengeRepository.findBySlug("demo")).thenReturn(Optional.of(existing));
+    when(challengeRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    Clock clock = Clock.fixed(Instant.parse("2026-06-01T12:00:00Z"), ZoneOffset.UTC);
+    var properties = CtlPropertiesTestFixtures.defaults(tempDir.toString());
+    ChallengeGitLoader loader =
+        new ChallengeGitLoader(
+            properties,
+            challengeRepository,
+            publicRepo,
+            hiddenRepo,
+            JsonMapper.builder().build(),
+            clock);
+    loader.run(new DefaultApplicationArguments(new String[] {}));
+
+    ArgumentCaptor<ChallengeEntity> captor = ArgumentCaptor.forClass(ChallengeEntity.class);
+    verify(challengeRepository).save(captor.capture());
+    assertThat(captor.getValue().getDescriptionMd()).contains("Updated narrative");
+    verify(publicRepo, org.mockito.Mockito.never()).save(any());
+    verify(hiddenRepo, org.mockito.Mockito.never()).save(any());
   }
 }

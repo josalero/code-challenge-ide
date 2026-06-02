@@ -4,6 +4,7 @@ import com.codetraininglab.operations.api.LanguageWarmStatusResponse;
 import com.codetraininglab.operations.api.RunnerImageStatusResponse;
 import com.codetraininglab.operations.api.RunnerOpsJobResponse;
 import com.codetraininglab.operations.api.RunnerOpsStatusResponse;
+import com.codetraininglab.integration.runner.RunnerContainerPool;
 import com.codetraininglab.platform.config.CtlProperties;
 import com.codetraininglab.platform.persistence.LanguageEntity;
 import com.codetraininglab.platform.persistence.LanguageRepository;
@@ -62,6 +63,7 @@ public class RunnerOpsService {
   private final JsonMapper jsonMapper;
   private final RunnerWarmStateStore warmStateStore;
   private final ObjectProvider<RunnerPoolWarmExecutor> runnerPoolWarmExecutor;
+  private final ObjectProvider<RunnerContainerPool> runnerContainerPool;
   private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
   private final ConcurrentHashMap<UUID, JobState> jobs = new ConcurrentHashMap<>();
   private volatile UUID activeJobId;
@@ -73,7 +75,8 @@ public class RunnerOpsService {
       LanguageRepository languageRepository,
       JsonMapper jsonMapper,
       RunnerWarmStateStore warmStateStore,
-      ObjectProvider<RunnerPoolWarmExecutor> runnerPoolWarmExecutor) {
+      ObjectProvider<RunnerPoolWarmExecutor> runnerPoolWarmExecutor,
+      ObjectProvider<RunnerContainerPool> runnerContainerPool) {
     this.properties = properties;
     this.environment = environment;
     this.runtimeRepository = runtimeRepository;
@@ -81,6 +84,7 @@ public class RunnerOpsService {
     this.jsonMapper = jsonMapper;
     this.warmStateStore = warmStateStore;
     this.runnerPoolWarmExecutor = runnerPoolWarmExecutor;
+    this.runnerContainerPool = runnerContainerPool;
   }
 
   public RunnerOpsStatusResponse status() {
@@ -570,13 +574,20 @@ public class RunnerOpsService {
     if (inspect.present()) {
       if (inspect.imageId() != null) {
         String stampedId = poolWarmStamp.get(image);
-        warmed = stampedId != null && stampedId.equals(inspect.imageId());
+        boolean stampMatches = stampedId != null && RunnerWarmImageIds.matches(stampedId, inspect.imageId());
+        boolean poolRunning = isRunnerPoolRunning(image);
+        warmed = stampMatches || poolRunning;
       } else {
         warmed = false;
       }
     }
     return new RunnerImageStatusResponse(
         label, image, inspect.present(), inspect.imageId(), warmed);
+  }
+
+  private boolean isRunnerPoolRunning(String image) {
+    RunnerContainerPool pool = runnerContainerPool.getIfAvailable();
+    return pool != null && pool.isEnabled() && pool.isPoolRunningForImage(image);
   }
 
   private RunnerImageStatusResponse inspectLspImage(

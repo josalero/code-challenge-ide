@@ -106,5 +106,5 @@ export const ApiPaths = {
 
 export const JavaRuntimeVersion = {
   DEFAULT: "26",
-  SUPPORTED: ["17", "21", "25", "26"] as const,
+  SUPPORTED: ["25", "26"] as const,
 } as const;

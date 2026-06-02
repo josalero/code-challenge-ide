@@ -3,11 +3,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MAJOR="${1:-26}"
 case "${MAJOR}" in
-  17) IMAGE="${RUNNER_JAVA_17_IMAGE:-code-challenge-ide-runner-java-17:local}" ;;
-  21) IMAGE="${RUNNER_JAVA_21_IMAGE:-code-challenge-ide-runner-java-21:local}" ;;
   25) IMAGE="${RUNNER_JAVA_25_IMAGE:-code-challenge-ide-runner-java-25:local}" ;;
   26) IMAGE="${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}" ;;
-  *) echo "Unsupported Java major: ${MAJOR} (use 17, 21, 25, or 26)" >&2; exit 1 ;;
+  *) echo "Unsupported Java major: ${MAJOR} (use 25 or 26)" >&2; exit 1 ;;
 esac
 docker build -t "${IMAGE}" --build-arg "JAVA_MAJOR=${MAJOR}" \
   -f "${ROOT}/runners/java/Dockerfile" "${ROOT}/runners/java"

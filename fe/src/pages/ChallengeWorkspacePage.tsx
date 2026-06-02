@@ -15,7 +15,8 @@ import AppLayout from "../components/AppLayout";
 import WorkspaceShell from "../components/workspace/WorkspaceShell";
 import type { BottomPanelTab } from "../components/workspace/WorkspaceBottomPanel";
 import type { AttemptRecord } from "../components/workspace/AttemptHistoryTab";
-import type { ActivityEntry, TrackedTest } from "../domain/runProgressTypes";
+import type { ActivityEntry, ActivityKind, TrackedTest } from "../domain/runProgressTypes";
+import { activityEntryFromTestResult } from "../utils/activityLog";
 import {
   ApiPaths,
   JavaRuntimeVersion,
@@ -23,6 +24,7 @@ import {
   SubmissionKind,
   SubmissionStatus,
 } from "../domain/constants";
+import { latestActiveRuntimeVersion } from "../utils/languageRuntimes";
 import type { SubmissionKindValue, SubmissionStatusValue } from "../domain/constants";
 import {
   deriveWorkspaceRunPhase,
@@ -67,10 +69,10 @@ export default function ChallengeWorkspacePage() {
     useState<SubmissionKindValue | null>(null);
   const [lastRunPassed, setLastRunPassed] = useState<boolean | null>(null);
 
-  const appendActivity = useCallback((msg: string) => {
+  const appendActivity = useCallback((msg: string, kind: ActivityKind = "info") => {
     setActivityLog((prev) => [
       ...prev,
-      { id: `${Date.now()}-${prev.length}`, at: Date.now(), message: msg },
+      { id: `${Date.now()}-${prev.length}`, at: Date.now(), message: msg, kind },
     ]);
   }, []);
 
@@ -118,8 +120,10 @@ export default function ChallengeWorkspacePage() {
     initializedSlug.current = slug;
     const draft = loadDraft();
     setSolutionCode(draft ?? detail.starterCode);
-    const defaultRuntime =
-      detail.runtimes.find((r) => r.active)?.version ?? JavaRuntimeVersion.DEFAULT;
+    const defaultRuntime = latestActiveRuntimeVersion(
+      detail.runtimes,
+      JavaRuntimeVersion.DEFAULT,
+    );
     setRuntimeVersion(defaultRuntime);
     setReport(null);
     setSubmissionStatus(null);
@@ -330,7 +334,7 @@ export default function ChallengeWorkspacePage() {
     },
     onTestResult: (test) => {
       setTrackedTests((prev) => applyTestResult(prev, test));
-      appendActivity(`Test ${test.name}: ${test.status}`);
+      setActivityLog((prev) => [...prev, activityEntryFromTestResult(test)]);
     },
     onDone: async (payload) => {
       setStreamConnected(false);
@@ -346,7 +350,8 @@ export default function ChallengeWorkspacePage() {
         setLastRunPassed(passed);
         appendActivity(
           payload[SsePayloadKeys.MESSAGE]
-            ?? (passed ? "Practice run: all tests passed" : "Practice run: some tests failed"),
+            ?? (passed ? "All tests passed — keep editing or submit when ready" : "Some tests failed — fix your solution and run again"),
+          passed ? "success" : "warning",
         );
         if (passed) {
           message.success("All tests passed — keep editing or submit when ready");

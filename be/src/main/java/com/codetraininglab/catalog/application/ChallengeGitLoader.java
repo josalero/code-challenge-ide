@@ -84,6 +84,7 @@ public class ChallengeGitLoader implements ApplicationRunner {
       Optional<ChallengeEntity> existing = challengeRepository.findBySlug(slug);
       if (existing.isPresent()) {
         syncPublicTestMetadata(dir, meta, existing.get().getId());
+        syncDescriptionFromYaml(meta, existing.get());
         return;
       }
       String language = stringVal(meta, "language");
@@ -115,6 +116,20 @@ public class ChallengeGitLoader implements ApplicationRunner {
     } catch (IOException e) {
       log.error("Failed to load challenge from {}", dir, e);
     }
+  }
+
+  private void syncDescriptionFromYaml(Map<String, Object> meta, ChallengeEntity entity) {
+    String descriptionMd = stringVal(meta, "description_md");
+    if (descriptionMd == null || descriptionMd.isBlank()) {
+      return;
+    }
+    if (descriptionMd.equals(entity.getDescriptionMd())) {
+      return;
+    }
+    entity.setDescriptionMd(descriptionMd);
+    entity.setUpdatedAt(clock.instant());
+    challengeRepository.save(entity);
+    log.info("Synced description for challenge {}", entity.getSlug());
   }
 
   private void syncPublicTestMetadata(Path dir, Map<String, Object> meta, UUID challengeId) {

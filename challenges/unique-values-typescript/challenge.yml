@@ -4,7 +4,14 @@ difficulty: easy
 language: typescript
 default_runtime_version: "5.7"
 description_md: |
+  ## What to do
   Return array with duplicates removed (first occurrence order preserved).
+  
+  Read the task and signature carefully. Use the public examples to clarify edge cases before submitting.
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

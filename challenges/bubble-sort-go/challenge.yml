@@ -4,7 +4,19 @@ difficulty: easy
 language: go
 default_runtime_version: "1.23"
 description_md: |
+  ## What to do
   Return a new array sorted ascending using bubble sort (stable).
+  
+  Return a **new** array sorted in ascending order using the bubble sort algorithm (do not mutate the input unless the API says otherwise).
+  
+  
+  ## Examples
+  - `[3, 1, 2]` → `[1,2,3]`
+  - `[1]` → `[1]`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use package `solution` and the function signature from the starter file.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

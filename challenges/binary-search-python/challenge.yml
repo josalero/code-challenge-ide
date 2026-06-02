@@ -4,7 +4,23 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Return index of `target` in sorted `nums`, or `-1`.
+  
+  The input array is sorted in ascending order. Return the index of `target`, or `-1` if it is not present.
+  
+  
+  ## Examples
+  - `[-1, 0, 3, 5, 9], 3` → `2`
+  - `[-1, 0, 3, 5, 9], 2` → `-1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `target`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +28,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_found"
-    description: "Checks that found"
+    description: "Expect binary_search([-1, 0, 3, 5, 9], 3) to equal 2"
   - name: "test_missing"
-    description: "Checks that missing"
+    description: "Expect binary_search([-1, 0, 3, 5, 9], 2) to equal -1"

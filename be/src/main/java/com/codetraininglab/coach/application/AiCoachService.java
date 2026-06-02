@@ -15,6 +15,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Comparator;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AiCoachService {
+
+  private static final int CODE_PROMPT_LIMIT = 6000;
+  private static final int TASK_SUMMARY_LIMIT = 900;
 
   private final FeedbackItemRepository feedbackItemRepository;
   private final SubmissionReportRepository reportRepository;
@@ -51,7 +56,9 @@ public class AiCoachService {
     if (item.getAiExplanation() != null) {
       return new ExplainResponse(item.getAiExplanation());
     }
-    String explanation = callProvider(coachPrompt(item, ownedFeedback.challenge()));
+    String explanation =
+        callProvider(
+            coachPrompt(item, ownedFeedback.challenge(), ownedFeedback.submission()));
     item.setAiExplanation(explanation);
     feedbackItemRepository.save(item);
     return new ExplainResponse(explanation);
@@ -75,61 +82,66 @@ public class AiCoachService {
         """
         You are a supportive coding coach reviewing a learner's submission for challenge '%s' (%s).
 
-        Submission code:
-        ```
+        Task summary:
         %s
-        ```
 
-        Give a short structured review covering:
-        1. Correctness and edge cases
-        2. Readability and naming
-        3. Performance and complexity (with Big-O when relevant)
-        4. One concrete next improvement they could try
+        %s
 
-        Do not output a full replacement solution; suggest direction, not code.
+        %s
         """
             .formatted(
                 challenge.getSlug(),
                 displayLanguage(challenge.getLanguage()),
-                truncateForPrompt(submission.getSolutionCode()))
+                truncateForPrompt(challenge.getDescriptionMd(), TASK_SUMMARY_LIMIT),
+                learnerSubmissionBlock(submission.getSolutionCode()),
+                coachAnalysisInstructions(challenge.getLanguage()))
             .trim();
     return callProvider(prompt);
   }
 
-  private static String truncateForPrompt(String code) {
-    int limit = 6000;
-    if (code == null) {
-      return "";
-    }
-    return code.length() <= limit ? code : code.substring(0, limit) + "\n...[truncated]";
-  }
-
   public AlternativesResponse alternatives(UUID userId, String slug) {
     ChallengeEntity challenge = findChallenge(slug);
-    boolean passed =
-        submissionRepository.findAll().stream()
-            .anyMatch(
-                s ->
-                    s.getUserId().equals(userId)
-                        && s.getChallengeId().equals(challenge.getId())
-                        && reportRepository
-                            .findBySubmissionId(s.getId())
-                            .map(r -> !r.isBlocked())
-                            .orElse(false));
-    if (!passed) {
-      throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "Alternatives require a passing submission");
-    }
+    SubmissionEntity submission =
+        findLatestPassingSubmission(userId, challenge.getId())
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.CONFLICT, "Alternatives require a passing submission"));
     String text =
         callProvider(
             """
-            You are a coding coach. The learner passed challenge '%s' in %s.
-            Suggest 2–3 alternative approaches or refinements (trade-offs, complexity, readability).
-            Do not provide a full replacement solution or complete code.
+            You are a coding coach. The learner passed challenge '%s' in %s with the submission below.
+
+            Task summary:
+            %s
+
+            %s
+
+            Suggest 2–3 alternative approaches or refinements compared to what they wrote
+            (trade-offs, complexity, readability). Reference their code where helpful.
+
+            %s
             """
-                .formatted(slug, displayLanguage(challenge.getLanguage()))
+                .formatted(
+                    slug,
+                    displayLanguage(challenge.getLanguage()),
+                    truncateForPrompt(challenge.getDescriptionMd(), TASK_SUMMARY_LIMIT),
+                    learnerSubmissionBlock(submission.getSolutionCode()),
+                    coachAnalysisInstructions(challenge.getLanguage()))
                 .trim());
     return new AlternativesResponse(text);
+  }
+
+  private Optional<SubmissionEntity> findLatestPassingSubmission(UUID userId, UUID challengeId) {
+    return submissionRepository.findAll().stream()
+        .filter(s -> s.getUserId().equals(userId) && s.getChallengeId().equals(challengeId))
+        .filter(
+            s ->
+                reportRepository
+                    .findBySubmissionId(s.getId())
+                    .map(report -> !report.isBlocked())
+                    .orElse(false))
+        .max(Comparator.comparing(SubmissionEntity::getCreatedAt));
   }
 
   private OwnedFeedback loadOwnedItem(UUID userId, UUID itemId) {
@@ -152,7 +164,7 @@ public class AiCoachService {
         challengeRepository
             .findById(submission.getChallengeId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    return new OwnedFeedback(item, challenge);
+    return new OwnedFeedback(item, challenge, submission);
   }
 
   private ChallengeEntity findChallenge(String slug) {
@@ -223,26 +235,80 @@ public class AiCoachService {
     }
   }
 
-  static String coachPrompt(FeedbackItemEntity item, ChallengeEntity challenge) {
+  static String coachPrompt(
+      FeedbackItemEntity item, ChallengeEntity challenge, SubmissionEntity submission) {
     return """
-        You are a supportive coding coach helping someone practice %s challenges.
-        They are learning — analyze this automated feedback and help them improve.
+        You are a supportive coding coach for %s practice.
 
         Challenge: %s
-        Category: %s
-        Result: %s
-        Feedback: %s
+        Task summary:
+        %s
 
-        Explain what this means in plain language, why it matters for practice, and give
-        specific next steps. Do not paste a full solution; hints and small examples only.
+        Automated check:
+        - Category: %s
+        - Result: %s
+        - Message: %s
+
+        %s
+
+        Relate your answer to this learner's actual code and the automated check above.
+        %s
         """
         .formatted(
             displayLanguage(challenge.getLanguage()),
             challenge.getSlug(),
+            truncateForPrompt(challenge.getDescriptionMd(), TASK_SUMMARY_LIMIT),
             item.getCategory(),
             item.getStatus(),
-            item.getMessage())
+            item.getMessage(),
+            learnerSubmissionBlock(submission.getSolutionCode()),
+            coachAnalysisInstructions(challenge.getLanguage()))
         .trim();
+  }
+
+  static String learnerSubmissionBlock(String solutionCode) {
+    return """
+        Learner's current submission:
+        ```
+        %s
+        ```
+        """
+        .formatted(truncateForPrompt(solutionCode, CODE_PROMPT_LIMIT))
+        .strip();
+  }
+
+  static String coachAnalysisInstructions(String language) {
+    String lang = displayLanguage(language);
+    return """
+        Analyze the learner's submission (not a generic tutorial). Structure your reply as:
+        1. **What your code does** — brief walkthrough tied to their implementation
+        2. **What to improve** — specific hints linked to the feedback or gaps you see
+        3. **Alternatives** — 1–2 other patterns or refactors (trade-offs, complexity) with short samples
+
+        Rules:
+        - Reference their approach (method names, data structures, control flow) before suggesting changes.
+        - Give actionable hints and partial steps, not a complete solution for this challenge.
+        %s
+        - Prefer %s for sample snippets unless another language fits better.
+        """
+        .formatted(codeSampleGuidance(language), lang)
+        .strip();
+  }
+
+  static String codeSampleGuidance(String language) {
+    return """
+        - Use Markdown fenced code blocks (``` + language tag) with 5–15 lines per pattern example.
+        - Use inline `code` for identifiers and one-liners.
+        - Samples must illustrate a technique (e.g. early return, map grouping, two pointers) — not the full answer.
+        """
+        .strip();
+  }
+
+  static String truncateForPrompt(String text, int limit) {
+    if (text == null || text.isBlank()) {
+      return "(not provided)";
+    }
+    return text.length() <= limit ? text : text.substring(0, limit) + "\n...[truncated]";
   }
 
   static String displayLanguage(String language) {
@@ -272,5 +338,6 @@ public class AiCoachService {
 
   public record AlternativesResponse(String alternatives) {}
 
-  private record OwnedFeedback(FeedbackItemEntity item, ChallengeEntity challenge) {}
+  private record OwnedFeedback(
+      FeedbackItemEntity item, ChallengeEntity challenge, SubmissionEntity submission) {}
 }

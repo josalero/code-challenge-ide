@@ -4,7 +4,24 @@ difficulty: easy
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Implement `Solution.factorial(int n)` returning `n!` for `n >= 0`. For `n == 0` return `1`.
+  
+  By definition, `0! = 1`. For `n > 0`, multiply all integers from `1` through `n`.
+  
+  
+  ## Examples
+  - `0` → `1L`
+  - `5` → `120L`
+  - `1` → `1L`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  
+  ## Method to implement
+  
+  `Solution.factorial(int n)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

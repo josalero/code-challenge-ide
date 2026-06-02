@@ -2,6 +2,7 @@ package com.codetraininglab.integration.lsp;
 
 import com.codetraininglab.platform.config.CtlProperties;
 import com.codetraininglab.platform.web.ApiPaths;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -17,10 +18,13 @@ public class LspWebSocketHandler extends TextWebSocketHandler {
 
   private final CtlProperties properties;
   private final LspSessionRegistry registry;
+  private final LspUserLanguagePool lspPool;
 
-  public LspWebSocketHandler(CtlProperties properties, LspSessionRegistry registry) {
+  public LspWebSocketHandler(
+      CtlProperties properties, LspSessionRegistry registry, LspUserLanguagePool lspPool) {
     this.properties = properties;
     this.registry = registry;
+    this.lspPool = lspPool;
   }
 
   @Override
@@ -39,9 +43,14 @@ public class LspWebSocketHandler extends TextWebSocketHandler {
       session.close(CloseStatus.SERVER_ERROR.withReason("No LSP image configured"));
       return;
     }
+    UUID userId = (UUID) session.getAttributes().get("userId");
+    if (userId == null) {
+      session.close(CloseStatus.POLICY_VIOLATION.withReason("Authentication required"));
+      return;
+    }
     String solution = (String) session.getAttributes().getOrDefault("solutionCode", "");
     try {
-      LspDockerSession lspSession = LspDockerSession.start(session, language, image, solution);
+      LspDockerSession lspSession = lspPool.attach(session, userId, language, image, solution);
       registry.register(session, lspSession);
     } catch (Exception e) {
       log.warn("Failed to start {} LSP session: {}", language, e.getMessage());

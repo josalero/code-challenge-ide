@@ -9,6 +9,7 @@ import type {
   FeedbackActionTypeValue,
 } from "../api/types";
 import { ApiPaths } from "../domain/constants";
+import CoachMarkdown from "./CoachMarkdown";
 import CtlCard from "./ui/CtlCard";
 
 type Props = {
@@ -26,7 +27,8 @@ const ACTIONS: ActionOption[] = [
   {
     value: "COACH",
     label: "AI coach review",
-    description: "LLM review of your submission with hints — not full solutions.",
+    description:
+      "LLM review of your submitted code: hints, alternative approaches, and short illustrative samples — not full solutions.",
     available: true,
   },
   {
@@ -171,11 +173,9 @@ export default function FeedbackActionsPanel({ submissionId }: Props) {
                 />
               )}
               {action.result && (
-                <Typography.Paragraph
-                  className="!mt-2 !mb-0 whitespace-pre-wrap !text-slate-300"
-                >
-                  {action.result}
-                </Typography.Paragraph>
+                <div className="mt-2">
+                  <CoachMarkdown text={action.result} />
+                </div>
               )}
             </div>
           ))}

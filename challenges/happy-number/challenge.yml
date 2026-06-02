@@ -4,7 +4,23 @@ difficulty: easy
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Replace `n` with sum of squares of its digits until `1` (happy) or loop (not). `Solution.isHappy(int n)`.
+  
+  Read the task and signature carefully. Use the public examples to clarify edge cases before submitting.
+  
+  
+  ## Examples
+  - `19` → `true`
+  - `2` → `false`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  
+  ## Method to implement
+  
+  `n`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

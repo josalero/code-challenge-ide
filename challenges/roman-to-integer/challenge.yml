@@ -4,7 +4,24 @@ difficulty: medium
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Convert a Roman numeral string to an integer. Implement `Solution.romanToInt(String s)`.
+  
+  Read the task and signature carefully. Use the public examples to clarify edge cases before submitting.
+  
+  
+  ## Examples
+  - `\"III\"` → `3`
+  - `\"LVIII\"` → `58`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  - Aim for an efficient solution; brute force may time out on large hidden inputs.
+  
+  ## Method to implement
+  
+  `Solution.romanToInt(String s)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

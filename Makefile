@@ -22,7 +22,7 @@ cursor-vendors:
 	@./scripts/install-cursor-vendors.sh
 
 down:
-	docker compose down
+	docker compose down --remove-orphans
 
 down-infra:
 	docker compose -f docker-compose.local.yml down -v --remove-orphans
@@ -36,7 +36,7 @@ ps:
 	docker compose ps
 
 reset:
-	docker compose down -v
+	docker compose down -v --remove-orphans
 
 config:
 	docker compose config

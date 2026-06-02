@@ -20,7 +20,7 @@ COPY pom-template.xml run.py daemon.py /opt/runner/
 COPY entrypoint.sh /entrypoint.sh
 
 # Warm Maven repository so sandbox runs work with --network none.
-# Shared BuildKit cache (id=ctl-java-m2) speeds parallel java-17/21/25/26 builds; copy into the image layer.
+# Shared BuildKit cache (id=ctl-java-m2) speeds parallel java-25/26 builds; copy into the image layer.
 RUN --mount=type=cache,id=ctl-java-m2,target=/tmp/m2cache \
     mkdir -p /opt/runner/warm/src/main/java/com/challenge \
     && mkdir -p /opt/runner/warm/src/test/java/com/challenge/public_ \

@@ -4,7 +4,23 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Reverse the string `s` and return it.
+  
+  Return a new string (or mutate in place where applicable) with characters in reverse order.
+  
+  
+  ## Examples
+  - `\"hello\"` → `\"olleh\"`
+  - `\"\"` → `\"\"`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `s`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +28,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_hello"
-    description: "Checks that hello"
+    description: "Expect reverse_string(\"hello\") to equal \"olleh\""
   - name: "test_empty"
-    description: "Checks that empty"
+    description: "Expect reverse_string(\"\") to equal \"\""

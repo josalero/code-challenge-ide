@@ -3,6 +3,7 @@ package com.codetraininglab.platform.config;
 import com.codetraininglab.platform.web.ApiPaths;
 import com.codetraininglab.integration.lsp.JwtWebSocketHandshakeInterceptor;
 import com.codetraininglab.integration.lsp.LspWebSocketHandler;
+import java.util.Arrays;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -31,10 +32,14 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
   @Override
   public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-    String[] origins = properties.corsAllowedOrigins().split(",");
+    String[] originPatterns =
+        Arrays.stream(properties.corsAllowedOrigins().split(","))
+            .map(String::trim)
+            .filter(origin -> !origin.isEmpty())
+            .toArray(String[]::new);
     registry
         .addHandler(lspHandler, ApiPaths.LSP_PREFIX + "{language}")
         .addInterceptors(handshakeInterceptor)
-        .setAllowedOrigins(origins);
+        .setAllowedOriginPatterns(originPatterns);
   }
 }

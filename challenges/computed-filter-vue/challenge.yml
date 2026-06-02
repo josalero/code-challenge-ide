@@ -4,7 +4,19 @@ difficulty: easy
 language: vue
 default_runtime_version: "3.5"
 description_md: |
+  ## What to do
   SFC `ItemFilter` — prop `items: string[]`, input filters list case-insensitively (computed pattern).
+  
+  Implement the component or module described above so it passes the Vitest tests. Focus on rendering, user interaction, and predictable state — not routing or backend APIs.
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Export the component/service/pipe expected by the Vitest suite.
+  
+  ## Method to implement
+  
+  `ItemFilter`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

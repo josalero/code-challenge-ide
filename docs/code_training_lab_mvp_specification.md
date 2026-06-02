@@ -293,7 +293,7 @@ flowchart LR
 
 | Language | Versions | Phase |
 | --- | --- | --- |
-| **Java** | 17, 21, 25, 26 | **1a** |
+| **Java** | 25, 26 | **1a** |
 | **Python** | 3.11, 3.12, 3.13 | 1b |
 | **Node** | 20, 22, 24 | 1b |
 | **C#** | .NET 8, 9, 10 | 1b |

@@ -4,7 +4,23 @@ difficulty: easy
 language: python
 default_runtime_version: "3.12"
 description_md: |
+  ## What to do
   Return whether `n >= 2` is prime.
+  
+  A prime number is an integer greater than `1` with no positive divisors other than `1` and itself.
+  
+  
+  ## Examples
+  - `1` → `false`
+  - `17` → `true`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Put your solution in `starter/solution.py` with the expected function names.
+  
+  ## Method to implement
+  
+  `n >= 2`
 gating_config:
   line_coverage_percent: 80
 limits:
@@ -12,6 +28,6 @@ limits:
 starter_main_class: solution
 public_tests_meta:
   - name: "test_not_prime_one"
-    description: "Checks that not prime one"
+    description: "Expect is_prime(1) to be false"
   - name: "test_prime_seventeen"
-    description: "Checks that prime seventeen"
+    description: "Expect is_prime(17) to be true"

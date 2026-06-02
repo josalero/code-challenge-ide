@@ -4,7 +4,23 @@ difficulty: easy
 language: java
 default_runtime_version: "26"
 description_md: |
+  ## What to do
   Array `nums` contains `n` distinct values in `[0, n]`. One value is missing. Return it.
+  
+  The array `nums` contains `n` distinct values taken from the range `[0, n]`. Exactly one number from that range is missing.
+  
+  
+  ## Examples
+  - `[3, 0, 1]` → `2`
+  - `[0]` → `1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  
+  ## Method to implement
+  
+  `nums`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

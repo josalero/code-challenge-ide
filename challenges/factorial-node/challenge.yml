@@ -4,16 +4,28 @@ difficulty: easy
 language: node
 default_runtime_version: "22"
 description_md: |
+  ## What to do
   Return n! for n >= 0 (0! = 1).
+  
+  By definition, `0! = 1`. For `n > 0`, multiply all integers from `1` through `n`.
+  
+  
+  ## Examples
+  - `0` → `1`
+  - `5` → `120`
+  - `1` → `1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
 public_tests_meta:
-  - name: "public_1"
+  - name: "factorial_0_should_equal_1"
     description: "factorial(0) should equal 1"
-  - name: "public_2"
+  - name: "factorial_5_should_equal_120"
     description: "factorial(5) should equal 120"
-  - name: "public_3"
+  - name: "factorial_1_should_equal_1"
     description: "factorial(1) should equal 1"

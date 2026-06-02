@@ -358,8 +358,38 @@ class AiCoachServiceTest {
             "id",
             Instant.EPOCH);
 
-    String prompt = AiCoachService.coachPrompt(item, challenge);
+    var submission =
+        new SubmissionEntity(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            challenge.getId(),
+            UUID.randomUUID(),
+            SubmissionStatus.COMPLETED,
+            com.codetraininglab.domain.SubmissionKind.SUBMIT,
+            "int[] twoSum(int[] nums, int target) { return null; }",
+            null,
+            null,
+            Instant.EPOCH,
+            Instant.EPOCH);
+
+    String prompt = AiCoachService.coachPrompt(item, challenge, submission);
 
     assertThat(prompt).contains("C++").contains("slug");
+    assertThat(prompt).contains("Learner's current submission");
+    assertThat(prompt).contains("twoSum");
+    assertThat(prompt).contains("Alternatives");
+    assertThat(prompt).contains("fenced code blocks");
+  }
+
+  @Test
+  void codeSampleGuidanceMentionsFencedBlocks() {
+    assertThat(AiCoachService.codeSampleGuidance("java")).contains("fenced code blocks");
+  }
+
+  @Test
+  void coachAnalysisInstructionsRequireSubmissionAnalysis() {
+    assertThat(AiCoachService.coachAnalysisInstructions("java"))
+        .contains("learner's submission")
+        .contains("Alternatives");
   }
 }

@@ -33,6 +33,8 @@ class RunnerOpsServiceTest {
   @Mock private LanguageRepository languageRepository;
   @Mock private Environment environment;
   @Mock private ObjectProvider<RunnerPoolWarmExecutor> runnerPoolWarmExecutor;
+  @Mock private ObjectProvider<com.codetraininglab.integration.runner.RunnerContainerPool>
+      runnerContainerPool;
   @Mock private RunnerWarmStateStore warmStateStore;
 
   private final JsonMapper jsonMapper = JsonMapper.builder().build();
@@ -74,7 +76,8 @@ class RunnerOpsServiceTest {
             languageRepository,
             jsonMapper,
             warmStateStore,
-            runnerPoolWarmExecutor);
+            runnerPoolWarmExecutor,
+            runnerContainerPool);
   }
 
   @Test
@@ -88,20 +91,20 @@ class RunnerOpsServiceTest {
   void statusListsEachActiveRuntimeInLanguageInventory() {
     UUID javaId = UUID.randomUUID();
     LanguageEntity java = new LanguageEntity(javaId, "java", "Java");
-    LanguageRuntimeEntity java17 =
+    LanguageRuntimeEntity java25 =
         new LanguageRuntimeEntity(
-            UUID.randomUUID(), javaId, "17", "code-challenge-ide-runner-java-17:local", true);
+            UUID.randomUUID(), javaId, "25", "code-challenge-ide-runner-java-25:local", true);
     LanguageRuntimeEntity java26 =
         new LanguageRuntimeEntity(
             UUID.randomUUID(), javaId, "26", "code-challenge-ide-runner-java-26:local", true);
     when(languageRepository.findAll()).thenReturn(List.of(java));
-    when(runtimeRepository.findAllOrdered()).thenReturn(List.of(java17, java26));
+    when(runtimeRepository.findAllOrdered()).thenReturn(List.of(java25, java26));
 
     var status = service.status();
 
     assertThat(status.languages().stream().filter(row -> "java".equals(row.language())))
         .extracting(LanguageWarmStatusResponse::label)
-        .containsExactly("java 17", "java 26");
+        .containsExactly("java 25", "java 26");
   }
 
   @Test
@@ -162,7 +165,8 @@ class RunnerOpsServiceTest {
             languageRepository,
             jsonMapper,
             warmStateStore,
-            runnerPoolWarmExecutor);
+            runnerPoolWarmExecutor,
+            runnerContainerPool);
 
     var job = dockerEnabledService.startRunnerWarm(false, List.of("java"));
 
@@ -204,7 +208,8 @@ class RunnerOpsServiceTest {
             languageRepository,
             jsonMapper,
             warmStateStore,
-            runnerPoolWarmExecutor);
+            runnerPoolWarmExecutor,
+            runnerContainerPool);
 
     assertThatThrownBy(() -> dockerEnabledService.startRunnerWarm(false, List.of("kotlin")))
         .isInstanceOf(ResponseStatusException.class)
@@ -243,7 +248,8 @@ class RunnerOpsServiceTest {
             languageRepository,
             jsonMapper,
             warmStateStore,
-            runnerPoolWarmExecutor);
+            runnerPoolWarmExecutor,
+            runnerContainerPool);
     when(environment.getProperty("ctl.repo-root", "")).thenReturn(repoRoot().toString());
 
     assertThatThrownBy(() -> dockerEnabledService.startLspWarm(false, List.of("kotlin")))

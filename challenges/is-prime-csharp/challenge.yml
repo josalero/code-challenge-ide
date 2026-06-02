@@ -4,7 +4,19 @@ difficulty: easy
 language: csharp
 default_runtime_version: "8.0"
 description_md: |
+  ## What to do
   Return true if n >= 2 is prime.
+  
+  A prime number is an integer greater than `1` with no positive divisors other than `1` and itself.
+  
+  
+  ## Examples
+  - `1` → `false`
+  - `2` → `true`
+  - `17` → `true`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0

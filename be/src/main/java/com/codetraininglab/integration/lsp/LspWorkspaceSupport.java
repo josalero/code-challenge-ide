@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.UUID;
 
 /** Creates temp workspaces on disk for language-server Docker mounts. */
 public final class LspWorkspaceSupport {
@@ -75,22 +76,36 @@ public final class LspWorkspaceSupport {
     return language != null && SUPPORTED.contains(language.trim().toLowerCase());
   }
 
-  public static Path create(String language, String solutionSource) throws IOException {
+  public static Path userWorkspaceRoot(Path opsDataDir, UUID userId, String language) {
+    return opsDataDir
+        .resolve("lsp-workspaces")
+        .resolve(userId.toString())
+        .resolve(language.trim().toLowerCase());
+  }
+
+  /** Writes challenge starter files into {@code root} (creates directories as needed). */
+  public static void populate(Path root, String language, String solutionSource) throws IOException {
     String lang = language.trim().toLowerCase();
-    return switch (lang) {
-      case "java" -> createJava(solutionSource);
-      case "python" -> createSingleFile("solution.py", defaultPython(solutionSource));
-      case "go" -> createGo(solutionSource);
-      case "node" -> createJsStack("solution.js", defaultNode(solutionSource));
-      case "typescript" -> createJsStack("solution.ts", defaultTypeScript(solutionSource));
-      case "react" -> createJsStack("solution.tsx", defaultReact(solutionSource));
-      case "vue" -> createJsStack("solution.vue", defaultVue(solutionSource));
-      case "angular" -> createJsStack("solution.ts", defaultAngular(solutionSource));
-      case "csharp" -> createCsharp(solutionSource);
-      case "rust" -> createRust(solutionSource);
-      case "cpp" -> createCpp(solutionSource);
+    switch (lang) {
+      case "java" -> populateJava(root, solutionSource);
+      case "python" -> populateSingleFile(root, "solution.py", defaultPython(solutionSource));
+      case "go" -> populateGo(root, solutionSource);
+      case "node" -> populateJsStack(root, "solution.js", defaultNode(solutionSource));
+      case "typescript" -> populateJsStack(root, "solution.ts", defaultTypeScript(solutionSource));
+      case "react" -> populateJsStack(root, "solution.tsx", defaultReact(solutionSource));
+      case "vue" -> populateJsStack(root, "solution.vue", defaultVue(solutionSource));
+      case "angular" -> populateJsStack(root, "solution.ts", defaultAngular(solutionSource));
+      case "csharp" -> populateCsharp(root, solutionSource);
+      case "rust" -> populateRust(root, solutionSource);
+      case "cpp" -> populateCpp(root, solutionSource);
       default -> throw new IllegalArgumentException("Unsupported LSP language: " + language);
-    };
+    }
+  }
+
+  public static Path create(String language, String solutionSource) throws IOException {
+    Path root = Files.createTempDirectory("ctl-lsp-");
+    populate(root, language, solutionSource);
+    return root;
   }
 
   /** Document path relative to {@code /workspace} — must match Monaco model URI on the client. */
@@ -111,8 +126,7 @@ public final class LspWorkspaceSupport {
     };
   }
 
-  private static Path createJava(String solutionSource) throws IOException {
-    Path root = Files.createTempDirectory("ctl-lsp-");
+  private static void populateJava(Path root, String solutionSource) throws IOException {
     Path mainDir = root.resolve("src/main/java/com/challenge");
     Files.createDirectories(mainDir);
     Files.writeString(root.resolve("pom.xml"), JAVA_POM, StandardCharsets.UTF_8);
@@ -126,17 +140,16 @@ public final class LspWorkspaceSupport {
             """
             : solutionSource;
     Files.writeString(mainDir.resolve("Solution.java"), source, StandardCharsets.UTF_8);
-    return root;
   }
 
-  private static Path createSingleFile(String fileName, String content) throws IOException {
-    Path root = Files.createTempDirectory("ctl-lsp-");
+  private static void populateSingleFile(Path root, String fileName, String content)
+      throws IOException {
+    Files.createDirectories(root);
     Files.writeString(root.resolve(fileName), content, StandardCharsets.UTF_8);
-    return root;
   }
 
-  private static Path createGo(String solutionSource) throws IOException {
-    Path root = Files.createTempDirectory("ctl-lsp-");
+  private static void populateGo(Path root, String solutionSource) throws IOException {
+    Files.createDirectories(root);
     Files.writeString(
         root.resolve("go.mod"),
         """
@@ -149,19 +162,18 @@ public final class LspWorkspaceSupport {
         root.resolve("solution.go"),
         defaultGo(solutionSource),
         StandardCharsets.UTF_8);
-    return root;
   }
 
-  private static Path createJsStack(String fileName, String content) throws IOException {
-    Path root = Files.createTempDirectory("ctl-lsp-");
+  private static void populateJsStack(Path root, String fileName, String content)
+      throws IOException {
+    Files.createDirectories(root);
     Files.writeString(root.resolve("package.json"), NODE_PACKAGE_JSON, StandardCharsets.UTF_8);
     Files.writeString(root.resolve("tsconfig.json"), TSCONFIG, StandardCharsets.UTF_8);
     Files.writeString(root.resolve(fileName), content, StandardCharsets.UTF_8);
-    return root;
   }
 
-  private static Path createCsharp(String solutionSource) throws IOException {
-    Path root = Files.createTempDirectory("ctl-lsp-");
+  private static void populateCsharp(Path root, String solutionSource) throws IOException {
+    Files.createDirectories(root);
     Files.writeString(
         root.resolve("workspace.csproj"),
         """
@@ -178,11 +190,9 @@ public final class LspWorkspaceSupport {
         root.resolve("Solution.cs"),
         defaultCsharp(solutionSource),
         StandardCharsets.UTF_8);
-    return root;
   }
 
-  private static Path createRust(String solutionSource) throws IOException {
-    Path root = Files.createTempDirectory("ctl-lsp-");
+  private static void populateRust(Path root, String solutionSource) throws IOException {
     Path src = root.resolve("src");
     Files.createDirectories(src);
     Files.writeString(
@@ -198,17 +208,15 @@ public final class LspWorkspaceSupport {
         """,
         StandardCharsets.UTF_8);
     Files.writeString(src.resolve("lib.rs"), defaultRust(solutionSource), StandardCharsets.UTF_8);
-    return root;
   }
 
-  private static Path createCpp(String solutionSource) throws IOException {
-    Path root = Files.createTempDirectory("ctl-lsp-");
+  private static void populateCpp(Path root, String solutionSource) throws IOException {
+    Files.createDirectories(root);
     Files.writeString(
         root.resolve("compile_flags.txt"),
         "-std=c++20\n-I.",
         StandardCharsets.UTF_8);
     Files.writeString(root.resolve("solution.cpp"), defaultCpp(solutionSource), StandardCharsets.UTF_8);
-    return root;
   }
 
   private static String defaultPython(String source) {

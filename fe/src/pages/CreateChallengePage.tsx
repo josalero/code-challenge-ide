@@ -480,7 +480,9 @@ export default function CreateChallengePage() {
     const versions = activeRuntimesForLanguage(runtimes, nextLang);
     const currentVersion = form.getFieldValue("defaultRuntimeVersion");
     const nextVersion =
-      versions.find((v) => v.version === currentVersion)?.version ?? versions[0]?.version ?? "";
+      versions.find((v) => v.version === currentVersion)?.version
+      ?? versions[0]?.version
+      ?? "";
     const patch: Partial<FormValues> = {
       language: nextLang,
       defaultRuntimeVersion: nextVersion,
@@ -590,7 +592,7 @@ export default function CreateChallengePage() {
               const lang = changed.language;
               const versions = activeRuntimesForLanguage(languagesQuery.data, lang);
               const patch: Partial<FormValues> = {
-                defaultRuntimeVersion: versions[0]?.version ?? "",
+                defaultRuntimeVersion: versions[0]?.version ?? "", // newest first (see languageRuntimes)
               };
               if (isTemplateLanguage(lang)) {
                 Object.assign(patch, templatesFor(lang));

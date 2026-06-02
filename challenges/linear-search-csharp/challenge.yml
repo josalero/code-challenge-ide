@@ -4,7 +4,18 @@ difficulty: easy
 language: csharp
 default_runtime_version: "8.0"
 description_md: |
+  ## What to do
   Return index of target in nums, or -1.
+  
+  Return the index of `target` in the array, or `-1` if the value does not occur.
+  
+  
+  ## Examples
+  - `[2, 3, 4], 3` → `index 1`
+  - `[1, 2], 5` → `index -1`
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
