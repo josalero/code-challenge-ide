@@ -252,7 +252,7 @@ export class ReversePipe implements PipeTransform {
 }
 EOF
 
-echo "Smoke-testing runners (11 languages)…"
+echo "Smoke-testing runners (11 languages)..."
 run_smoke "Java" "${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}" reverse-string maven "${TMP}/reverse.java"
 run_smoke "Python" "${RUNNER_PYTHON_312_IMAGE:-code-challenge-ide-runner-python-312:local}" fizzbuzz-python pytest "${TMP}/fizzbuzz.py"
 run_smoke "Go" "${RUNNER_GO_123_IMAGE:-code-challenge-ide-runner-go-123:local}" gcd-go go-test "${TMP}/gcd.go"

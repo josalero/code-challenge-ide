@@ -1,7 +1,7 @@
 name: Docker
 
 # Publishes application images to GHCR.
-# Images: be, fe, all language runners (11 tracks), lsp-java
+# Images: be, fe, all language runners, and LSP images.
 
 on:
   workflow_dispatch:
@@ -70,6 +70,24 @@ jobs:
           - component: lsp-java
             context: runners/lsp-java
             dockerfile: runners/lsp-java/Dockerfile
+          - component: lsp-python
+            context: runners/lsp-python
+            dockerfile: runners/lsp-python/Dockerfile
+          - component: lsp-go
+            context: runners/lsp-go
+            dockerfile: runners/lsp-go/Dockerfile
+          - component: lsp-typescript
+            context: runners/lsp-typescript
+            dockerfile: runners/lsp-typescript/Dockerfile
+          - component: lsp-dotnet
+            context: runners/lsp-dotnet
+            dockerfile: runners/lsp-dotnet/Dockerfile
+          - component: lsp-rust
+            context: runners/lsp-rust
+            dockerfile: runners/lsp-rust/Dockerfile
+          - component: lsp-cpp
+            context: runners/lsp-cpp
+            dockerfile: runners/lsp-cpp/Dockerfile
 
     permissions:
       contents: read

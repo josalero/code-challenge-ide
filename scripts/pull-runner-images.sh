@@ -27,7 +27,14 @@ COMPONENTS=(
   runner-react-19
   runner-vue-35
   runner-angular-19
+  runner-postgres-17
   lsp-java
+  lsp-python
+  lsp-go
+  lsp-typescript
+  lsp-dotnet
+  lsp-rust
+  lsp-cpp
 )
 
 for component in "${COMPONENTS[@]}"; do

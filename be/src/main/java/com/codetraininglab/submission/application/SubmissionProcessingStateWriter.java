@@ -87,6 +87,9 @@ public class SubmissionProcessingStateWriter {
         runtimeRepository
             .findById(submission.getRuntimeId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    String runnerImage =
+        properties.runnerImageFor(
+            challenge.getLanguage(), runtime.getVersion(), runtime.getDockerImage());
     Path challengeDir = Path.of(properties.challengesPath(), challenge.getSlug());
 
     publishStatus(
@@ -100,7 +103,7 @@ public class SubmissionProcessingStateWriter {
     publishStatus(
         submissionId,
         SubmissionStatus.RUNNING,
-        "Launching Docker runner (" + runtime.getDockerImage() + ")");
+        "Launching Docker runner (" + runnerImage + ")");
 
     return new SubmissionProcessingContext(submission, challenge, runtime, challengeDir);
   }

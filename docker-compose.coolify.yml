@@ -4,12 +4,11 @@
 #   Type: Docker Compose
 #   Base directory: repository root (challenges/, runners/, be/, fe/)
 #   Docker Compose file: docker-compose.coolify.yml
-#   Build: enabled — Coolify builds api, fe; runner/LSP use profile `runners` (post-deploy or --profile runners build).
-#   Post-deployment command: optional ./scripts/coolify-post-deploy.sh (rebuild runners after runners/ changes).
+#   Build: enabled — Coolify builds api, fe, runner, and LSP images from this file.
 #
-# Runner/LSP: profile `runners` so default deploy starts FE quickly (avoids 504 while 20+ images build).
+# Runner/LSP images are one-shot build services. They exit 0 after /bin/true; the API waits for
+# them so Ops/Run tests see the same image inventory as local docker-compose.yml.
 # Expose in Coolify: service `code-lab-fe`, container port 80 (HTTPS proxy).
-# Optional host bind: FE_PORT=3010 → ports 3010:80 (direct http://<vps-ip>:3010).
 # Env: cp .env.coolify.example .env — see docs/coolify.md
 
 name: code-training-lab
@@ -23,7 +22,6 @@ networks:
 # FE nginx: fe/nginx.conf baked in image (service name code-lab-api). Avoid compose configs — some Coolify parsers drop them.
 
 x-runner-build-only: &runner-build-only
-
   restart: "no"
   entrypoint: ["/bin/true"]
   networks:
@@ -101,6 +99,7 @@ services:
       RUNNER_ANGULAR_19_IMAGE: ${RUNNER_ANGULAR_19_IMAGE:-code-challenge-ide-runner-angular-19:local}
       RUNNER_POSTGRES_17_IMAGE: ${RUNNER_POSTGRES_17_IMAGE:-code-challenge-ide-runner-postgres-17:local}
       RUNNER_MAVEN_CACHE_VOLUME: ${RUNNER_MAVEN_CACHE_VOLUME:-ctl-runner-m2-cache}
+      RUNNER_POOL_ENABLED: ${RUNNER_POOL_ENABLED:-true}
       RUNNER_POOL_WARM_ON_STARTUP: ${RUNNER_POOL_WARM_ON_STARTUP:-false}
       CTL_OPS_DATA_DIR: /data/ctl-ops
       DOCKER_GID: ${DOCKER_GID:?Set DOCKER_GID to the host docker.sock group id}
@@ -127,6 +126,48 @@ services:
         condition: service_healthy
       code-lab-rabbitmq:
         condition: service_healthy
+      runner-java-25:
+        condition: service_completed_successfully
+      runner-java-26:
+        condition: service_completed_successfully
+      runner-python-312:
+        condition: service_completed_successfully
+      runner-go-123:
+        condition: service_completed_successfully
+      runner-node-22:
+        condition: service_completed_successfully
+      runner-dotnet-8:
+        condition: service_completed_successfully
+      runner-typescript-57:
+        condition: service_completed_successfully
+      runner-rust-184:
+        condition: service_completed_successfully
+      runner-cpp-20:
+        condition: service_completed_successfully
+      runner-react-19:
+        condition: service_completed_successfully
+      runner-vue-35:
+        condition: service_completed_successfully
+      runner-angular-19:
+        condition: service_completed_successfully
+      runner-postgres-17:
+        condition: service_completed_successfully
+      runner-lsp-java:
+        condition: service_completed_successfully
+      runner-lsp-python:
+        condition: service_completed_successfully
+      runner-lsp-go:
+        condition: service_completed_successfully
+      runner-lsp-typescript:
+        condition: service_completed_successfully
+      runner-lsp-dotnet:
+        condition: service_completed_successfully
+      runner-lsp-rust:
+        condition: service_completed_successfully
+      runner-lsp-cpp:
+        condition: service_completed_successfully
+      runner-m2-warm:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness || exit 1"]
       interval: 30s
@@ -142,13 +183,14 @@ services:
       dockerfile: Dockerfile
     image: ${CTL_FE_IMAGE:-code-challenge-ide-fe:local}
     restart: unless-stopped
-    ports:
-      - "${FE_PORT:-3010}:80"
     expose:
       - "80"
     networks:
       - code-lab
       - coolify
+    depends_on:
+      code-lab-api:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
       interval: 15s

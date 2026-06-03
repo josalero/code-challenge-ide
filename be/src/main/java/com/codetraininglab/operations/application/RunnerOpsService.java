@@ -452,8 +452,9 @@ public class RunnerOpsService {
       }
       languagesWithRuntimes.add(languageName);
       String label = languageName + " " + runtime.getVersion();
-      RunnerImageStatusResponse runner =
-          inspectRunnerImage(label, runtime.getDockerImage(), poolWarmStamp);
+      String image =
+          properties.runnerImageFor(languageName, runtime.getVersion(), runtime.getDockerImage());
+      RunnerImageStatusResponse runner = inspectRunnerImage(label, image, poolWarmStamp);
       Boolean runnerReady = runnerReadyFromImage(runner);
       Boolean editorReady = editorReadyForLanguage(languageName, lspByLabel);
       boolean ready = languageWarmReady(runnerReady, editorReady);
@@ -462,7 +463,7 @@ public class RunnerOpsService {
               languageName,
               runtime.getVersion(),
               label,
-              runtime.getDockerImage(),
+              image,
               runner.present(),
               runnerReady,
               editorReady,
@@ -565,9 +566,12 @@ public class RunnerOpsService {
       LanguageEntity language = languages.get(runtime.getLanguageId());
       String label =
           (language == null ? "unknown" : language.getName()) + " " + runtime.getVersion();
+      String languageName = language == null ? "unknown" : language.getName().toLowerCase();
+      String image =
+          properties.runnerImageFor(languageName, runtime.getVersion(), runtime.getDockerImage());
       unique.putIfAbsent(
-          runtime.getDockerImage(),
-          inspectRunnerImage(label, runtime.getDockerImage(), poolWarmStamp));
+          image,
+          inspectRunnerImage(label, image, poolWarmStamp));
     }
     return unique.values().stream()
         .sorted(Comparator.comparing(RunnerImageStatusResponse::label))
