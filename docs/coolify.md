@@ -1,288 +1,206 @@
 # Deploy on Coolify
 
-Code Training Lab is a self-hosted stack: **frontend**, **API**, **Postgres**, **RabbitMQ**, plus **on-demand runner and LSP containers** started by the API through the host Docker socket.
+Code Training Lab is a self-hosted stack with a React frontend, Spring Boot API,
+Postgres, RabbitMQ, and Docker runner/LSP images used by the API for submissions
+and editor assistance.
 
-Use **`docker-compose.coolify.yml`** as the single Compose file in Coolify. It defines **code-lab-postgres**, **code-lab-rabbitmq**, **code-lab-api**, and **code-lab-fe** (no `include` — compatible with Coolify’s Compose parser).
+Use [`docker-compose.coolify.yml`](../docker-compose.coolify.yml) as the single
+Compose file in Coolify. It is intentionally self-contained and mirrors the local
+stack made from `docker-compose.yml` plus `docker-compose.runners.yml`, without
+Compose `include`, runner profiles, or extra deploy commands.
 
-**Default: local Docker build** — `docker-compose.coolify.yml` builds **api** + **fe** on each deploy; runner/LSP use Compose profile **`runners`** (build via post-deploy script so the site is reachable sooner). No GHCR pull required.
+## Deployment Model
 
-Postgres and RabbitMQ use upstream images on the internal network only (no host ports).
+Default Coolify path:
+
+- Coolify builds `code-lab-api`, `code-lab-fe`, every `runner-*` image, every
+  `runner-lsp-*` image, and the Maven cache warm service from the same Compose
+  file.
+- Runner and LSP services are one-shot build services. They run `/bin/true` and
+  exit with status 0 after the image exists. That is expected.
+- `code-lab-api` waits for Postgres, RabbitMQ, runner images, LSP images, and
+  `runner-m2-warm` before starting.
+- No extra Coolify deploy command is required.
+- First deploys can take a long time on small VPS hosts because many base images
+  and language dependencies are downloaded.
+
+Long-running services after deploy:
+
+| Service | Purpose | Expected state |
+| --- | --- | --- |
+| `code-lab-postgres` | Database | Up / healthy |
+| `code-lab-rabbitmq` | Submission queue | Up / healthy |
+| `code-lab-api` | Backend and runner orchestrator | Up / healthy |
+| `code-lab-fe` | Public nginx frontend | Up / healthy |
+| `runner-*`, `runner-lsp-*`, `runner-m2-warm` | Build-only images/cache | Exited 0 |
 
 ## Prerequisites
 
 | Requirement | Notes |
 | --- | --- |
-| **Coolify** on a Linux VPS with Docker | Same host runs Coolify and submission runners |
-| **Docker socket** | API container must mount `/var/run/docker.sock` (already in compose) |
-| **Disk** | ~25–40 GB for local builds + image layers + DB volume |
-| **Git repo** | Coolify deploys from Bitbucket/GitHub; full repo root (`challenges/`, `runners/`, `be/`, `fe/`) |
-| **Build time** | First deploy: API + FE (~10–25 min); runners/LSP via post-deploy (~20–60 min extra) |
+| Coolify on a Linux VPS with Docker | Same host runs Coolify and submission runners |
+| Docker socket | API container must mount `/var/run/docker.sock` |
+| Disk | Plan for 25-40 GB minimum; more is better on first build |
+| Git repo root | Coolify base directory must be `/` so `challenges/`, `runners/`, `be/`, and `fe/` are available |
+| Network access | First build pulls Docker Hub, Microsoft, Maven, npm, Cargo, and OS package assets |
 
-## Coolify UI — step by step
+## Coolify Setup
 
-### 1. Create a Docker Compose resource
+### 1. Create Docker Compose resource
 
 | Field | Value |
 | --- | --- |
-| **Type** | Docker Compose |
-| **Repository** | This project (branch `main` or your release branch) |
-| **Base directory** | `/` (repository root) |
-| **Docker Compose file** | `docker-compose.coolify.yml` |
-| **Build** | **Enabled** — Compose builds `code-lab-api`, `code-lab-fe`, and runner/LSP images (same file) |
+| Type | Docker Compose |
+| Repository | This project |
+| Base directory | `/` |
+| Docker Compose file | `docker-compose.coolify.yml` |
+| Build | Enabled |
 
 ### 2. Domain and routing
 
+Expose only the frontend service:
+
 | Field | Value |
 | --- | --- |
-| **Service to expose** | `code-lab-fe` |
-| **Container port** | **`80`** (nginx inside the container — not `FE_PORT`) |
-| **Host port (optional)** | `FE_PORT=3010` in env maps **`3010:80`** for `http://<vps-ip>:3010` — Coolify HTTPS domain still uses container **80** |
-| **Port mappings** | Coolify attaches to the container port; `FE_PORT` host mapping in compose is optional |
-| **HTTPS** | Enable in Coolify (Let’s Encrypt) |
+| Service | `code-lab-fe` |
+| Container port | `80` |
+| HTTPS | Enable in Coolify |
 
-The frontend proxies `/api/` to the internal `api` service. You do **not** need a separate public domain for the API.
+Do not expose the API separately. The frontend nginx config proxies `/api/` to
+`code-lab-api:8080` on the internal Compose network.
 
-**Proxy requirements:** allow long-lived connections and WebSocket upgrade on `/api/` (LSP and submission event streams).
+Make sure Coolify's proxy supports long-lived HTTP connections and WebSocket
+upgrade for `/api/`, because submissions and LSP features use streaming and
+WebSockets.
 
 ### 3. Environment variables
 
-Set these in Coolify **Environment Variables**, or on the server:
+Start from [`.env.coolify.example`](../.env.coolify.example):
 
 ```bash
 cp .env.coolify.example .env
-# edit .env — secrets, CORS_ALLOWED_ORIGINS, DOCKER_GID
 ```
 
-Template: [`.env.coolify.example`](../.env.coolify.example). General reference: [`.env.example`](../.env.example).
-
-**Required**
+Set these in Coolify Environment Variables:
 
 | Variable | Example | Purpose |
 | --- | --- | --- |
-| `PG_PASSWORD` | strong secret | Postgres |
-| `RMQ_PASSWORD` | strong secret | RabbitMQ |
-| `JWT_SECRET` | ≥ 32 random chars | API auth |
-| `CORS_ALLOWED_ORIGINS` | `https://lab.example.com` | Must match your Coolify URL |
-| `DOCKER_GID` | `988` | Linux: `stat -c '%g' /var/run/docker.sock` |
+| `PG_PASSWORD` | `change-me` | Postgres password |
+| `RMQ_PASSWORD` | `change-me` | RabbitMQ password |
+| `JWT_SECRET` | `at-least-32-random-characters` | JWT signing key |
+| `CORS_ALLOWED_ORIGINS` | `https://lab.example.com` | Exact Coolify URL, no trailing slash |
+| `DOCKER_GID` | `998` | Group id of `/var/run/docker.sock` on the VPS |
 
-**Strongly recommended**
+Recommended production values:
 
-| Variable | Example | Purpose |
+| Variable | Recommended | Notes |
 | --- | --- | --- |
-| `REGISTRATION_ENABLED` | `false` | Lock sign-up on public instances |
-| `RUNNER_POOL_WARM_ON_STARTUP` | `false` | Set `true` after runners are built; or use Ops → Warm |
-| `OPENROUTER_API_KEY` | (secret) | AI coach (optional) |
+| `REGISTRATION_ENABLED` | `false` | Keep public sign-up closed unless needed |
+| `RUNNER_POOL_ENABLED` | `true` | Required for stable Docker-out-of-Docker execution |
+| `RUNNER_POOL_WARM_ON_STARTUP` | `false` | Use Ops -> Warm everything after first deploy |
+| `CTL_LSP_ENABLED` | `true` | Enables editor language servers |
 
-**Runner / LSP images (`:local`)**
+The Coolify env file includes local image names for every runner and LSP image,
+including Rust and SQL:
 
-Defaults in [`.env.coolify.example`](../.env.coolify.example) match Flyway (`code-challenge-ide-runner-*:local`). Defined inline in `docker-compose.coolify.yml` — no GHCR required.
+- `RUNNER_RUST_184_IMAGE=code-challenge-ide-runner-rust-184:local`
+- `RUNNER_POSTGRES_17_IMAGE=code-challenge-ide-runner-postgres-17:local`
+- `LSP_RUST_IMAGE=code-challenge-ide-lsp-rust:local`
 
-Optional GHCR override: set `RUNNER_*_IMAGE` / `LSP_*_IMAGE` to `ghcr.io/...` only if you publish images via [`.github/workflows/build.yml`](../.github/workflows/build.yml) and pull them yourself.
+These names match the image inventory used by the backend.
 
-### 4. Docker socket (required for `code-lab-api`)
+## Docker Socket
 
-The API runs `docker info` and spawns runner/LSP containers on the **host**. Without socket access you will see:
+The API starts runner and LSP containers through the host Docker socket. Without
+socket access, Run tests, warm-up, and LSP features will fail.
 
-```text
-Runner pool warm on startup could not start: … Docker is not reachable from the API container …
-```
-
-**Fix on the VPS**
-
-1. SSH to the server and read the socket group id:
-
-   ```bash
-   stat -c '%g' /var/run/docker.sock
-   ```
-
-2. In Coolify **Environment Variables**, set `DOCKER_GID` to that number (not `0` unless it matches).
-
-3. Confirm `docker-compose.coolify.yml` still mounts the socket on **`code-lab-api`**:
-
-   ```yaml
-   volumes:
-     - /var/run/docker.sock:/var/run/docker.sock
-   group_add:
-     - "${DOCKER_GID}"
-   ```
-
-4. Redeploy the stack.
-
-5. Verify inside the API container:
-
-   ```bash
-   docker ps --filter name=code-lab-api --format '{{.Names}}'
-   docker exec -it <api-container-name> docker info
-   ```
-
-   `docker info` must exit 0. If you get “permission denied”, `DOCKER_GID` is wrong.
-
-**Coolify UI:** Some versions require explicitly allowing the compose project to use the Docker socket (resource **Advanced** / **Docker** settings). If Coolify strips bind mounts, re-add the socket volume or deploy on the same host where Coolify manages Docker.
-
-**Workaround until socket works:** set `RUNNER_POOL_WARM_ON_STARTUP=false`, redeploy, then use Admin → **Ops** → **Warm everything** after fixing `DOCKER_GID`.
-
-### 5. Volumes and mounts (verify in Coolify)
-
-All four services are declared in `docker-compose.coolify.yml`. Confirm Coolify does not strip mounts:
-
-| Service | In Coolify stack | Mount / data |
-| --- | --- | --- |
-| `code-lab-postgres` | Yes | volume `ctl-postgres-data` |
-| `code-lab-rabbitmq` | Yes | ephemeral (queue state in container) |
-| `code-lab-api` | Yes | Built from `be/Dockerfile` (includes `challenges/`); `docker.sock`, `ctl-ops-data` |
-| `code-lab-fe` | Yes (public URL) | nginx config inlined in compose (`configs`) → `code-lab-api:8080` |
-
-**Base directory must be the git root** (API build context is `.`).
-
-### 6. Post-deployment command (optional)
-
-| Field | Value |
-| --- | --- |
-| **Post-deployment / Execute command** | `./scripts/coolify-post-deploy.sh` (recommended) |
-
-Default deploy builds only **4** running services; the script builds profile **`runners`**. Without it, the UI loads but **Run tests** / LSP fail until images exist.
-
-Runner compose services use `entrypoint: /bin/true` — they show as **Exited** after `up`; that is normal (images are for `docker run` from the API).
-
-### 7. GHCR (optional)
-
-The default Coolify path does **not** use GHCR. To use pre-built images instead, change `docker-compose.coolify.yml` back to `image: ghcr.io/...` and run [`pull-runner-images.sh`](../scripts/pull-runner-images.sh) + [`tag-runner-images-local.sh`](../scripts/tag-runner-images-local.sh).
-
-## Manual deploy (SSH on the VPS)
+On the VPS:
 
 ```bash
-git clone <your-repo-url> code-challenge-ide && cd code-challenge-ide
-cp .env.example .env
-# edit .env — set CTL_IMAGE_OWNER, secrets, CORS_ALLOWED_ORIGINS
+stat -c '%g' /var/run/docker.sock
+```
 
+Set `DOCKER_GID` to that value in Coolify, then redeploy.
+
+The API service must keep:
+
+```yaml
+volumes:
+  - /var/run/docker.sock:/var/run/docker.sock
+group_add:
+  - "${DOCKER_GID}"
+```
+
+Verify from the API container:
+
+```bash
+docker ps --filter name=code-lab-api --format '{{.Names}}'
+docker exec -it <api-container-name> docker info
+```
+
+`docker info` must exit 0. If it says permission denied, `DOCKER_GID` is wrong or
+Coolify stripped the socket mount.
+
+## Manual VPS Deploy
+
+For a direct SSH deploy using the same Coolify compose:
+
+```bash
+git clone <your-repo-url> code-challenge-ide
+cd code-challenge-ide
+cp .env.coolify.example .env
+# edit .env: secrets, CORS_ALLOWED_ORIGINS, DOCKER_GID
+
+docker compose -f docker-compose.coolify.yml config --quiet
 docker compose -f docker-compose.coolify.yml build
 docker compose -f docker-compose.coolify.yml up -d
-# optional: ./scripts/coolify-post-deploy.sh  # rebuild runners only + smoke
 ```
 
-Alternative (same stack, two-file override):
+No extra deploy command is needed.
+
+If you run this outside Coolify and the external network does not exist:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
-./scripts/pull-runner-images.sh
-./scripts/build-lsp-images.sh   # if not using coolify-post-deploy.sh
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker network create coolify
 ```
 
-## Services
+## First Login Checklist
 
-| Service | Image | Notes |
-| --- | --- | --- |
-| `code-lab-fe` | `code-challenge-ide-fe:local` (built `fe/Dockerfile`) | Public URL → port **80** |
-| `code-lab-api` | `code-challenge-ide-be:local` (built `be/Dockerfile`) | Internal; Docker socket |
-| `code-lab-postgres` | `postgres:17` | Not exposed on host |
-| `code-lab-rabbitmq` | `rabbitmq:3-management-alpine` | Not exposed on host |
-
-Runner/LSP images are **not** long-running Compose services; the API runs them with `docker run`.
-
-## First login checklist
-
-1. Open `https://<your-domain>/`
-2. Sign in (or register if `REGISTRATION_ENABLED=true`)
-3. Admin → **Ops** → **Warm everything** (if not auto-warmed)
-4. Open a Java challenge → **Run tests** to confirm runners work
-5. `GET https://<your-domain>/api/v1/health` or `/actuator/health/readiness`
-
-## Operations
-
-| Task | How |
-| --- | --- |
-| Health | `GET /api/v1/health`, `/actuator/health/readiness` |
-| Warm state | Admin → **Infrastructure warm-up** (`/admin/ops`) |
-| Dead-letter submissions | `GET /api/v1/ops/dead-letter-submissions?limit=20` |
-| Replay dead-letter | `POST /api/v1/ops/dead-letter-submissions/replay?limit=10` |
-| Logs | Coolify → service logs, or `docker compose -f docker-compose.coolify.yml logs -f api` |
+1. Open `https://<your-domain>/`.
+2. Sign in or register if `REGISTRATION_ENABLED=true`.
+3. Open Admin -> Ops -> Warm everything.
+4. Open a Java, Rust, or SQL challenge and run tests.
+5. Check `GET https://<your-domain>/api/v1/health`.
 
 ## Troubleshooting
 
 | Symptom | Check |
 | --- | --- |
-| `Docker CLI is not available` / `Docker is not reachable` on startup | `DOCKER_GID` = `stat -c '%g' /var/run/docker.sock`; socket volume on `code-lab-api`; `docker exec … docker info` |
-| Run tests fails immediately | Same as above + runner images (`docker images \| grep code-challenge-ide`) |
-| Ops shows runner images **missing** | DB expects `:local` tags; enable Coolify **Build**, redeploy, or run `./scripts/coolify-post-deploy.sh`. See **Runner images on Coolify** below |
-| 401 / CORS in browser | `CORS_ALLOWED_ORIGINS` matches exact site URL (scheme + host) |
-| Wrong redirects / links behind HTTPS | API uses `server.forward-headers-strategy: framework` in `application-production.yml` (same as TrailPulse behind Coolify) |
-| Challenges missing / empty catalog | Do **not** bind-mount `./challenges` on Coolify (empty host dir overrides image). Use GHCR `be` image with baked `/challenges`. API logs: `ChallengeGitLoader` / `Seeded challenge`. Verify: `docker exec <api> ls /challenges \| head` |
-| IntelliSense dead | LSP images built; `CTL_LSP_ENABLED=true`; WebSocket proxy |
-| Ops LSP warm: `python3` not found | Rebuild **API** image (`be/Dockerfile` installs `python3` for `scripts/lsp_warm.py`) |
-| GHCR pull 401 | Registry credentials in Coolify |
-| SQL challenges fail | `runner-postgres-17` built (`coolify-post-deploy.sh`) |
-| `host not found in upstream "api"` (nginx) | Use current `docker-compose.coolify.yml` (inlined nginx `configs`, upstream `code-lab-api`) |
-| `nginx.coolify.conf` mount: not a directory | Remove stray dir on VPS: `rm -rf fe/nginx.coolify.conf` if created by a failed mount; redeploy (compose no longer bind-mounts this file) |
-| **504 / 503** on public URL | Coolify **container port = 80** on `code-lab-fe`; see checks below |
-| Browser `content.js` / `first bit not a valid function name` | Chrome extension noise — not from this app; ignore or disable the extension |
+| Build fails at `docker/dockerfile:1` | Use current runner Java Dockerfile without the BuildKit syntax directive |
+| 504 during deploy | First deploy may still be building all runner/LSP images; check Coolify build logs |
+| 504 after deploy | Coolify must expose `code-lab-fe` on container port `80` |
+| API unhealthy | Check Postgres/RabbitMQ credentials, `JWT_SECRET`, and readiness logs |
+| `Docker is not reachable` | Check socket mount and `DOCKER_GID` |
+| Ops shows Rust or SQL image missing | Confirm `runner-rust-184` and `runner-postgres-17` completed with exit 0 and `docker images` shows the `:local` tags |
+| Run tests fails immediately | Check Docker socket access and runner image inventory |
+| SQL challenges fail | Confirm `RUNNER_POSTGRES_17_IMAGE` points to `code-challenge-ide-runner-postgres-17:local` |
+| IntelliSense dead | Confirm LSP images were built and `CTL_LSP_ENABLED=true` |
+| CORS errors | `CORS_ALLOWED_ORIGINS` must match the exact public URL |
+| `network coolify not found` | Let Coolify create it, or create it manually on SSH |
 
-### Runner images on Coolify
-
-The API uses **`language_runtimes.docker_image`** from Postgres (`code-challenge-ide-*:local`). Coolify builds them when **Build** is enabled on the Compose resource (all `runner-*` / `runner-lsp-*` in `docker-compose.coolify.yml`).
-
-Verify on the VPS:
+Useful VPS checks:
 
 ```bash
+docker compose -f docker-compose.coolify.yml ps
+docker compose -f docker-compose.coolify.yml logs --tail=100 code-lab-api
+docker compose -f docker-compose.coolify.yml logs --tail=100 code-lab-fe
 docker images | grep code-challenge-ide
 ```
 
-If images are missing after deploy, rebuild manually:
+## Optional Prebuilt Images
 
-```bash
-chmod +x scripts/*.sh
-./scripts/coolify-post-deploy.sh
-```
-
-Then Admin → **Ops** → **Warm everything** (or `RUNNER_POOL_WARM_ON_STARTUP=true` once images exist).
-
-### 504 / 503 gateway errors
-
-Coolify returns **504** when nothing answers on **`code-lab-fe:80`** (container crash, never started, wrong port, or deploy still building).
-
-**Common cause:** `code-lab-fe` waited for `code-lab-api` health while the API was still building (Gradle). Compose now starts FE when the API **container is up** (`service_started`), not when readiness passes. The login page should load; `/api/` may 502 until the API is healthy.
-
-**504 during deploy:** If every `runner-*` is built on deploy (no profile), nothing listens on `code-lab-fe:80` until **all** images finish — Coolify shows **504** for a long time. Use profile **`runners`** (current compose) + post-deploy script.
-
-**Runners:** Build with `./scripts/coolify-post-deploy.sh` or `docker compose -f docker-compose.coolify.yml --profile runners build`.
-
-**Coolify domain settings**
-
-| Field | Value |
-| --- | --- |
-| Service | `code-lab-fe` |
-| Port | **80** |
-
-**On the VPS (SSH)**
-
-```bash
-cd /data/coolify/applications/<your-app-id>
-docker compose -f docker-compose.coolify.yml ps
-docker compose -f docker-compose.coolify.yml logs --tail=80 code-lab-fe
-docker compose -f docker-compose.coolify.yml logs --tail=80 code-lab-api
-```
-
-| `ps` shows | Meaning |
-| --- | --- |
-| `code-lab-fe` missing or Restarting | API not healthy yet, nginx config error, or image pull failed — read `code-lab-fe` logs |
-| `code-lab-api` unhealthy | Fix Postgres/RabbitMQ env, `JWT_SECRET`, or wait through `start_period` (up to ~2 min) |
-| Both **Up (healthy)** | Fix Coolify port (must be **80**) and redeploy proxy |
-| Deploy logs show 20+ runner builds | Normal on first deploy (Coolify **Build**); long-running stack is postgres, rabbitmq, api, fe — runners exit after `/bin/true` |
-| `network coolify not found` | Create external network or let Coolify provision it: `docker network create coolify` |
-
-**Env**
-
-```bash
-CORS_ALLOWED_ORIGINS=https://code-challenge-lab.5.78.76.98.sslip.io
-```
-
-(match your real URL, no trailing slash)
-
-## Related files
-
-| File | Role |
-| --- | --- |
-| [`docker-compose.coolify.yml`](../docker-compose.coolify.yml) | Coolify stack: postgres, rabbitmq, api, fe (self-contained) |
-| [`docker-compose.prod.yml`](../docker-compose.prod.yml) | GHCR override only (use with `docker-compose.yml`) |
-| [`scripts/coolify-post-deploy.sh`](../scripts/coolify-post-deploy.sh) | Optional manual runner/LSP rebuild + smoke |
-| [`.env.example`](../.env.example) | Full variable reference |
+The default path builds everything on the VPS because that is the most reliable
+script-free Coolify setup. If the VPS is too small or Docker Hub pulls are
+unreliable, publish API, FE, runner, and LSP images from CI and use a Coolify
+compose override or edited deploy compose that removes `build:` from those
+services and points `image:` to the published registry tags.

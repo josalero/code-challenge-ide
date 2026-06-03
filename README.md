@@ -161,14 +161,14 @@ For IntelliSense in the full stack, run `make runners` once on the host before o
 
 ### Production images (GHCR)
 
-[`.github/workflows/build.yml`](.github/workflows/build.yml) publishes **`be`**, **`fe`**, all **11 language runners**, and **`lsp-java`** to GHCR. The other six LSP images (`lsp-python`, `lsp-go`, `lsp-typescript`, `lsp-dotnet`, `lsp-rust`, `lsp-cpp`) are built locally today — run `./scripts/build-lsp-images.sh` or `make runners` on the deployment host until they are added to the workflow.
+[`.github/workflows/build.yml`](.github/workflows/build.yml) publishes **`be`**, **`fe`**, all **11 language runners**, and all LSP images to GHCR. For local `:local` tags, run `make runners` on the deployment host.
 
 ```bash
 cp .env.example .env
 # Set CTL_IMAGE_OWNER, PG_PASSWORD, RMQ_PASSWORD, JWT_SECRET
 docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
-./scripts/pull-runner-images.sh   # 11 language runners + lsp-java from GHCR
-make runners                      # or ./scripts/build-lsp-images.sh — non-Java LSP images
+./scripts/pull-runner-images.sh   # runners + LSP images from GHCR
+make runners                      # only needed when using local :local runner/LSP tags
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
@@ -176,7 +176,7 @@ Map pulled GHCR tags in `.env` (`LSP_*_IMAGE`, `RUNNER_*_IMAGE`) or rely on `:lo
 
 ## Deploy (Coolify / VPS)
 
-Use **`docker-compose.coolify.yml`** in Coolify (one Compose file) and **`./scripts/coolify-post-deploy.sh`** after each deploy.
+Use **`docker-compose.coolify.yml`** in Coolify as the one Compose file. Enable **Build**; no extra deploy command is required.
 
 See **[docs/coolify.md](docs/coolify.md)** for UI fields, environment variables, domains, volumes, and troubleshooting.
 
