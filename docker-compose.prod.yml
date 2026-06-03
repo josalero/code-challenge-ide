@@ -1,5 +1,7 @@
 # Production / GHCR — pull pre-built API and FE images instead of building locally.
 #
+# Coolify: use docker-compose.coolify.yml (single file) — see docs/coolify.md
+#
 # Runner images are pulled separately (not compose services):
 #   ./scripts/pull-runner-images.sh
 #

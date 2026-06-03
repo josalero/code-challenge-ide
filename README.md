@@ -176,7 +176,9 @@ Map pulled GHCR tags in `.env` (`LSP_*_IMAGE`, `RUNNER_*_IMAGE`) or rely on `:lo
 
 ## Deploy (Coolify / VPS)
 
-See [docs/coolify.md](docs/coolify.md) for self-hosted deployment, runner image pulls, and the dead-letter ops endpoint.
+Use **`docker-compose.coolify.yml`** in Coolify (one Compose file) and **`./scripts/coolify-post-deploy.sh`** after each deploy.
+
+See **[docs/coolify.md](docs/coolify.md)** for UI fields, environment variables, domains, volumes, and troubleshooting.
 
 ## Repository layout
 
@@ -208,6 +210,7 @@ code-challenge-ide/
 ├── docker-compose.yml          # default: build & run everything locally
 ├── docker-compose.runners.yml  # runner + LSP image builds (make runners)
 ├── docker-compose.prod.yml     # override: pull be/fe from GHCR
+├── docker-compose.coolify.yml  # Coolify entry (includes stack + GHCR + internal DB ports)
 ├── .env.example
 ├── be/
 ├── fe/

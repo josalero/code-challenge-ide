@@ -3,16 +3,14 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
-if [[ ! -f .env ]]; then
-  echo "Missing .env — run: cp .env.example .env" >&2
-  exit 1
+if [[ -f .env ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
 fi
-set -a
-# shellcheck disable=SC1091
-source .env
-set +a
 REGISTRY="${CTL_IMAGE_REGISTRY:-ghcr.io}"
-OWNER="${CTL_IMAGE_OWNER:?Set CTL_IMAGE_OWNER in .env}"
+OWNER="${CTL_IMAGE_OWNER:?Set CTL_IMAGE_OWNER in .env or Coolify environment}"
 TAG="${CTL_IMAGE_TAG:-latest}"
 PREFIX="${REGISTRY}/${OWNER}/code-challenge-ide"
 
