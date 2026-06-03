@@ -35,7 +35,8 @@ Postgres and RabbitMQ use upstream images on the internal network only (no host 
 | Field | Value |
 | --- | --- |
 | **Service to expose** | `code-lab-fe` |
-| **Container port** | **`80`** (not 3000 — nginx listens on 80 inside the container) |
+| **Container port** | **`80`** (nginx inside the container — not `FE_PORT`) |
+| **Host port (optional)** | `FE_PORT=3010` in env maps **`3010:80`** for `http://<vps-ip>:3010` — Coolify HTTPS domain still uses container **80** |
 | **Port mappings** | Coolify attaches to the container port; `FE_PORT` host mapping in compose is optional |
 | **HTTPS** | Enable in Coolify (Let’s Encrypt) |
 

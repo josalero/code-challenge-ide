@@ -8,7 +8,8 @@
 #   Post-deployment command: ./scripts/coolify-post-deploy.sh  (rebuild runners after runner/ changes)
 #
 # Runner/LSP services use profile `runners` — not started on default `up` (build via post-deploy).
-# Expose in Coolify: service `code-lab-fe`, container port 80 (not 3010).
+# Expose in Coolify: service `code-lab-fe`, container port 80 (HTTPS proxy).
+# Optional host bind: FE_PORT=3010 → ports 3010:80 (direct http://<vps-ip>:3010).
 # Env: cp .env.coolify.example .env — see docs/coolify.md
 
 name: code-training-lab
@@ -166,6 +167,8 @@ services:
       dockerfile: Dockerfile
     image: ${CTL_FE_IMAGE:-code-challenge-ide-fe:local}
     restart: unless-stopped
+    ports:
+      - "${FE_PORT:-3010}:80"
     expose:
       - "80"
     networks:
