@@ -10,32 +10,21 @@
 # them so Ops/Run tests see the same image inventory as local docker-compose.yml.
 # Expose in Coolify: service `code-lab-fe`, container port 80 (HTTPS proxy).
 # Direct host access: FE_PORT=3010 publishes http://<vps-ip>:3010 -> code-lab-fe:80.
+# Do not add custom networks here. Coolify attaches the stack and proxy to its managed network.
 # Env: cp .env.coolify.example .env — see docs/coolify.md
 
 name: code-training-lab
-
-networks:
-  code-lab:
-    name: code-lab
-  coolify:
-    external: true
 
 # FE Caddyfile is baked in the image and proxies /api/* to code-lab-api.
 
 x-runner-build-only: &runner-build-only
   restart: "no"
   entrypoint: ["/bin/true"]
-  networks:
-    - code-lab
-    - coolify
 
 services:
   code-lab-postgres:
     image: postgres:17
     restart: unless-stopped
-    networks:
-      - code-lab
-      - coolify
     environment:
       POSTGRES_USER: ${PG_USER:-postgres}
       POSTGRES_PASSWORD: ${PG_PASSWORD:?Set PG_PASSWORD}
@@ -51,9 +40,6 @@ services:
   code-lab-rabbitmq:
     image: rabbitmq:3-management-alpine
     restart: unless-stopped
-    networks:
-      - code-lab
-      - coolify
     environment:
       RABBITMQ_DEFAULT_USER: ${RMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RMQ_PASSWORD:?Set RMQ_PASSWORD}
@@ -69,9 +55,6 @@ services:
       dockerfile: be/Dockerfile
     image: ${CTL_API_IMAGE:-code-challenge-ide-be:local}
     restart: unless-stopped
-    networks:
-      - code-lab
-      - coolify
     environment:
       SERVER_PORT: 8080
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-production}
@@ -188,9 +171,6 @@ services:
       - "${FE_PORT:-3010}:80"
     expose:
       - "80"
-    networks:
-      - code-lab
-      - coolify
     depends_on:
       code-lab-api:
         condition: service_healthy
@@ -364,9 +344,6 @@ services:
           echo "Maven cache volume already warm."
         fi
     restart: "no"
-    networks:
-      - code-lab
-      - coolify
     depends_on:
       runner-java-26:
         condition: service_completed_successfully

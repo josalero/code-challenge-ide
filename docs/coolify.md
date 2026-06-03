@@ -21,6 +21,8 @@ Default Coolify path:
 - `code-lab-api` waits for Postgres, RabbitMQ, runner images, LSP images, and
   `runner-m2-warm` before starting.
 - No extra Coolify deploy command is required.
+- The Coolify compose does not define custom Docker networks. Coolify should
+  manage the resource network and attach its proxy to it.
 - First deploys can take a long time on small VPS hosts because many base images
   and language dependencies are downloaded.
 
@@ -68,7 +70,7 @@ Expose only the frontend service:
 | Direct host port | `FE_PORT=3010` publishes `http://<vps-ip>:3010` if the VPS firewall allows it |
 
 Do not expose the API separately. The frontend Caddy config proxies `/api/` to
-`code-lab-api:8080` on the internal Compose network.
+`code-lab-api:8080` on Coolify's managed Compose network.
 
 Make sure Coolify's proxy supports long-lived HTTP connections and WebSocket
 upgrade for `/api/`, because submissions and LSP features use streaming and
@@ -160,12 +162,6 @@ docker compose -f docker-compose.coolify.yml up -d
 
 No extra deploy command is needed.
 
-If you run this outside Coolify and the external network does not exist:
-
-```bash
-docker network create coolify
-```
-
 ## First Login Checklist
 
 1. Open `https://<your-domain>/`.
@@ -181,6 +177,7 @@ docker network create coolify
 | Build fails at `docker/dockerfile:1` | Use current runner Java Dockerfile without the BuildKit syntax directive |
 | 504 during deploy | First deploy may still be building all runner/LSP images; check Coolify build logs |
 | 504 after deploy | Coolify must expose `code-lab-fe` on container port `80`; direct host access is `http://<vps-ip>:${FE_PORT:-3010}` |
+| Intermittent 504 / HTTPS hangs while direct `:3010` works | Do not add custom `networks:` to the Coolify compose. Let Coolify manage the stack network and proxy attachment |
 | 504 when clicking Warm everything | Redeploy the API; warm endpoints enqueue quickly and Docker checks run inside the background job. If it still happens, Docker on the VPS is overloaded or unreachable |
 | API unhealthy | Check Postgres/RabbitMQ credentials, `JWT_SECRET`, and readiness logs |
 | `Docker is not reachable` | Check socket mount and `DOCKER_GID` |
@@ -189,7 +186,6 @@ docker network create coolify
 | SQL challenges fail | Confirm `RUNNER_POSTGRES_17_IMAGE` points to `code-challenge-ide-runner-postgres-17:local` |
 | IntelliSense dead | Confirm LSP images were built and `CTL_LSP_ENABLED=true` |
 | CORS errors | `CORS_ALLOWED_ORIGINS` must match the exact public URL |
-| `network coolify not found` | Let Coolify create it, or create it manually on SSH |
 
 Useful VPS checks:
 
