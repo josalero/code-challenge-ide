@@ -149,7 +149,7 @@ make up
 
 | URL | Service |
 | --- | --- |
-| http://localhost:3000 | Frontend (nginx → API proxy at `/api/`) |
+| http://localhost:3000 | Frontend (Caddy → API proxy at `/api/`) |
 | http://localhost:8080 | API (direct) |
 | http://localhost:15672 | RabbitMQ management |
 

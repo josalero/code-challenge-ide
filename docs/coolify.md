@@ -31,7 +31,7 @@ Long-running services after deploy:
 | `code-lab-postgres` | Database | Up / healthy |
 | `code-lab-rabbitmq` | Submission queue | Up / healthy |
 | `code-lab-api` | Backend and runner orchestrator | Up / healthy |
-| `code-lab-fe` | Public nginx frontend | Up / healthy |
+| `code-lab-fe` | Public Caddy frontend | Up / healthy |
 | `runner-*`, `runner-lsp-*`, `runner-m2-warm` | Build-only images/cache | Exited 0 |
 
 ## Prerequisites
@@ -66,7 +66,7 @@ Expose only the frontend service:
 | Container port | `80` |
 | HTTPS | Enable in Coolify |
 
-Do not expose the API separately. The frontend nginx config proxies `/api/` to
+Do not expose the API separately. The frontend Caddy config proxies `/api/` to
 `code-lab-api:8080` on the internal Compose network.
 
 Make sure Coolify's proxy supports long-lived HTTP connections and WebSocket

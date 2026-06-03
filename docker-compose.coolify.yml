@@ -19,7 +19,7 @@ networks:
   coolify:
     external: true
 
-# FE nginx: fe/nginx.conf baked in image (service name code-lab-api). Avoid compose configs — some Coolify parsers drop them.
+# FE Caddyfile is baked in the image and proxies /api/* to code-lab-api.
 
 x-runner-build-only: &runner-build-only
   restart: "no"

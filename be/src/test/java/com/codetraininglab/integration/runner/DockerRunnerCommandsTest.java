@@ -32,6 +32,10 @@ class DockerRunnerCommandsTest {
         .contains("--name", "ctl-runner-pool-java")
         .contains("--label", DockerRunnerCommands.POOL_LABEL)
         .contains("-e", "CTL_RUNNER_POOLED=1")
+        .contains("--cap-drop", "ALL")
+        .contains("--cap-add", "FOWNER")
+        .contains("--security-opt", "no-new-privileges:true")
+        .contains("--ipc", "none")
         .contains("--entrypoint", "sleep")
         .contains("infinity")
         .doesNotContain("--read-only");
@@ -50,6 +54,10 @@ class DockerRunnerCommandsTest {
 
     assertThat(command)
         .contains("--rm", "-i")
+        .contains("--cap-drop", "ALL")
+        .contains("--cap-add", "FOWNER")
+        .contains("--security-opt", "no-new-privileges:true")
+        .contains("--ipc", "none")
         .contains("/tmp/challenges/reverse-string:/challenge:ro");
   }
 }

@@ -33,7 +33,8 @@ When `RUNNER_POOL_ENABLED=true` (default):
 2. A **daemon** inside the container (`runners/java/daemon.py` for Java) reads JSON jobs on stdin and returns one JSON result line.
 3. Challenge files are synced into `/challenge` only when the slug/path changes (skip on repeat runs).
 4. **Java (pooled):** incremental workspace — same challenge keeps `target/` for faster Maven rebuilds.
-5. Idle pool containers are removed after `RUNNER_POOL_IDLE_MINUTES` (default 60).
+5. Runner containers run with network disabled, CPU/memory/PID limits, dropped Linux capabilities except the narrow file-ownership capability needed for challenge sync, `no-new-privileges`, and isolated IPC.
+6. Idle pool containers are removed after `RUNNER_POOL_IDLE_MINUTES` (default 60).
 
 Set `RUNNER_POOL_ENABLED=false` to fall back to one-shot `docker run --rm` per submission.
 

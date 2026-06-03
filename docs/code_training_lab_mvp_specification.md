@@ -822,7 +822,7 @@ Workflow: `.github/workflows/build.yml`
 | Matrix image | Dockerfile | Context |
 | --- | --- | --- |
 | `code-challenge-ide-be` | `be/Dockerfile` | Repository root (Gradle `:be:bootJar`) |
-| `code-challenge-ide-fe` | `fe/Dockerfile` | `fe/` (npm build → nginx) |
+| `code-challenge-ide-fe` | `fe/Dockerfile` | `fe/` (npm build → Caddy) |
 | `code-challenge-ide-runner-java-26` | `runners/java/Dockerfile` | `runners/java/` |
 
 Published as:
@@ -853,7 +853,7 @@ flowchart TB
     GHCR --> RUN_IMG["code-challenge-ide-runner-java-26"]
 
     subgraph Host["Operator VPS Coolify or Compose"]
-        FE["fe container nginx"]
+        FE["fe container Caddy"]
         API["api container"]
         PG["postgres:17"]
         RMQ["rabbitmq"]

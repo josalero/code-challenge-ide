@@ -96,6 +96,14 @@ final class DockerRunnerCommands {
     command.add("run");
     command.add("--network");
     command.add("none");
+    command.add("--cap-drop");
+    command.add("ALL");
+    command.add("--cap-add");
+    command.add("FOWNER");
+    command.add("--security-opt");
+    command.add("no-new-privileges:true");
+    command.add("--ipc");
+    command.add("none");
     command.add("--memory");
     command.add(limits.memoryMb() + "m");
     command.add("--cpus");
