@@ -16,6 +16,8 @@ name: code-training-lab
 networks:
   code-lab:
     name: code-lab
+  coolify:
+    external: true
 
 # Inlined so Coolify does not bind-mount a missing fe/nginx.coolify.conf (Docker creates a directory).
 # Keep in sync with fe/nginx.coolify.conf
@@ -134,6 +136,7 @@ services:
     restart: unless-stopped
     networks:
       - code-lab
+      - coolify
     configs:
       - source: code-lab-nginx-default
         target: /etc/nginx/conf.d/default.conf
