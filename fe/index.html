@@ -17,8 +17,6 @@
           var root = document.documentElement;
           if (stored === "light" || stored === "dark") {
             root.classList.add(stored);
-          } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
-            root.classList.add("light");
           } else {
             root.classList.add("dark");
           }
