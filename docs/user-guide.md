@@ -86,6 +86,10 @@ UPDATE users SET role = 'ADMIN' WHERE email = 'you@example.com';
 
 Admins get extra navigation: **Create** (new challenge) and **Ops** (infrastructure).
 
+### Appearance (light / dark)
+
+Use the **sun** or **moon** icon in the top bar to switch themes. Your choice is saved in the browser and restored on the next visit. The code editor stays dark in both themes for readability.
+
 ---
 
 ## Learner flow: solve a challenge
@@ -95,7 +99,7 @@ Admins get extra navigation: **Create** (new challenge) and **Ops** (infrastruct
 1. Sign in.
 2. Open **Challenges** (`/challenges`).
 3. Filter by language or progress if needed.
-4. Open a challenge → workspace at **`/challenges/:slug`**.
+4. Open a challenge → workspace at **`/challenges/:slug`**, or open **Metrics** in the nav for your progress summary.
 
 ### 2. Understand the workspace
 
@@ -103,9 +107,16 @@ Admins get extra navigation: **Create** (new challenge) and **Ops** (infrastruct
 | --- | --- |
 | **Problem** (left) | Instructions, constraints, public test descriptions |
 | **Editor** (center) | **Solution** tab (your code) and **Custom tests** tab (extra cases for practice) |
-| **Output** (bottom) | **Tests**, **Compiler**, **Analysis**, **Feedback**, **History** |
+| **Output** (right) | **Guide** (timed challenges), **Tests**, **Compiler**, **Analysis**, **Feedback**, **History** |
+| **Activity** (below editor, desktop) | Live run log stream |
 
-On desktop you can drag the dividers between panels. On mobile, use **Instructions | Editor** tabs and the output strip at the bottom.
+**Desktop (wide screen):**
+
+- **Hide a side panel:** use the small panel icon in the top corner of the **Problem** (left) or **Output** (right) panel.
+- **Show it again:** click the same icon if the panel is only narrowed, or the **open-panel** icon on the left/right edge of the editor when fully hidden. You can also **drag** the vertical divider (highlighted bar between panels).
+- **Activity log:** collapse/expand with the icon on the activity strip under the editor; drag the horizontal divider to resize.
+
+**Mobile:** side panels are not collapsible — use **Problem | Editor | Output** tabs at the top, and **Expand** on the problem sheet for full instructions.
 
 **Autosave:** the solution draft is stored in the browser (`localStorage`). Custom tests are saved to the server when you edit them.
 
@@ -120,6 +131,20 @@ These buttons drive different backend paths. Use them in this order while learni
 | **Redo** | After a submit | Unlocks the workspace so you can edit and **Submit** again. |
 
 **Typical loop:** edit solution → **Run** until tests pass → **Submit** for feedback → read **Feedback** tab → optional **Redo** to improve.
+
+### Timed attempts
+
+Many challenges have a time limit (configured per challenge, often 30 minutes for easy and 60 for harder ones).
+
+| Topic | Behavior |
+| --- | --- |
+| **Before you start** | The **starter skeleton** is visible in the Solution editor (**read-only**). Read the problem and skeleton, pick a runtime, then press **Start test**. |
+| **When the clock starts** | When you press **Start test** (not when you open the challenge). |
+| **Countdown** | Shown in the workspace toolbar after **Start test**. |
+| **Cancel run** (square while tests run) | Stops only the **current Docker run**. The session timer **keeps going**. |
+| **Abandon** | Stops and **resets** the timer, exits focus mode, keeps your draft. Press **Start test** again for a **new** full limit. |
+| **Redo** (after submit) | Unlocks the exercise and **resets** the timer; press **Start test** again to code. |
+| **Time's up** | **Run** and **Submit** are disabled until you **Abandon** (to reset). |
 
 ### 4. IntelliSense (editor)
 

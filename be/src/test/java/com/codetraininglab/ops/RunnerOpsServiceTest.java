@@ -108,6 +108,14 @@ class RunnerOpsServiceTest {
   }
 
   @Test
+  void languageWarmReadyTreatsMissingLspAsSatisfied() {
+    assertThat(RunnerOpsService.languageWarmReady(true, null)).isTrue();
+    assertThat(RunnerOpsService.languageWarmReady(true, true)).isTrue();
+    assertThat(RunnerOpsService.languageWarmReady(true, false)).isFalse();
+    assertThat(RunnerOpsService.languageWarmReady(false, null)).isFalse();
+  }
+
+  @Test
   void mapsRunnerLanguagesToLspLabels() {
     assertThat(RunnerOpsService.mapRunnerLanguagesToLspLabels(List.of("java", "go")))
         .containsExactly("java", "go");

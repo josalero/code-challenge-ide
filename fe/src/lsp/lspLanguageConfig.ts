@@ -162,6 +162,9 @@ export function customTestsModelUri(language: string | undefined): string {
   if (solution.endsWith(".cpp")) {
     return workspaceFile("custom_tests.cpp");
   }
+  if (solution.endsWith(".sql")) {
+    return workspaceFile("custom_tests.sql");
+  }
   return `${solution}.custom`;
 }
 

@@ -54,7 +54,8 @@ public class RunnerOpsService {
           "cpp",
           "react",
           "vue",
-          "angular");
+          "angular",
+          "sql");
 
   private final CtlProperties properties;
   private final Environment environment;
@@ -445,7 +446,7 @@ public class RunnerOpsService {
           inspectRunnerImage(label, runtime.getDockerImage(), poolWarmStamp);
       Boolean runnerReady = runnerReadyFromImage(runner);
       Boolean editorReady = editorReadyForLanguage(languageName, lspByLabel);
-      boolean ready = Boolean.TRUE.equals(runnerReady) && Boolean.TRUE.equals(editorReady);
+      boolean ready = languageWarmReady(runnerReady, editorReady);
       rows.add(
           new LanguageWarmStatusResponse(
               languageName,
@@ -474,6 +475,14 @@ public class RunnerOpsService {
                 .thenComparing(
                     row -> row.version() == null ? "" : row.version(), Comparator.naturalOrder()))
         .toList();
+  }
+
+  /** Runner warm counts when the image is present and stamped; LSP is optional (null = not required). */
+  static boolean languageWarmReady(Boolean runnerReady, Boolean editorReady) {
+    if (!Boolean.TRUE.equals(runnerReady)) {
+      return false;
+    }
+    return editorReady == null || Boolean.TRUE.equals(editorReady);
   }
 
   private static Boolean runnerReadyFromImage(RunnerImageStatusResponse runner) {

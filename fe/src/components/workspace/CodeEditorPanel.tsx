@@ -25,6 +25,8 @@ type Props = {
   workspaceTab: "solution" | "custom";
   onWorkspaceTabChange: (tab: "solution" | "custom") => void;
   readOnly?: boolean;
+  /** Read-only preview of starter skeleton before Start test */
+  previewStarter?: boolean;
 };
 
 export default function CodeEditorPanel({
@@ -37,9 +39,10 @@ export default function CodeEditorPanel({
   workspaceTab,
   onWorkspaceTabChange,
   readOnly = false,
+  previewStarter = false,
 }: Props) {
   const editorLanguage = editorLanguageFor(language);
-  const lspEnabled = usesLsp(language);
+  const lspEnabled = usesLsp(language) && !previewStarter;
   const solutionPath = solutionModelUri(language);
   const customTestsPath = customTestsModelUri(language);
 
@@ -76,7 +79,8 @@ export default function CodeEditorPanel({
             </TabsTrigger>
             <TabsTrigger
               value="custom"
-              className="gap-1.5 rounded-md border border-transparent px-3 text-xs data-[state=active]:border-slate-600/60 data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100"
+              disabled={previewStarter}
+              className="gap-1.5 rounded-md border border-transparent px-3 text-xs data-[state=active]:border-slate-600/60 data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 disabled:opacity-40"
             >
               <FlaskConical className="size-3.5 opacity-70" aria-hidden />
               {customTestsTabLabel(language)}
@@ -84,7 +88,7 @@ export default function CodeEditorPanel({
           </TabsList>
           {readOnly && (
             <span className="pr-2 text-[10px] uppercase tracking-wide text-slate-500">
-              Read-only
+              {previewStarter ? "Starter skeleton" : "Read-only"}
             </span>
           )}
         </div>
@@ -101,7 +105,8 @@ export default function CodeEditorPanel({
                   language={language}
                   value={solutionCode}
                   onChange={onSolutionChange}
-                  lspEnabled
+                  lspEnabled={lspEnabled}
+                  readOnly={readOnly}
                 />
               ) : (
                 <Editor

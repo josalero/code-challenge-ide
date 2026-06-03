@@ -1,5 +1,7 @@
+import { Popconfirm } from "antd";
 import {
   ArrowLeft,
+  Clock,
   FlaskConical,
   Loader2,
   Play,
@@ -7,6 +9,7 @@ import {
   Save,
   Send,
   Square,
+  XCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +59,14 @@ type Props = {
   onSaveCustomTests?: () => void;
   saveCustomTestsLoading?: boolean;
   activeTab: "solution" | "custom";
+  sessionActive?: boolean;
+  sessionCountdown?: string | null;
+  sessionExpired?: boolean;
+  sessionDurationMinutes?: number;
+  onAbandonAttempt?: () => void;
+  showAbandonAttempt?: boolean;
+  onStartTest?: () => void;
+  showStartTest?: boolean;
 };
 
 function autosaveLabel(status: AutosaveStatus): string {
@@ -90,8 +101,21 @@ export default function WorkspaceHeader({
   onSaveCustomTests,
   saveCustomTestsLoading,
   activeTab,
+  sessionActive = false,
+  sessionCountdown = null,
+  sessionExpired = false,
+  sessionDurationMinutes = 0,
+  onAbandonAttempt,
+  showAbandonAttempt = false,
+  onStartTest,
+  showStartTest = false,
 }: Props) {
   const autosaveText = autosaveLabel(autosaveStatus);
+  const canEdit = sessionActive && !isRunning && !exerciseLocked && !sessionExpired;
+  const actionsDisabled = !canEdit;
+  const limitMinutes =
+    sessionDurationMinutes > 0 ? sessionDurationMinutes : 60;
+  const showTimer = limitMinutes > 0 && !exerciseLocked;
 
   return (
     <header
@@ -100,15 +124,18 @@ export default function WorkspaceHeader({
       aria-label="Workspace actions"
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 lg:px-4">
-        <Link
-          to="/challenges"
-          className="inline-flex shrink-0 items-center gap-1 text-xs text-slate-500 no-underline hover:text-emerald-400"
-        >
-          <ArrowLeft className="size-3.5" aria-hidden />
-          <span className="hidden sm:inline">Challenges</span>
-        </Link>
-
-        <div className="hidden h-4 w-px bg-slate-700/80 sm:block" aria-hidden />
+        {!sessionActive && (
+          <>
+            <Link
+              to="/challenges"
+              className="inline-flex shrink-0 items-center gap-1 text-xs text-slate-500 no-underline hover:text-emerald-400"
+            >
+              <ArrowLeft className="size-3.5" aria-hidden />
+              <span className="hidden sm:inline">Challenges</span>
+            </Link>
+            <div className="hidden h-4 w-px bg-slate-700/80 sm:block" aria-hidden />
+          </>
+        )}
 
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <h1 className="truncate text-base font-semibold text-slate-50 lg:text-lg">
@@ -136,7 +163,7 @@ export default function WorkspaceHeader({
                 onRuntimeChange(v);
               }
             }}
-            disabled={isRunning || exerciseLocked}
+            disabled={actionsDisabled}
           >
             <SelectTrigger
               className="h-8 w-auto min-w-[120px] border-slate-600/60 bg-slate-800/60 text-xs"
@@ -153,6 +180,64 @@ export default function WorkspaceHeader({
                 ))}
             </SelectContent>
           </Select>
+
+          {showTimer && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Badge
+                    variant="outline"
+                    className={
+                      sessionExpired
+                        ? "border-red-500/40 bg-red-500/10 text-red-200"
+                        : sessionActive
+                          ? "border-amber-500/40 bg-amber-500/10 text-amber-100"
+                          : "border-slate-600/50 bg-slate-800/50 text-slate-300"
+                    }
+                    role="timer"
+                    aria-live={sessionActive ? "polite" : undefined}
+                    aria-label={
+                      sessionExpired
+                        ? "Challenge time limit reached"
+                        : sessionActive
+                          ? `Time remaining: ${sessionCountdown}`
+                          : `${limitMinutes} minute limit; press Start test to begin`
+                    }
+                  />
+                }
+              >
+                <Clock className="size-3 shrink-0" aria-hidden />
+                {sessionExpired ? (
+                  "Time's up"
+                ) : sessionActive && sessionCountdown ? (
+                  sessionCountdown
+                ) : (
+                  <>
+                    <span className="font-mono tabular-nums">{limitMinutes}:00</span>
+                    <span className="hidden text-slate-400 sm:inline">· not started</span>
+                  </>
+                )}
+              </TooltipTrigger>
+              <TooltipContent>
+                {sessionExpired
+                  ? "Your allotted time for this challenge has ended."
+                  : sessionActive
+                    ? "Countdown is running. Run and Submit are disabled when time is up."
+                    : `You have ${limitMinutes} minutes after Start test. Until then you can read the starter skeleton in the editor (read-only).`}
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {showStartTest && onStartTest && (
+            <Button
+              size="sm"
+              onClick={onStartTest}
+              className="h-8 gap-1.5 bg-emerald-600 font-semibold text-white hover:bg-emerald-500"
+            >
+              <Play className="size-3.5" aria-hidden />
+              Start test
+            </Button>
+          )}
 
           {runPhase !== "idle" && runPhase !== "loading" && (
             <Badge
@@ -223,7 +308,7 @@ export default function WorkspaceHeader({
                 <Button
                   variant="secondary"
                   size="sm"
-                  disabled={isRunning || exerciseLocked}
+                  disabled={actionsDisabled}
                   onClick={onRunTests}
                   className="h-8 border border-slate-600/50 bg-slate-800/80 text-slate-100"
                 />
@@ -237,15 +322,19 @@ export default function WorkspaceHeader({
               Run
             </TooltipTrigger>
             <TooltipContent>
-              {exerciseLocked
-                ? "Exercise submitted — use Redo to practice again"
-                : "Practice run in Docker (⌘/Ctrl + Enter) — does not lock editing"}
+              {sessionExpired
+                ? "Time limit reached — you can no longer run tests"
+                : exerciseLocked
+                  ? "Exercise submitted — use Redo to practice again"
+                  : !sessionActive
+                    ? "Start test first to enable Run"
+                    : "Practice run in Docker (⌘/Ctrl + Enter) — does not lock editing"}
             </TooltipContent>
           </Tooltip>
 
           <Button
             size="sm"
-            disabled={isRunning || exerciseLocked}
+            disabled={actionsDisabled}
             onClick={onSubmit}
             className="h-8 bg-emerald-600 font-medium text-white hover:bg-emerald-500"
           >
@@ -287,8 +376,30 @@ export default function WorkspaceHeader({
               ) : (
                 <Square aria-hidden />
               )}
-              <span className="sr-only">Cancel</span>
+              <span className="sr-only">Cancel run</span>
             </Button>
+          )}
+
+          {showAbandonAttempt && onAbandonAttempt && (
+            <Popconfirm
+              title="Abandon this timed attempt?"
+              description="Stops and resets the countdown; your code draft stays saved. Not the same as Cancel run, which only stops the current test."
+              onConfirm={onAbandonAttempt}
+              okText="Abandon"
+              cancelText="Keep going"
+              okButtonProps={{ danger: true }}
+              disabled={isRunning}
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isRunning}
+                className="h-8 border-slate-600/60 text-slate-300 hover:border-red-500/40 hover:text-red-200"
+              >
+                <XCircle aria-hidden />
+                <span className="hidden sm:inline">Abandon</span>
+              </Button>
+            </Popconfirm>
           )}
         </div>
       </div>
@@ -305,6 +416,15 @@ export default function WorkspaceHeader({
           ⌘/Ctrl+Enter
         </kbd>
         <span>to run</span>
+        {showTimer && !sessionActive && !sessionExpired && (
+          <>
+            <span className="text-slate-700" aria-hidden>
+              ·
+            </span>
+            <Clock className="size-3 text-amber-500/70" aria-hidden />
+            <span>Press Start test to begin the {limitMinutes}-minute attempt</span>
+          </>
+        )}
       </div>
     </header>
   );

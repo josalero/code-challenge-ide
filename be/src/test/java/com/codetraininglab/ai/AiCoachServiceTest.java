@@ -101,6 +101,7 @@ class AiCoachServiceTest {
                     "git",
                     "easy",
                     "java",
+                    null,
                     Instant.EPOCH,
                     Instant.EPOCH)));
 
@@ -159,6 +160,7 @@ class AiCoachServiceTest {
                     "git",
                     "easy",
                     "java",
+                    null,
                     Instant.EPOCH,
                     Instant.EPOCH)));
 
@@ -255,6 +257,7 @@ class AiCoachServiceTest {
                     "git",
                     "easy",
                     "python",
+                    null,
                     Instant.EPOCH,
                     Instant.EPOCH)));
     when(submissionRepository.findAll())
@@ -315,6 +318,7 @@ class AiCoachServiceTest {
                     "git",
                     "easy",
                     "java",
+                    null,
                     Instant.EPOCH,
                     Instant.EPOCH)));
 
@@ -345,6 +349,7 @@ class AiCoachServiceTest {
             "git",
             "easy",
             "cpp",
+            null,
             Instant.EPOCH,
             Instant.EPOCH);
     var item =

@@ -80,6 +80,7 @@ export const ApiPaths = {
   LANGUAGES: "/api/v1/languages",
   ME: "/api/v1/me",
   ME_PROGRESS: "/api/v1/me/progress",
+  ME_METRICS: "/api/v1/me/metrics",
   SUBMISSIONS: "/api/v1/submissions",
   LSP_JAVA: "/api/v1/lsp/java",
   lsp: (language: string) => `/api/v1/lsp/${language}`,

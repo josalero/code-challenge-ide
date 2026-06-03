@@ -8,7 +8,7 @@ export default function ProtectedRoute() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
+      <div className="ctl-app-bg flex min-h-screen items-center justify-center">
         <Spin size="large" />
       </div>
     );

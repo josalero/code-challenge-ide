@@ -9,11 +9,11 @@ description_md: |
   
   The greatest common divisor (GCD) is the largest integer that divides both inputs without remainder.
   
-  
   ## Examples
   - `54, 24` → `6`
   - `17, 13` → `1`
   - `25, 15` → `5`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -23,6 +23,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "gcd_54_24_should_equal_6"
     description: "GCD(54, 24) should equal 6"

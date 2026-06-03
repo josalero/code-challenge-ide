@@ -9,6 +9,9 @@ description_md: |
   
   Return a new string (or mutate in place where applicable) with characters in reverse order.
   
+  ## Examples
+  - `hello` → `olleh`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -18,6 +21,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "reversestring_hello_should_be_olleh"
     description: "reverseString(\"hello\") should be \"olleh\""

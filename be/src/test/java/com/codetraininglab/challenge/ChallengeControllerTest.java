@@ -42,6 +42,7 @@ class ChallengeControllerTest {
                 "starter",
                 "easy",
                 "java",
+                30,
                 "{}",
                 List.of(new PublicTestInfo("T1", "")),
                 2,

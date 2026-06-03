@@ -9,11 +9,11 @@ description_md: |
   
   Use the standard definition: `F(0) = 0`, `F(1) = 1`, and `F(n) = F(n-1) + F(n-2)`.
   
-  
   ## Examples
   - `0` → `0L`
   - `1` → `1L`
   - `5` → `5L`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -27,6 +27,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 starter_main_class: com.challenge.Solution
 public_tests_meta:
   - name: "expect_fib_0_to_equal_0l"

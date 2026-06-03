@@ -150,6 +150,20 @@ To add more explanation (story, constraints, edge cases), enrich `description_md
 
 ---
 
+## SQL (PostgreSQL)
+
+| Source | Role in catalog |
+| --- | --- |
+| [PostgreSQL Exercises](https://pgexercises.com/) | Schema and drill patterns (employees / departments) |
+| [SQLBolt](https://sqlbolt.com/) | Beginner-friendly SELECT / WHERE / JOIN progression |
+| [Select Star SQL](https://selectstarsql.com/) | Narrative query practice ideas |
+
+**Seed:** `scripts/seed-challenges/catalog_sql.py` — 10 original challenges with `setup/schema.sql` and pytest result-set checks.
+
+**Runner:** `runners/sql/` — embedded PostgreSQL 17, `workspace_layout: postgres-sql`, no line coverage gate.
+
+---
+
 ## Angular
 
 | Source | Role in catalog |
@@ -171,6 +185,7 @@ To add more explanation (story, constraints, edge cases), enrich `description_md
 | `catalog_typescript_extra.py` | TS utility challenges |
 | `catalog_frontend.py` | Base React / Vue / Angular |
 | `catalog_frontend_extra.py` | app-ideas / RealWorld-style UI |
+| `catalog_sql.py` | PostgreSQL SQL drills |
 
 ---
 

@@ -57,6 +57,7 @@ class AiCoachServiceAlternativesTest {
                     "git",
                     "easy",
                     "java",
+                    null,
                     Instant.EPOCH,
                     Instant.EPOCH)));
     when(submissionRepository.findAll()).thenReturn(java.util.List.of());

@@ -3,6 +3,8 @@ package com.codetraininglab.identity.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import com.codetraininglab.identity.application.MeMetricsService;
+import com.codetraininglab.identity.application.MeMetricsService.MeMetricsResponse;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.ChallengeRepository;
 import com.codetraininglab.platform.persistence.UserEntity;
@@ -28,6 +30,7 @@ class MeControllerTest {
   @Mock private UserRepository userRepository;
   @Mock private UserProgressRepository progressRepository;
   @Mock private ChallengeRepository challengeRepository;
+  @Mock private MeMetricsService metricsService;
 
   @InjectMocks private MeController controller;
 
@@ -66,10 +69,22 @@ class MeControllerTest {
                     "git",
                     "easy",
                     "java",
+                    null,
                     Instant.EPOCH,
                     Instant.EPOCH)));
     var progress =
         controller.progress(new UsernamePasswordAuthenticationToken(userId, null, List.of()));
     assertThat(progress.getFirst().state()).isEqualTo("PASSED");
+  }
+
+  @Test
+  void returnsMetrics() {
+    when(metricsService.metricsForUser(userId))
+        .thenReturn(
+            new MeMetricsResponse(10, 4, 2, 3, 1, 30, 20, 12, 8, 18, 2, List.of(), List.of()));
+    var metrics =
+        controller.metrics(new UsernamePasswordAuthenticationToken(userId, null, List.of()));
+    assertThat(metrics.catalogTotal()).isEqualTo(10);
+    assertThat(metrics.completionPercent()).isEqualTo(30);
   }
 }

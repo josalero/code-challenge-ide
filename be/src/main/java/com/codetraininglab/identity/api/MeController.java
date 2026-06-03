@@ -1,5 +1,7 @@
 package com.codetraininglab.identity.api;
 
+import com.codetraininglab.identity.application.MeMetricsService;
+import com.codetraininglab.identity.application.MeMetricsService.MeMetricsResponse;
 import com.codetraininglab.platform.persistence.UserEntity;
 import com.codetraininglab.platform.persistence.UserProgressEntity;
 import com.codetraininglab.platform.persistence.UserProgressRepository;
@@ -21,14 +23,17 @@ public class MeController {
   private final UserRepository userRepository;
   private final UserProgressRepository progressRepository;
   private final ChallengeRepository challengeRepository;
+  private final MeMetricsService metricsService;
 
   public MeController(
       UserRepository userRepository,
       UserProgressRepository progressRepository,
-      ChallengeRepository challengeRepository) {
+      ChallengeRepository challengeRepository,
+      MeMetricsService metricsService) {
     this.userRepository = userRepository;
     this.progressRepository = progressRepository;
     this.challengeRepository = challengeRepository;
+    this.metricsService = metricsService;
   }
 
   @GetMapping
@@ -47,6 +52,12 @@ public class MeController {
     return progressRepository.findByUserId(userId).stream()
         .map(this::toEntry)
         .toList();
+  }
+
+  @GetMapping("/metrics")
+  MeMetricsResponse metrics(Authentication authentication) {
+    UUID userId = (UUID) authentication.getPrincipal();
+    return metricsService.metricsForUser(userId);
   }
 
   private ProgressEntry toEntry(UserProgressEntity entity) {

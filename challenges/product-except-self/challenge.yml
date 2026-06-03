@@ -9,24 +9,26 @@ description_md: |
   
   Read the task and signature carefully. Use the public examples to clarify edge cases before submitting.
   
-  
   ## Examples
   - `[1, 2, 3, 4]` → `[24,12,8,6]`
   - `[-1, 1, 0, -3, 3]` → `[0,0,9,0]`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
   - Use the `Solution` class and static methods unless the starter specifies otherwise.
   - Aim for an efficient solution; brute force may time out on large hidden inputs.
+  - Arrays may be empty unless examples show otherwise.
   
   ## Method to implement
   
-  `answer`
+  `Solution.productExceptSelf(int[] nums)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 60
 starter_main_class: com.challenge.Solution
 public_tests_meta:
   - name: "expect_productexceptself_new_int_1_2_3_4_to_retu"

@@ -9,10 +9,10 @@ description_md: |
   
   A string is valid when every opening bracket has a matching closing bracket of the same type and pairs are properly nested. Ignore all other characters.
   
-  
   ## Examples
-  - `\"()\"` → `true`
-  - `\"()[]{}\"` → `true`
+  - `"()"` → `true`
+  - `"()[]{}"` → `true`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -26,6 +26,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "isvalid_should_be_true"
     description: "isValid(\"()\") should be true"

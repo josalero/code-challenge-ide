@@ -9,10 +9,10 @@ description_md: |
   
   Read the task and signature carefully. Use the public examples to clarify edge cases before submitting.
   
-  
   ## Examples
   - `123` → `321`
   - `-123` → `-321`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -21,12 +21,13 @@ description_md: |
   
   ## Method to implement
   
-  `x`
+  `Solution.reverse(int x)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 60
 starter_main_class: com.challenge.Solution
 public_tests_meta:
   - name: "expect_reverse_123_to_equal_321"

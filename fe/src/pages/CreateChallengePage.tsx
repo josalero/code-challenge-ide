@@ -38,6 +38,7 @@ type FormValues = {
   defaultRuntimeVersion: string;
   starterCode: string;
   lineCoveragePercent: number;
+  sessionDurationMinutes: number;
   publicTests: { name: string; source: string }[];
   hiddenTests: { name: string; source: string }[];
 };
@@ -504,6 +505,7 @@ export default function CreateChallengePage() {
       language: lang,
       defaultRuntimeVersion: "",
       lineCoveragePercent: 80,
+      sessionDurationMinutes: 30,
       ...t,
     };
   }, []);
@@ -534,6 +536,7 @@ export default function CreateChallengePage() {
       defaultRuntimeVersion: values.defaultRuntimeVersion,
       starterCode: values.starterCode,
       lineCoveragePercent: values.lineCoveragePercent,
+      sessionDurationMinutes: values.sessionDurationMinutes,
       publicTests: values.publicTests.map((t) => ({
         name: t.name.trim(),
         source: t.source,
@@ -682,6 +685,18 @@ export default function CreateChallengePage() {
                     rules={[{ required: true }]}
                   >
                     <InputNumber min={0} max={100} className="w-full" />
+                  </Form.Item>
+                  <Form.Item
+                    label={<span className="text-slate-300">Session time (min)</span>}
+                    name="sessionDurationMinutes"
+                    rules={[{ required: true, message: "Session duration is required" }]}
+                    extra={
+                      <Typography.Text className="!text-slate-500 text-xs">
+                        Allotted workspace time after the learner starts Run or Submit (5–480 min).
+                      </Typography.Text>
+                    }
+                  >
+                    <InputNumber min={5} max={480} className="w-full" />
                   </Form.Item>
                 </div>
 

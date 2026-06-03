@@ -31,6 +31,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 starter_main_class: com.challenge.Solution
 public_tests_meta:
   - name: "expect_fizzbuzz_1_to_equal_list_of_1"

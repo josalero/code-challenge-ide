@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   languageStateLabel,
   languageStateSummary,
+  RUNNER_ONLY_WARM_LANGUAGES,
   type LanguageWarmGroup,
 } from "./opsWarmUtils";
 
@@ -26,9 +27,17 @@ function runtimeStatus(
   return { label: "N/A", color: "default" };
 }
 
-function RuntimeRow({ row }: { row: LanguageWarmStatus }) {
+function RuntimeRow({
+  row,
+  runnerOnly,
+}: {
+  row: LanguageWarmStatus;
+  runnerOnly: boolean;
+}) {
   const runTests = runtimeStatus(row.runnerReady, row.runnerPresent, "runner");
-  const editor = runtimeStatus(row.editorReady, true, "editor");
+  const editor = runnerOnly
+    ? { label: "N/A", color: "default" as const }
+    : runtimeStatus(row.editorReady, true, "editor");
 
   return (
     <tr className="border-t border-slate-800/60">
@@ -190,6 +199,7 @@ export default function LanguageWarmList({
                     <RuntimeRow
                       key={`${row.language}-${row.version ?? row.label}-${row.runnerImage ?? ""}`}
                       row={row}
+                      runnerOnly={RUNNER_ONLY_WARM_LANGUAGES.has(group.language)}
                     />
                   ))}
                 </Fragment>

@@ -9,10 +9,10 @@ description_md: |
   
   Return whether `n` is a power of two (including `1 = 2^0`).
   
-  
   ## Examples
   - `1` → `true`
   - `3` → `false`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -21,6 +21,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "ispoweroftwo_1_should_be_true"
     description: "isPowerOfTwo(1) should be true"

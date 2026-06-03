@@ -9,10 +9,10 @@ description_md: |
   
   A prime number is an integer greater than `1` with no positive divisors other than `1` and itself.
   
-  
   ## Examples
   - `10` → `4`
   - `0` → `0`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -21,12 +21,13 @@ description_md: |
   
   ## Method to implement
   
-  `n`
+  `Solution.countPrimes(int n)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 60
 starter_main_class: com.challenge.Solution
 public_tests_meta:
   - name: "expect_countprimes_10_to_equal_4"

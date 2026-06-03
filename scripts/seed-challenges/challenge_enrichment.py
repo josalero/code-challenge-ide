@@ -135,11 +135,13 @@ SLUG_EXAMPLE_ROWS: dict[str, list[tuple[str, str]]] = {
 }
 
 
-def format_examples_markdown(meta: list[dict[str, str]], slug: str = "") -> str:
+def format_examples_markdown(
+    meta: list[dict[str, str]], slug: str = "", *, language: str = ""
+) -> str:
     from example_rows import format_examples_markdown as _format_rows
     from example_rows import rows_from_meta
 
-    return _format_rows(rows_from_meta(meta, slug))
+    return _format_rows(rows_from_meta(meta, slug, language=language), language=language)
 
 
 def _already_rich(description: str) -> bool:
@@ -201,6 +203,11 @@ def _infer_background(slug: str, title: str, description: str, language: str) ->
         return "Search the structure or array as described and return the required index or boolean result."
     if "sort" in slug:
         return "Produce sorted output according to the rules in the task line; preserve stability if required."
+    if language == "sql":
+        return (
+            "Each challenge seeds a small PostgreSQL schema under `setup/schema.sql`. "
+            "Public checks run on **Run**; hidden checks validate more result shapes on **Submit**."
+        )
     if "cipher" in slug or "encrypt" in slug:
         return "Apply the transformation character by character; preserve case and non-alphabetic symbols unless stated."
     if "armstrong" in slug:
@@ -227,6 +234,9 @@ def _constraints(language: str, difficulty: str, description: str) -> str:
         lines.append("Export the component/service/pipe expected by the Vitest suite.")
     elif language == "go":
         lines.append("Use package `solution` and the function signature from the starter file.")
+    elif language == "sql":
+        lines.append("Write your query in `starter/solution.sql`; the runner applies `setup/schema.sql` before each check.")
+        lines.append("Result sets are compared to expected rows (column order must match unless noted).")
     if difficulty == "medium":
         lines.append("Aim for an efficient solution; brute force may time out on large hidden inputs.")
     sig = _extract_signature(description)
@@ -246,7 +256,7 @@ def build_description_md(
     """Structured markdown: What to do → context → Examples → Constraints → signature."""
     base = base_description.strip()
     if _already_rich(base):
-        examples = format_examples_markdown(public_meta, slug)
+        examples = format_examples_markdown(public_meta, slug, language=language)
         has_examples = bool(
             re.search(r"^##\s+examples?\b", base, re.I | re.M)
             or re.search(r"\*\*examples?\*\*", base, re.I)
@@ -254,9 +264,13 @@ def build_description_md(
         if examples and not has_examples:
             from example_rows import rows_from_meta, upsert_examples_section
 
-            rows = rows_from_meta(public_meta, slug)
+            rows = rows_from_meta(public_meta, slug, language=language)
             if rows:
                 return upsert_examples_section(base, rows)
+            if language == "sql":
+                from example_rows import format_public_checks_markdown
+
+                return base + format_public_checks_markdown(public_meta)
             return base + examples
         return base
 
@@ -272,9 +286,13 @@ def build_description_md(
     if not re.search(r"^##\s+examples?\b", base, re.I | re.M) and not re.search(
         r"\*\*examples?\*\*", base, re.I
     ):
-        examples = format_examples_markdown(public_meta, slug)
+        examples = format_examples_markdown(public_meta, slug, language=language)
         if examples:
             parts.append(examples)
+        elif language == "sql" and public_meta:
+            from example_rows import format_public_checks_markdown
+
+            parts.append(format_public_checks_markdown(public_meta))
 
     parts.append("\n\n## Constraints\n")
     parts.append(_constraints(language, difficulty, base))

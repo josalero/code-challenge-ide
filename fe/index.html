@@ -1,15 +1,32 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#020617" />
+    <meta name="theme-color" content="#0f172a" />
     <meta name="description" content="Multi-language code challenges with Docker sandbox runs, coverage gates, and AI coaching." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
     <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
     <title>Code Training Lab</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("ctl-theme");
+          var root = document.documentElement;
+          if (stored === "light" || stored === "dark") {
+            root.classList.add(stored);
+          } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+            root.classList.add("light");
+          } else {
+            root.classList.add("dark");
+          }
+        } catch (e) {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -23,6 +23,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 60
 public_tests_meta:
   - name: "adds_a_todo_on_enter"
     description: "Adds a todo on Enter"

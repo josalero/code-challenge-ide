@@ -55,7 +55,7 @@ export default function WorkspaceResizableLayout({
         collapsible
         collapsedSize="0"
         onResize={problemCollapsed.onResize}
-        className="ctl-workspace-panel border-slate-700/70 bg-slate-900/30"
+        className="ctl-workspace-panel border-slate-600/50 bg-slate-800/25"
       >
         <WorkspacePanelFrame>
           <div className="relative flex h-full min-h-0 flex-col">
@@ -77,8 +77,32 @@ export default function WorkspaceResizableLayout({
       <Panel
         id="center"
         minSize="28"
-        className="ctl-workspace-panel bg-[#1e1e1e]"
+        className="ctl-workspace-panel relative bg-[#1e1e1e]"
       >
+        {problemCollapsed.collapsed && (
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-20 flex items-start pt-1">
+            <div className="pointer-events-auto">
+              <PanelCollapseButton
+                panelRef={problemRef}
+                collapsed
+                side="left"
+                label="problem panel"
+              />
+            </div>
+          </div>
+        )}
+        {outputCollapsed.collapsed && (
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-20 flex items-start pt-1">
+            <div className="pointer-events-auto">
+              <PanelCollapseButton
+                panelRef={outputRef}
+                collapsed
+                side="right"
+                label="output panel"
+              />
+            </div>
+          </div>
+        )}
         <Group
           id="ctl-workspace-vertical"
           orientation="vertical"
@@ -129,7 +153,7 @@ export default function WorkspaceResizableLayout({
         collapsible
         collapsedSize="0"
         onResize={outputCollapsed.onResize}
-        className="ctl-workspace-panel border-slate-700/70 bg-slate-900/40"
+        className="ctl-workspace-panel border-slate-600/50 bg-slate-800/30"
       >
         <WorkspacePanelFrame>
           <div className="relative flex h-full min-h-0 flex-col">

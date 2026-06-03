@@ -17,7 +17,8 @@ public final class RunnerSmokeChallenges {
           Map.entry("cpp", "anagram-check-cpp"),
           Map.entry("react", "accordion-react"),
           Map.entry("vue", "computed-filter-vue"),
-          Map.entry("angular", "double-service-angular"));
+          Map.entry("angular", "double-service-angular"),
+          Map.entry("sql", "sql-count-engineering"));
 
   private RunnerSmokeChallenges() {}
 

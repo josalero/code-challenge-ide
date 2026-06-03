@@ -22,6 +22,7 @@ class ChallengeLanguageSupportTest {
     "react, starter/solution.tsx, .test.tsx, VITEST_REACT, 19",
     "vue, starter/solution.vue, .test.ts, VITEST_VUE, 3.5",
     "angular, starter/solution.ts, .test.ts, VITEST_ANGULAR, 19",
+    "sql, starter/solution.sql, .py, POSTGRES_SQL, 17",
   })
   void resolvesFilesAndRuntime(
       String language, String starter, String suffix, WorkspaceLayout layout, String runtime) {

@@ -12,7 +12,11 @@ export const WARM_LANGUAGES = [
   "react",
   "vue",
   "angular",
+  "sql",
 ] as const;
+
+/** Languages warmed via runner image only (no LSP / IntelliSense). */
+export const RUNNER_ONLY_WARM_LANGUAGES = new Set<string>(["sql"]);
 
 export type LanguageWarmChipState = "ready" | "partial" | "cold" | "missing";
 
@@ -73,8 +77,11 @@ export function languageStateSummary(group: LanguageWarmGroup): string {
     return "No active runtime in the catalog for this language.";
   }
   const readyCount = runtimes.filter((r) => r.ready).length;
+  const runnerOnly = RUNNER_ONLY_WARM_LANGUAGES.has(group.language);
   if (state === "ready") {
-    return `All ${runtimes.length} runtime${runtimes.length === 1 ? "" : "s"} ready for Run tests and IntelliSense.`;
+    return runnerOnly
+      ? `All ${runtimes.length} runtime${runtimes.length === 1 ? "" : "s"} ready for Run tests (no IntelliSense for SQL).`
+      : `All ${runtimes.length} runtime${runtimes.length === 1 ? "" : "s"} ready for Run tests and IntelliSense.`;
   }
   if (state === "partial") {
     return `${readyCount} of ${runtimes.length} runtime${runtimes.length === 1 ? "" : "s"} fully ready — warm again or check missing Docker images.`;

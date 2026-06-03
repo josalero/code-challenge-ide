@@ -73,7 +73,7 @@ export default function AdminOpsPage() {
       return;
     }
     void queryClient.refetchQueries({ queryKey: ["ops", "runners", "status"] });
-  }, [job?.status, job?.id, queryClient]);
+  }, [job, queryClient]);
 
   const status = statusQuery.data;
   const busy = warmInfra.isPending || job?.status === "RUNNING";

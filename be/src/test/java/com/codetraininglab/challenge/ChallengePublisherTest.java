@@ -130,6 +130,7 @@ class ChallengePublisherTest {
                     "git",
                     "easy",
                     "java",
+                    null,
                     Instant.EPOCH,
                     Instant.EPOCH)));
 
@@ -159,6 +160,7 @@ class ChallengePublisherTest {
             "26",
             "class Solution {}",
             80,
+            null,
             List.of(new ChallengeTestPayload("Pub", "source", "Checks factorial")),
             List.of(new ChallengeTestPayload("Hid", "hidden source")));
     publisher.create(request);
@@ -192,6 +194,7 @@ class ChallengePublisherTest {
             "3.12",
             "def solve(): pass",
             80,
+            null,
             List.of(new ChallengeTestPayload("test_sample", "assert True")),
             List.of());
     publisher.create(request);
@@ -213,6 +216,7 @@ class ChallengePublisherTest {
         "26",
         "package com.challenge;\n\npublic class Solution { }\n",
         80,
+        null,
         List.of(new ChallengeTestPayload("MyPublic", "public test source")),
         List.of(new ChallengeTestPayload("MyHidden", "hidden test source")));
   }

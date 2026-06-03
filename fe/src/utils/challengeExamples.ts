@@ -4,6 +4,8 @@ export type ChallengeExample = {
   input: string;
   output: string;
   label?: string;
+  /** Shown when row comes from public test metadata rather than parsed I/O. */
+  fromPublicTest?: boolean;
 };
 
 /** Curated when tests or meta cannot express the return type clearly. */
@@ -275,15 +277,106 @@ export function stripExamplesFromDescription(descriptionMd: string): string {
     .trim();
 }
 
+/** Human-readable label from a pytest-style test name. */
+export function formatPublicTestName(name: string): string {
+  const words = name
+    .replace(/^test_/, "")
+    .split("_")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1));
+  return words.length > 0 ? words.join(" ") : name;
+}
+
+/**
+ * Turn public test descriptions into reference rows when they are not input/output assertions
+ * (common for SQL and loosely worded meta).
+ */
+export function parseReferenceFromPublicTest(
+  description: string,
+  testName: string,
+): ChallengeExample | null {
+  const text = (description || "").trim();
+  if (!text || VAGUE_DESC.test(text)) {
+    if (!testName) {
+      return null;
+    }
+    return {
+      input: formatPublicTestName(testName),
+      output: "Passes on Run",
+      fromPublicTest: true,
+    };
+  }
+
+  const wordToDigit: Record<string, string> = {
+    zero: "0",
+    one: "1",
+    two: "2",
+    three: "3",
+    four: "4",
+    five: "5",
+    six: "6",
+    seven: "7",
+    eight: "8",
+    nine: "9",
+    ten: "10",
+  };
+  const digitRows =
+    text.match(/(\d+)\s+rows?\b/i)
+    ?? text.match(/returns\s+(\d+)\s+rows?/i)
+    ?? text.match(/exactly\s+(\d+)\s+rows?/i);
+  const wordRows = text.match(/returns\s+(\w+)\s+rows?\b/i);
+  const n = digitRows?.[1] ?? (wordRows ? wordToDigit[wordRows[1].toLowerCase()] : undefined);
+  if (n) {
+    return {
+      input: "Your SQL query",
+      output: `${n} row${n === "1" ? "" : "s"}`,
+      label: formatPublicTestName(testName),
+      fromPublicTest: true,
+    };
+  }
+
+  const scalar =
+    text.match(/(\d+)\s+employees?/i)
+    ?? text.match(/has\s+(\d+)\s+/i)
+    ?? text.match(/(\d+)\s+distinct/i)
+    ?? text.match(/(\d+)\s+departments?/i);
+  if (scalar) {
+    const n = scalar[1];
+    return {
+      input: "Your SQL query",
+      output: `Result checks ${n}`,
+      label: formatPublicTestName(testName),
+      fromPublicTest: true,
+    };
+  }
+
+  if (/no rows|zero rows|0 rows|none empty|empty/i.test(text)) {
+    return {
+      input: "Your SQL query",
+      output: text,
+      label: formatPublicTestName(testName),
+      fromPublicTest: true,
+    };
+  }
+
+  return {
+    input: formatPublicTestName(testName),
+    output: text,
+    fromPublicTest: true,
+  };
+}
+
 function examplesFromPublicTests(publicTests: PublicTestInfo[]): ChallengeExample[] {
   const fromTests: ChallengeExample[] = [];
   const seen = new Set<string>();
   for (const test of publicTests) {
-    const parsed = parseExampleFromDescription(test.description ?? test.name);
+    const parsed =
+      parseExampleFromDescription(test.description ?? test.name)
+      ?? parseReferenceFromPublicTest(test.description ?? "", test.name);
     if (!parsed) {
       continue;
     }
-    const key = `${parsed.input}→${parsed.output}`;
+    const key = `${parsed.input}→${parsed.output}→${parsed.label ?? ""}`;
     if (seen.has(key)) {
       continue;
     }
@@ -291,6 +384,17 @@ function examplesFromPublicTests(publicTests: PublicTestInfo[]): ChallengeExampl
     fromTests.push(parsed);
   }
   return fromTests;
+}
+
+/** True when the examples table should use public-test reference column labels. */
+export function examplesUseReferenceLayout(
+  rows: ChallengeExample[],
+  language?: string,
+): boolean {
+  if (language?.toLowerCase() === "sql") {
+    return rows.some((r) => r.fromPublicTest);
+  }
+  return rows.length > 0 && rows.every((r) => r.fromPublicTest);
 }
 
 export function resolveChallengeExamples(

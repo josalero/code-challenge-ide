@@ -109,6 +109,13 @@ services:
       dockerfile: Dockerfile
     image: ${RUNNER_ANGULAR_19_IMAGE:-code-challenge-ide-runner-angular-19:local}
 
+  runner-postgres-17:
+    <<: *runner-build-only
+    build:
+      context: ./runners/sql
+      dockerfile: Dockerfile
+    image: ${RUNNER_POSTGRES_17_IMAGE:-code-challenge-ide-runner-postgres-17:local}
+
   runner-lsp-java:
     <<: *runner-build-only
     build:

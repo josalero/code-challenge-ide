@@ -60,6 +60,8 @@ challenges/{slug}/
     └── …
 ```
 
+**SQL challenges** also include `setup/schema.sql` (loaded by the PostgreSQL runner before each test).
+
 ### Starter file paths (by language)
 
 | Language | Starter path | Test suffix | Runner layout |
@@ -75,6 +77,7 @@ challenges/{slug}/
 | React | `starter/solution.tsx` | `.test.tsx` | `vitest-react` |
 | Vue | `starter/solution.vue` | `.test.ts` | `vitest-vue` |
 | Angular | `starter/solution.ts` | `.test.ts` | `vitest-angular` |
+| SQL | `starter/solution.sql` | `.py` (result checks) | `postgres-sql` |
 
 Source of truth: `ChallengeLanguageSupport.java` and [contracts.md](./contracts.md).
 
@@ -96,6 +99,7 @@ gating_config:
   line_coverage_percent: 80
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30   # easy default; use 60 for medium/hard
 starter_main_class: solution   # java: com.challenge.Solution
 public_tests_meta:             # optional; learner-facing labels for public test names
   - name: "test_hello"
@@ -113,7 +117,7 @@ public_tests_meta:             # optional; learner-facing labels for public test
 | `description_md` | yes | Problem statement (markdown/plain) |
 | `difficulty` | recommended | `easy`, `medium`, `hard` |
 | `gating_config` | recommended | Coverage/style thresholds; see MVP spec |
-| `limits` | optional | Per-test timeout |
+| `limits` | optional | `per_test_timeout_seconds`, `session_duration_minutes` (workspace time limit once Run/Submit starts) |
 | `public_tests_meta` | optional | Maps public test names → learner-visible descriptions (use input/output phrasing; see below) |
 | `starter_main_class` | Java/Python | Loader metadata for runners |
 
@@ -142,7 +146,13 @@ To refresh on-disk challenges after changing the catalog:
 python3 scripts/seed-challenges/generate.py --force   # rewrites challenge.yml for all catalog slugs
 ```
 
-Restart the API so `ChallengeGitLoader` syncs updated `public_tests_meta` and `description_md` into Postgres.
+To add or refresh **only** `limits.session_duration_minutes` on existing trees (30 for `easy`, 60 for `medium` / `hard`):
+
+```bash
+python3 scripts/seed-challenges/patch_session_duration.py
+```
+
+Restart the API so `ChallengeGitLoader` syncs updated `public_tests_meta`, `description_md`, and `session_duration_minutes` into Postgres.
 
 ### Rich descriptions (bulk)
 

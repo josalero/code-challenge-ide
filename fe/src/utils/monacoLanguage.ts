@@ -23,6 +23,8 @@ export function monacoLanguageFor(language: string | undefined): string {
       return "rust";
     case "cpp":
       return "cpp";
+    case "sql":
+      return "sql";
     default:
       return "plaintext";
   }
@@ -52,6 +54,8 @@ export const usesJavaLsp = usesLsp;
 
 export function customTestsTabLabel(language: string | undefined): string {
   switch (language?.toLowerCase()) {
+    case "sql":
+      return "Optional SQL checks";
     case "python":
       return "Optional pytest tests";
     case "go":

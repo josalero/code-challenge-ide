@@ -95,8 +95,14 @@ public class ChallengePublisher {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Challenge directory already exists");
     }
 
+    String difficulty = request.difficulty().trim().toLowerCase();
+    int sessionDurationMinutes =
+        request.sessionDurationMinutes() != null && request.sessionDurationMinutes() > 0
+            ? request.sessionDurationMinutes()
+            : ChallengeSessionLimits.defaultMinutesForDifficulty(difficulty);
+
     try {
-      writeChallengeTree(challengeDir, request, slug, language);
+      writeChallengeTree(challengeDir, request, slug, language, sessionDurationMinutes);
     } catch (IOException e) {
       throw new ResponseStatusException(
           HttpStatus.INTERNAL_SERVER_ERROR, "Failed to write challenge files", e);
@@ -120,8 +126,9 @@ public class ChallengePublisher {
             request.starterCode(),
             gatingJson,
             "user",
-            request.difficulty().trim().toLowerCase(),
+            difficulty,
             language,
+            sessionDurationMinutes,
             now,
             now);
     challengeRepository.save(entity);
@@ -131,7 +138,11 @@ public class ChallengePublisher {
   }
 
   private void writeChallengeTree(
-      Path challengeDir, CreateChallengeRequest request, String slug, String language)
+      Path challengeDir,
+      CreateChallengeRequest request,
+      String slug,
+      String language,
+      int sessionDurationMinutes)
       throws IOException {
     Files.createDirectories(challengeDir);
     Files.createDirectories(challengeDir.resolve("public/tests"));
@@ -152,7 +163,10 @@ public class ChallengePublisher {
     meta.put("description_md", request.descriptionMd().trim());
     int lineCoverage = request.lineCoveragePercent() <= 0 ? 80 : request.lineCoveragePercent();
     meta.put("gating_config", Map.of("line_coverage_percent", lineCoverage));
-    meta.put("limits", Map.of("per_test_timeout_seconds", 10));
+    Map<String, Object> limits = new LinkedHashMap<>();
+    limits.put("per_test_timeout_seconds", 10);
+    limits.put("session_duration_minutes", sessionDurationMinutes);
+    meta.put("limits", limits);
     meta.put("default_runtime_version", request.defaultRuntimeVersion().trim());
     if ("java".equals(language)) {
       meta.put("starter_main_class", "com.challenge.Solution");

@@ -14,15 +14,17 @@ description_md: |
   - Hidden tests may include additional edge cases beyond the examples.
   - Use the `Solution` class and static methods unless the starter specifies otherwise.
   - Aim for an efficient solution; brute force may time out on large hidden inputs.
+  - Arrays may be empty unless examples show otherwise.
   
   ## Method to implement
   
-  `nums`
+  `Solution.rotate(int[] nums, int k)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 60
 starter_main_class: com.challenge.Solution
 public_tests_meta:
   - name: "verify_behavior_for_rotate_array"

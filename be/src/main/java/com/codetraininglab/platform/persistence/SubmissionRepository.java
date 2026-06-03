@@ -1,5 +1,6 @@
 package com.codetraininglab.platform.persistence;
 
+import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
 import java.time.Instant;
 import java.util.List;
@@ -20,4 +21,10 @@ public interface SubmissionRepository extends JpaRepository<SubmissionEntity, UU
       @Param("userId") UUID userId, @Param("key") String key, @Param("since") Instant since);
 
   List<SubmissionEntity> findByStatusAndUpdatedAtBefore(SubmissionStatus status, Instant cutoff);
+
+  long countByUserId(UUID userId);
+
+  long countByUserIdAndKind(UUID userId, SubmissionKind kind);
+
+  long countByUserIdAndStatus(UUID userId, SubmissionStatus status);
 }

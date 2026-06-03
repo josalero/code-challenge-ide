@@ -9,10 +9,10 @@ description_md: |
   
   The array `nums` contains `n` distinct values taken from the range `[0, n]`. Exactly one number from that range is missing.
   
-  
   ## Examples
   - `[3, 0, 1]` → `2`
   - `[0]` → `1`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -21,6 +21,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "missingnumber_3_0_1_should_equal_2"
     description: "missingNumber([3, 0, 1]) should equal 2"

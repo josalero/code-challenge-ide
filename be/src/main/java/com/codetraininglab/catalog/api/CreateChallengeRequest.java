@@ -23,5 +23,6 @@ public record CreateChallengeRequest(
     @NotBlank String defaultRuntimeVersion,
     @NotBlank String starterCode,
     @Min(0) @Max(100) int lineCoveragePercent,
+    @Min(5) @Max(480) Integer sessionDurationMinutes,
     @NotEmpty @Valid List<ChallengeTestPayload> publicTests,
     @NotEmpty @Valid List<ChallengeTestPayload> hiddenTests) {}
