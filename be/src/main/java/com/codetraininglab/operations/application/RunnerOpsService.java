@@ -6,6 +6,7 @@ import com.codetraininglab.operations.api.RunnerOpsJobResponse;
 import com.codetraininglab.operations.api.RunnerOpsStatusResponse;
 import com.codetraininglab.integration.runner.RunnerContainerPool;
 import com.codetraininglab.platform.config.CtlProperties;
+import com.codetraininglab.platform.util.InterruptSupport;
 import com.codetraininglab.platform.persistence.LanguageEntity;
 import com.codetraininglab.platform.persistence.LanguageRepository;
 import com.codetraininglab.platform.persistence.LanguageRuntimeEntity;
@@ -29,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -39,6 +42,7 @@ import tools.jackson.databind.json.JsonMapper;
 @Service
 public class RunnerOpsService {
 
+  private static final Logger log = LoggerFactory.getLogger(RunnerOpsService.class);
   private static final int LOG_TAIL_MAX = 8000;
   private static final List<String> LSP_WARM_LABELS =
       List.of("java", "python", "go", "typescript", "csharp", "rust", "cpp", "vue");
@@ -236,9 +240,13 @@ public class RunnerOpsService {
             job.fail(ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage());
           } finally {
             try {
-              persistWarmInventoryFromDocker();
+              // InterruptedException handlers set the interrupt flag; JDBC fails with
+              // "Closed by interrupt" unless we clear it before the best-effort DB sync.
+              InterruptSupport.runWithInterruptCleared(this::persistWarmInventoryFromDocker);
             } catch (Exception syncEx) {
-              // Best-effort: ops UI still works from live docker inspect on next status poll.
+              log.warn(
+                  "Warm inventory sync to Postgres failed (best-effort): {}",
+                  syncEx.getMessage());
             }
             if (job.id.equals(activeJobId)) {
               activeJobId = null;

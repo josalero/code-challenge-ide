@@ -3,6 +3,7 @@ package com.codetraininglab.integration.runner;
 import com.codetraininglab.domain.RunnerStatus;
 import com.codetraininglab.domain.TestOutcomeStatus;
 import com.codetraininglab.platform.config.CtlProperties;
+import com.codetraininglab.platform.util.InterruptSupport;
 import jakarta.annotation.PostConstruct;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -127,6 +128,9 @@ public class RunnerContainerPool {
           }
           return execJob(pooled, jobJson, limits);
         } catch (RunnerPoolException ex) {
+          // A prior attempt may have set the interrupt flag; clear before retry or return so
+          // warm inventory JDBC on this virtual thread is not poisoned.
+          InterruptSupport.clearInterrupted();
           log.warn(
               "Runner pool attempt failed for image {} (attempt {}): {}",
               image,

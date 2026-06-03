@@ -6,6 +6,7 @@ import com.codetraininglab.integration.runner.RunnerContainerPool;
 import com.codetraininglab.integration.runner.RunnerJobPayload;
 import com.codetraininglab.integration.runner.RunnerResult;
 import com.codetraininglab.platform.config.CtlProperties;
+import com.codetraininglab.platform.util.InterruptSupport;
 import com.codetraininglab.platform.persistence.LanguageEntity;
 import com.codetraininglab.platform.persistence.LanguageRepository;
 import com.codetraininglab.platform.persistence.LanguageRuntimeEntity;
@@ -260,7 +261,7 @@ public class RunnerPoolWarmExecutor {
       }
       return new ImageIdentity(true, output.trim());
     } catch (IOException | InterruptedException ex) {
-      Thread.currentThread().interrupt();
+      InterruptSupport.clearInterrupted();
       return new ImageIdentity(false, null);
     }
   }
