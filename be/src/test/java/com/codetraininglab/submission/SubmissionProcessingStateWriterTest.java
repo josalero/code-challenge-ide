@@ -274,6 +274,7 @@ class SubmissionProcessingStateWriterTest {
         "git",
         "easy",
         "java",
+        null,
         Instant.EPOCH,
         Instant.EPOCH);
   }

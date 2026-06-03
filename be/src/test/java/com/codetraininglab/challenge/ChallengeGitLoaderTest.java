@@ -74,8 +74,56 @@ class ChallengeGitLoaderTest {
     ArgumentCaptor<ChallengeEntity> captor = ArgumentCaptor.forClass(ChallengeEntity.class);
     verify(challengeRepository).save(captor.capture());
     assertThat(captor.getValue().getSlug()).isEqualTo("demo");
+    assertThat(captor.getValue().getSessionDurationMinutes()).isEqualTo(30);
     verify(publicRepo).save(any());
     verify(hiddenRepo).save(any());
+  }
+
+  @Test
+  void loadsSessionDurationFromLimitsBlock() throws Exception {
+    Path challengeDir = tempDir.resolve("timed");
+    Files.createDirectories(challengeDir.resolve("starter"));
+    Files.createDirectories(challengeDir.resolve("public/tests"));
+    Files.createDirectories(challengeDir.resolve("hidden/tests"));
+    Files.writeString(
+        challengeDir.resolve("challenge.yml"),
+        """
+        slug: timed
+        title: Timed
+        difficulty: hard
+        description_md: Hello
+        gating_config:
+          line_coverage_percent: 80
+        limits:
+          session_duration_minutes: 45
+        """);
+    Files.writeString(
+        challengeDir.resolve("starter/Solution.java"), "package com.challenge; class Solution {}");
+    Files.writeString(
+        challengeDir.resolve("public/tests/DemoTest.java"),
+        "package com.challenge.public_; class DemoTest {}");
+    Files.writeString(
+        challengeDir.resolve("hidden/tests/DemoHiddenTest.java"),
+        "package com.challenge.hidden; class DemoHiddenTest {}");
+
+    ChallengeRepository challengeRepository = org.mockito.Mockito.mock(ChallengeRepository.class);
+    when(challengeRepository.findBySlug("timed")).thenReturn(Optional.empty());
+    when(challengeRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    var properties = CtlPropertiesTestFixtures.defaults(tempDir.toString());
+    ChallengeGitLoader loader =
+        new ChallengeGitLoader(
+            properties,
+            challengeRepository,
+            org.mockito.Mockito.mock(ChallengePublicTestRepository.class),
+            org.mockito.Mockito.mock(ChallengeHiddenTestRepository.class),
+            JsonMapper.builder().build(),
+            Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+    loader.run(new DefaultApplicationArguments(new String[] {}));
+
+    ArgumentCaptor<ChallengeEntity> captor = ArgumentCaptor.forClass(ChallengeEntity.class);
+    verify(challengeRepository).save(captor.capture());
+    assertThat(captor.getValue().getSessionDurationMinutes()).isEqualTo(45);
   }
 
   @Test
@@ -116,6 +164,7 @@ class ChallengeGitLoaderTest {
             "git",
             "easy",
             "java",
+            null,
             Instant.EPOCH,
             Instant.EPOCH);
 

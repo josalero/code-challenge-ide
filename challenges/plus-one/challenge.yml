@@ -9,23 +9,25 @@ description_md: |
   
   A non-negative integer is stored as an array of digits (most significant digit first). Return the digit array after adding one.
   
-  
   ## Examples
   - `[1, 2, 3]` → `[1,2,4]`
   - `[0]` → `[1]`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
   - Use the `Solution` class and static methods unless the starter specifies otherwise.
+  - Arrays may be empty unless examples show otherwise.
   
   ## Method to implement
   
-  `digits`
+  `Solution.plusOne(int[] digits)`
 gating_config:
   line_coverage_percent: 80
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 starter_main_class: com.challenge.Solution
 public_tests_meta:
   - name: "expect_plusone_new_int_1_2_3_to_return_1_2_4"

@@ -9,10 +9,10 @@ description_md: |
   
   A non-negative integer is stored as an array of digits (most significant digit first). Return the digit array after adding one.
   
-  
   ## Examples
   - `[1, 2, 3]` → `[1,2,4]`
   - `[9]` → `[1,0]`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -21,6 +21,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "Plusone123ShouldReturn124"
     description: "plusOne([1, 2, 3]) should return [1, 2, 4]"

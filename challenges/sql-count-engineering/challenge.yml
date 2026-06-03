@@ -1,0 +1,28 @@
+slug: sql-count-engineering
+title: Count Engineering headcount
+difficulty: easy
+language: sql
+default_runtime_version: "17"
+description_md: |
+  ## What to do
+  Return a single number: how many employees are in Engineering (department_id = 2).
+  
+  Each challenge seeds a small PostgreSQL schema under `setup/schema.sql`. Public checks run on **Run**; hidden checks validate more result shapes on **Submit**.
+  
+  ## Public checks (reference)
+  - `Public check` → `Engineering has three employees`
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Write your query in `starter/solution.sql`; the runner applies `setup/schema.sql` before each check.
+  - Result sets are compared to expected rows (column order must match unless noted).
+gating_config:
+  line_coverage_percent: 0
+limits:
+  per_test_timeout_seconds: 15
+  session_duration_minutes: 30
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_count"
+    description: "Engineering has three employees"

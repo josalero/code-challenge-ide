@@ -9,11 +9,11 @@ description_md: |
   
   By definition, `0! = 1`. For `n > 0`, multiply all integers from `1` through `n`.
   
-  
   ## Examples
   - `0` → `1`
   - `5` → `120`
   - `1` → `1`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -22,6 +22,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "Factorial0ShouldEqual1"
     description: "factorial(0) should equal 1"

@@ -2,6 +2,7 @@
 
 | Doc | Purpose |
 | --- | --- |
+| [technical-article.md](./technical-article.md) | **How it was built** — architecture, design decisions, LSP pooling, runner daemon, submission pipeline |
 | [user-guide.md](./user-guide.md) | **How to use the app** — setup flow, Run/Submit, admin Ops, troubleshooting |
 | [runner-ops.md](./runner-ops.md) | **Run tests** pooling, Maven/LSP warm, Admin Ops, env vars |
 | [code_training_lab_mvp_specification.md](./code_training_lab_mvp_specification.md) | Product scope, roadmap, architecture |

@@ -9,10 +9,10 @@ description_md: |
   
   Return a **new** array sorted in ascending order using the bubble sort algorithm (do not mutate the input unless the API says otherwise).
   
-  
   ## Examples
   - `[3, 1, 2]` → `[1,2,3]`
   - `[1]` → `[1]`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -21,6 +21,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "Bubblesort312ShouldReturn123"
     description: "bubbleSort([3, 1, 2]) should return [1, 2, 3]"

@@ -10,6 +10,7 @@ export type WorkspaceRunPhase =
   | "compilation-error"
   | "failed-test"
   | "timeout"
+  | "session-expired"
   | "service-unavailable"
   | "run-passed"
   | "run-failed"
@@ -17,6 +18,7 @@ export type WorkspaceRunPhase =
 
 export function deriveWorkspaceRunPhase(input: {
   challengeLoading: boolean;
+  sessionExpired?: boolean;
   isRunning: boolean;
   submissionStatus: SubmissionStatusValue | null;
   submitError: string | null;
@@ -28,6 +30,9 @@ export function deriveWorkspaceRunPhase(input: {
 }): WorkspaceRunPhase {
   if (input.challengeLoading) {
     return "loading";
+  }
+  if (input.sessionExpired) {
+    return "session-expired";
   }
   if (input.isRunning) {
     return "running";
@@ -106,6 +111,7 @@ export const RUN_PHASE_LABELS: Record<WorkspaceRunPhase, string> = {
   "compilation-error": "Compilation error",
   "failed-test": "Tests failed",
   timeout: "Run timed out",
+  "session-expired": "Time limit reached",
   "service-unavailable": "Service unavailable",
   "run-passed": "Tests passing",
   "run-failed": "Tests failing",

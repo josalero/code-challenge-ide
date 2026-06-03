@@ -11,7 +11,8 @@ public enum WorkspaceLayout {
   CMAKE("cmake-test"),
   VITEST_REACT("vitest-react"),
   VITEST_VUE("vitest-vue"),
-  VITEST_ANGULAR("vitest-angular");
+  VITEST_ANGULAR("vitest-angular"),
+  POSTGRES_SQL("postgres-sql");
 
   private final String id;
 
@@ -38,6 +39,7 @@ public enum WorkspaceLayout {
       case "react" -> VITEST_REACT;
       case "vue" -> VITEST_VUE;
       case "angular" -> VITEST_ANGULAR;
+      case "sql" -> POSTGRES_SQL;
       default -> MAVEN;
     };
   }

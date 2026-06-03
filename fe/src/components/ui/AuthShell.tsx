@@ -2,6 +2,7 @@ import { Bot, Code2, ShieldCheck } from "lucide-react";
 import { Typography } from "antd";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import ThemeToggle from "../ThemeToggle";
 
 type Props = {
   title: string;
@@ -30,28 +31,31 @@ const FEATURES = [
 export default function AuthShell({ title, subtitle, children }: Props) {
   return (
     <div className="ctl-auth-bg flex min-h-dvh flex-col">
-      <header className="border-b border-slate-800/75 bg-slate-950/90 backdrop-blur">
+      <header className="border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 py-2 md:px-6">
           <Link
             to="/login"
-            className="inline-flex min-w-0 items-center gap-2.5 text-white no-underline"
+            className="inline-flex min-w-0 items-center gap-2.5 text-foreground no-underline"
             aria-label="Code Training Lab"
           >
             <span className="flex size-9 items-center justify-center rounded-md bg-emerald-500/15 ring-1 ring-emerald-500/25">
               <Code2 className="size-5 text-emerald-400" aria-hidden />
             </span>
             <span className="min-w-0">
-              <Typography.Text className="!text-white block text-sm font-semibold leading-tight">
+              <Typography.Text className="!text-foreground block text-sm font-semibold leading-tight">
                 Code Training Lab
               </Typography.Text>
-              <Typography.Text className="!text-slate-500 hidden text-xs sm:block">
+              <Typography.Text className="!text-muted-foreground hidden text-xs sm:block">
                 Practice · test · improve
               </Typography.Text>
             </span>
           </Link>
-          <Typography.Text className="!text-slate-500 hidden text-xs sm:block">
-            Private training workspace
-          </Typography.Text>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Typography.Text className="!text-muted-foreground hidden text-xs sm:block">
+              Private training workspace
+            </Typography.Text>
+          </div>
         </div>
       </header>
 
@@ -102,7 +106,7 @@ export default function AuthShell({ title, subtitle, children }: Props) {
         </section>
       </main>
 
-      <footer className="border-t border-slate-800/75 bg-slate-950/90">
+      <footer className="border-t border-slate-700/60 bg-slate-900/90">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between md:px-6">
           <span className="font-medium text-slate-400">Code Training Lab</span>
           <span>Docker sandbox · hidden tests · feedback reports</span>

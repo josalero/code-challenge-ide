@@ -21,6 +21,7 @@ gating_config:
   line_coverage_percent: 80
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 starter_main_class: solution
 public_tests_meta:
   - name: "test_simple"

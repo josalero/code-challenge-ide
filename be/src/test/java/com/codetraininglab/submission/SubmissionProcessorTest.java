@@ -85,6 +85,7 @@ class SubmissionProcessorTest {
             "git",
             "easy",
             "java",
+            null,
             Instant.EPOCH,
             Instant.EPOCH);
     LanguageRuntimeEntity runtime =
@@ -139,6 +140,7 @@ class SubmissionProcessorTest {
             "git",
             "easy",
             "java",
+            null,
             Instant.EPOCH,
             Instant.EPOCH);
     LanguageRuntimeEntity runtime =
@@ -315,6 +317,7 @@ class SubmissionProcessorTest {
             "git",
             "easy",
             "java",
+            null,
             Instant.EPOCH,
             Instant.EPOCH);
     LanguageRuntimeEntity runtime =

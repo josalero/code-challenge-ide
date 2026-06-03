@@ -58,6 +58,7 @@ class ChallengeWorkspaceServiceTest {
             "git",
             "easy",
             "java",
+            null,
             FIXED_NOW,
             FIXED_NOW);
     UserProgressEntity progress =
@@ -98,6 +99,7 @@ class ChallengeWorkspaceServiceTest {
             "git",
             "easy",
             "java",
+            null,
             FIXED_NOW,
             FIXED_NOW);
     when(challengeRepository.findBySlug("reverse-string")).thenReturn(Optional.of(challenge));
@@ -122,6 +124,7 @@ class ChallengeWorkspaceServiceTest {
             "git",
             "easy",
             "java",
+            null,
             FIXED_NOW,
             FIXED_NOW);
     UserProgressEntity progress =

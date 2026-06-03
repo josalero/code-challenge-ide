@@ -9,10 +9,10 @@ description_md: |
   
   Return the index of `target` in the array, or `-1` if the value does not occur.
   
-  
   ## Examples
   - `[2, 3, 4], 3` → `index 1`
   - `[1, 2], 5` → `index -1`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -22,6 +22,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "linearsearch_2_3_4_3_should_return_index_1"
     description: "linearSearch([2, 3, 4], 3) should return index 1"

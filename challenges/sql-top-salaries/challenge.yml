@@ -1,0 +1,29 @@
+slug: sql-top-salaries
+title: Top three salaries
+difficulty: medium
+language: sql
+default_runtime_version: "17"
+description_md: |
+  ## What to do
+  Return the names of the three highest-paid employees, highest first.
+  
+  Each challenge seeds a small PostgreSQL schema under `setup/schema.sql`. Public checks run on **Run**; hidden checks validate more result shapes on **Submit**.
+  
+  ## Public checks (reference)
+  - `Public check` → `Exactly three rows returned`
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Write your query in `starter/solution.sql`; the runner applies `setup/schema.sql` before each check.
+  - Result sets are compared to expected rows (column order must match unless noted).
+  - Aim for an efficient solution; brute force may time out on large hidden inputs.
+gating_config:
+  line_coverage_percent: 0
+limits:
+  per_test_timeout_seconds: 15
+  session_duration_minutes: 60
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_limit"
+    description: "Exactly three rows returned"

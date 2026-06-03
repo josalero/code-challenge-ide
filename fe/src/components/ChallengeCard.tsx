@@ -1,102 +1,97 @@
-import { ArrowRightOutlined } from "@ant-design/icons";
-import { Tag, Typography } from "antd";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { ChallengeSummary } from "../api/types";
-import { ProgressState } from "../domain/constants";
-import { difficultyColor } from "../utils/difficulty";
+import { difficultyColorClass } from "./workspace/difficultyBadgeStyles";
+import { languageBadgeClass } from "./workspace/languageBadgeStyles";
 import {
-  formatLanguageLabel,
-  languageTagColor,
-  runnerPipelineLabel,
-} from "../utils/languageRuntimes";
+  challengeActionLabel,
+  challengeProgressAccent,
+  challengeProgressLabel,
+} from "../utils/challengeCardUi";
+import { formatLanguageLabel, runnerPipelineLabel } from "../utils/languageRuntimes";
+import { cn } from "@/lib/utils";
 
 type Props = {
   challenge: ChallengeSummary;
   progressState?: string;
 };
 
-function actionLabel(state?: string): string {
-  if (state === ProgressState.PASSED) {
-    return "Review challenge";
-  }
-  if (state === ProgressState.ATTEMPTED || state === ProgressState.FAILED) {
-    return "Continue challenge";
-  }
-  return "Start challenge";
-}
-
-function progressTagColor(state?: string): string {
-  if (state === ProgressState.PASSED) {
-    return "success";
-  }
-  if (state === ProgressState.ATTEMPTED) {
-    return "processing";
-  }
-  if (state === ProgressState.FAILED) {
-    return "error";
-  }
-  return "default";
-}
-
-function progressLabel(state?: string): string {
-  if (!state || state === ProgressState.NOT_STARTED) {
-    return "Not started";
-  }
-  if (state === ProgressState.PASSED) {
-    return "Passed";
-  }
-  if (state === ProgressState.ATTEMPTED) {
-    return "In progress";
-  }
-  if (state === ProgressState.FAILED) {
-    return "Needs work";
-  }
-  return state;
-}
-
 export default function ChallengeCard({ challenge, progressState }: Props) {
-  const action = actionLabel(progressState);
+  const accent = challengeProgressAccent(progressState);
+  const action = challengeActionLabel(progressState);
 
   return (
-    <article className="ctl-challenge-card group relative flex h-full min-h-[168px] flex-col rounded-lg border border-slate-700/60 bg-slate-900/70 p-4 transition-colors hover:border-emerald-500/50 hover:bg-slate-800/70">
-      <div className="mb-3 flex flex-wrap items-center gap-1.5">
-        {challenge.language && (
-          <Tag color={languageTagColor(challenge.language)} className="!m-0 !text-xs">
-            {formatLanguageLabel(challenge.language)}
-          </Tag>
+    <article
+      className={cn(
+        "ctl-challenge-card group relative flex h-full min-h-[172px] flex-col overflow-hidden rounded-xl",
+        "border border-border bg-card shadow-sm transition-all duration-200",
+        "hover:border-emerald-500/40 hover:shadow-md",
+        "dark:border-slate-600/45 dark:bg-slate-800/40 dark:shadow-none",
+        "dark:hover:border-emerald-500/35 dark:hover:bg-slate-800/70 dark:hover:shadow-md dark:hover:shadow-black/20",
+      )}
+    >
+      <div
+        className={cn(
+          "absolute inset-y-0 left-0 w-1 bg-gradient-to-b to-transparent opacity-80",
+          accent.border,
         )}
-        <Tag color={difficultyColor(challenge.difficulty)} className="!m-0 !text-xs">
-          {challenge.difficulty}
-        </Tag>
-        <Tag color={progressTagColor(progressState)} className="!m-0 !text-xs">
-          {progressLabel(progressState)}
-        </Tag>
+        aria-hidden
+      />
+
+      <div className="flex flex-1 flex-col p-4 pl-5">
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          {challenge.language && (
+            <span
+              className={cn(
+                "rounded-md border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                languageBadgeClass(challenge.language),
+              )}
+            >
+              {formatLanguageLabel(challenge.language)}
+            </span>
+          )}
+          <span
+            className={cn(
+              "rounded-md border px-2 py-0.5 text-[10px] font-medium capitalize",
+              difficultyColorClass(challenge.difficulty),
+            )}
+          >
+            {challenge.difficulty}
+          </span>
+        </div>
+
+        <h3 className="mb-1 line-clamp-2 text-base font-semibold leading-snug text-foreground">
+          <Link
+            to={`/challenges/${challenge.slug}`}
+            className="text-inherit no-underline after:absolute after:inset-0 hover:text-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 dark:hover:text-emerald-300"
+          >
+            {challenge.title}
+          </Link>
+        </h3>
+
+        <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+          {runnerPipelineLabel(challenge.language)}
+        </p>
+
+        <div className="mt-auto flex items-center justify-between gap-2 pt-4">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium",
+              accent.chip,
+            )}
+          >
+            <span className={cn("size-1.5 rounded-full", accent.dot)} aria-hidden />
+            {challengeProgressLabel(progressState)}
+          </span>
+          <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 transition-colors group-hover:text-emerald-700 dark:text-emerald-400/90 dark:group-hover:text-emerald-300">
+            {action}
+            <ArrowRight
+              className="size-3.5 transition-transform group-hover:translate-x-0.5"
+              aria-hidden
+            />
+          </span>
+        </div>
       </div>
-
-      <Typography.Title
-        level={3}
-        className="!mb-1 !mt-0 line-clamp-2 !text-base !font-semibold !leading-snug !text-slate-50"
-      >
-        <Link
-          to={`/challenges/${challenge.slug}`}
-          className="!text-slate-50 no-underline after:absolute after:inset-0 hover:!text-emerald-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
-        >
-          {challenge.title}
-        </Link>
-      </Typography.Title>
-
-      <Typography.Text className="!text-slate-500 block truncate !text-xs">
-        {challenge.slug}
-      </Typography.Text>
-
-      <Typography.Text className="!mt-3 block line-clamp-2 !text-sm !leading-relaxed !text-slate-400">
-        {runnerPipelineLabel(challenge.language)}
-      </Typography.Text>
-
-      <span className="mt-auto flex items-center gap-1 pt-4 text-sm font-medium text-emerald-400/90 group-hover:text-emerald-300">
-        {action}
-        <ArrowRightOutlined className="text-xs transition-transform group-hover:translate-x-0.5" />
-      </span>
     </article>
   );
 }

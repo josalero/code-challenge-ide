@@ -13,6 +13,7 @@ import WorkspaceBottomPanel, {
 import WorkspacePanelFrame from "./WorkspacePanelFrame";
 import WorkspaceResizableLayout from "./WorkspaceResizableLayout";
 import RunStateBanner from "./RunStateBanner";
+import WorkspaceStartGate from "./WorkspaceStartGate";
 import type { ChallengeDetail, ReportResponse, RunnerLogs } from "@/api/types";
 import type { WorkspaceRunPhase } from "@/domain/workspaceRunState";
 import type { SubmissionStatusValue } from "@/domain/constants";
@@ -66,6 +67,15 @@ type Props = {
   isTerminal: boolean;
   submitError: string | null;
   loading?: boolean;
+  sessionActive?: boolean;
+  sessionCountdown?: string | null;
+  sessionExpired?: boolean;
+  sessionDurationMinutes?: number;
+  onAbandonAttempt?: () => void;
+  showAbandonAttempt?: boolean;
+  onStartTest?: () => void;
+  showStartTest?: boolean;
+  showStartGate?: boolean;
 };
 
 type MobilePane = "instructions" | "editor" | "output";
@@ -140,6 +150,15 @@ export default function WorkspaceShell({
   isTerminal,
   submitError,
   loading,
+  sessionActive = false,
+  sessionCountdown = null,
+  sessionExpired = false,
+  sessionDurationMinutes = 0,
+  onAbandonAttempt,
+  showAbandonAttempt = false,
+  onStartTest,
+  showStartTest = false,
+  showStartGate = false,
 }: Props) {
   const [mobilePane, setMobilePane] = useState<MobilePane>("editor");
   const [instructionsOpen, setInstructionsOpen] = useState(false);
@@ -171,8 +190,20 @@ export default function WorkspaceShell({
       onSaveCustomTests={onSaveCustomTests}
       saveCustomTestsLoading={saveCustomTestsLoading}
       activeTab={workspaceTab}
+      sessionActive={sessionActive}
+      sessionCountdown={sessionCountdown}
+      sessionExpired={sessionExpired}
+      sessionDurationMinutes={sessionDurationMinutes}
+      onAbandonAttempt={onAbandonAttempt}
+      showAbandonAttempt={showAbandonAttempt}
+      onStartTest={onStartTest}
+      showStartTest={showStartTest}
     />
   );
+
+  const previewStarter = showStartGate;
+  const editorEditable =
+    sessionActive && !isRunning && !exerciseLocked && !sessionExpired;
 
   const editorPanel = (
     <CodeEditorPanel
@@ -184,8 +215,22 @@ export default function WorkspaceShell({
       onCustomTestsChange={onCustomTestsChange}
       workspaceTab={workspaceTab}
       onWorkspaceTabChange={onWorkspaceTabChange}
-      readOnly={isRunning || exerciseLocked}
+      readOnly={!editorEditable}
+      previewStarter={previewStarter}
     />
+  );
+
+  const editorColumn = (
+    <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
+      <div className={cn("min-h-0 flex-1 overflow-hidden", previewStarter && "pb-[4.5rem]")}>
+        {editorPanel}
+      </div>
+      <WorkspaceStartGate
+        visible={showStartGate}
+        limitMinutes={sessionDurationMinutes > 0 ? sessionDurationMinutes : 60}
+        onStartTest={onStartTest ?? (() => {})}
+      />
+    </div>
   );
 
   const instructionsPanel = (
@@ -217,6 +262,14 @@ export default function WorkspaceShell({
       showLiveRun={showLiveRun}
       isTerminal={isTerminal}
       exerciseLocked={exerciseLocked}
+      sessionDurationMinutes={sessionDurationMinutes}
+      sessionActive={sessionActive}
+      sessionExpired={sessionExpired}
+      sessionCountdown={sessionCountdown}
+      showStartTest={showStartTest}
+      onStartTest={onStartTest}
+      showAbandonAttempt={showAbandonAttempt}
+      onAbandonAttempt={onAbandonAttempt}
     />
   );
 
@@ -233,6 +286,7 @@ export default function WorkspaceShell({
       {header}
 
       {(submitError
+        || runPhase === "session-expired"
         || (runPhase !== "idle" && runPhase !== "loading" && runPhase !== "running")) && (
         <div className="shrink-0 border-b border-slate-800/80 px-4 py-2">
           <RunStateBanner phase={runPhase} message={submitError} />
@@ -300,7 +354,7 @@ export default function WorkspaceShell({
         <div className={cn("ctl-workspace-ide-column bg-[#1e1e1e]", paneClass("editor", mobilePane))}>
           <WorkspacePanelFrame>
             <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
-              <div className="min-h-0 flex-1 overflow-hidden">{editorPanel}</div>
+              <div className="min-h-0 flex-1 overflow-hidden">{editorColumn}</div>
               <WorkspaceActivityPanel
                 activityLog={activityLog}
                 isActive={isRunning || showLiveRun}
@@ -326,7 +380,7 @@ export default function WorkspaceShell({
       <div className="min-h-0 flex-1 overflow-hidden">
         <WorkspaceResizableLayout
           problem={instructionsPanel}
-          editor={editorPanel}
+          editor={editorColumn}
           activity={
             <WorkspaceActivityPanel
               activityLog={activityLog}

@@ -9,10 +9,10 @@ description_md: |
   
   Apply the transformation character by character; preserve case and non-alphabetic symbols unless stated.
   
-  
   ## Examples
-  - `\"abc\", 3` → `\"def\"`
-  - `\"xyz\", 3` → `\"abc\"`
+  - `"abc", 3` → `"def"`
+  - `"xyz", 3` → `"abc"`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -26,6 +26,7 @@ gating_config:
   line_coverage_percent: 80
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 60
 starter_main_class: solution
 public_tests_meta:
   - name: "test_shift_three"

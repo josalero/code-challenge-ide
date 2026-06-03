@@ -24,6 +24,30 @@ export type ProgressEntry = {
   submitted: boolean;
 };
 
+export type MetricsBreakdownRow = {
+  label: string;
+  total: number;
+  passed: number;
+  inProgress: number;
+  notStarted: number;
+};
+
+export type MeMetricsResponse = {
+  catalogTotal: number;
+  notStarted: number;
+  attempted: number;
+  passed: number;
+  failed: number;
+  completionPercent: number;
+  submissionsTotal: number;
+  practiceRuns: number;
+  gradedSubmits: number;
+  submissionsCompleted: number;
+  submissionsFailed: number;
+  byLanguage: MetricsBreakdownRow[];
+  byDifficulty: MetricsBreakdownRow[];
+};
+
 export type ChallengeSummary = {
   slug: string;
   title: string;
@@ -51,6 +75,7 @@ export type CreateChallengeRequest = {
   defaultRuntimeVersion: string;
   starterCode: string;
   lineCoveragePercent: number;
+  sessionDurationMinutes?: number | null;
   publicTests: ChallengeTestPayload[];
   hiddenTests: ChallengeTestPayload[];
 };
@@ -85,6 +110,8 @@ export type ChallengeDetail = {
   starterCode: string;
   difficulty: string;
   language: string;
+  /** Allotted workspace time in minutes (from challenge.yml limits or DB). */
+  sessionDurationMinutes: number;
   gatingConfig: string;
   publicTests: PublicTestInfo[];
   hiddenTestCount: number;

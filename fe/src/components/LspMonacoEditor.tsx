@@ -25,6 +25,7 @@ type Props = {
   value: string;
   onChange: (value: string) => void;
   lspEnabled: boolean;
+  readOnly?: boolean;
 };
 
 const EDITOR_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
@@ -56,6 +57,7 @@ export default function LspMonacoEditor({
   value,
   onChange,
   lspEnabled,
+  readOnly = false,
 }: Props) {
   const lspConfig = lspConfigFor(language);
   const modelUri = solutionModelUri(language);
@@ -87,9 +89,14 @@ export default function LspMonacoEditor({
     if (editor.getModel()?.uri.toString() !== model.uri.toString()) {
       editor.setModel(model);
     }
+    editor.updateOptions({ readOnly });
     monacoEditorAfterMount(editor, editorMonaco);
     setEditorMounted(true);
   };
+
+  useEffect(() => {
+    editorRef.current?.updateOptions({ readOnly });
+  }, [readOnly]);
 
   useEffect(() => {
     const model = modelRef.current;
@@ -100,7 +107,7 @@ export default function LspMonacoEditor({
   }, [value]);
 
   useEffect(() => {
-    if (!lspEnabled || !editorMounted || !lspConfig) {
+    if (!lspEnabled || readOnly || !editorMounted || !lspConfig) {
       return;
     }
 
@@ -243,7 +250,7 @@ export default function LspMonacoEditor({
       socketRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- connect once per mount
-  }, [lspEnabled, editorMounted, language]);
+  }, [lspEnabled, readOnly, editorMounted, language]);
 
   const showStatus = lspEnabled && lspStatus !== "off" && lspStatus !== "ready";
 
@@ -280,6 +287,7 @@ export default function LspMonacoEditor({
           onMount={handleMount}
           options={{
             ...EDITOR_OPTIONS,
+            readOnly,
             ariaLabel: "Solution editor",
           }}
         />

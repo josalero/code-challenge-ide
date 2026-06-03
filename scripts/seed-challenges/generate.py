@@ -35,9 +35,14 @@ from catalog_multi_extended import (
     EXTENDED_TYPESCRIPT_CHALLENGES,
 )
 from catalog_typescript_extra import TYPESCRIPT_EXTRA_CHALLENGES
+from catalog_sql import SQL_CHALLENGES
 
 ROOT = Path(__file__).resolve().parents[2]
 CHALLENGES_DIR = ROOT / "challenges"
+
+
+def session_duration_minutes(difficulty: str) -> int:
+    return 30 if difficulty.lower() == "easy" else 60
 
 JAVA_TEST_HEADER = """package com.challenge.{package};
 
@@ -61,6 +66,7 @@ LANG_CONFIG = {
     "react": {"starter_name": "solution.tsx"},
     "vue": {"starter_name": "solution.vue"},
     "angular": {"starter_name": "solution.ts"},
+    "sql": {"starter_name": "solution.sql"},
 }
 
 
@@ -170,6 +176,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: {session_duration_minutes(entry["difficulty"])}
 starter_main_class: com.challenge.Solution
 {format_public_tests_meta_yaml(public_meta)}"""
     (challenge_dir / "challenge.yml").write_text(yml, encoding="utf-8")
@@ -185,6 +192,53 @@ starter_main_class: com.challenge.Solution
         for class_name, cases in group_java_tests(entry[tests_key], slug).items():
             content = java_test_class(package, class_name, cases)
             (tests_dir / f"{class_name}.java").write_text(content, encoding="utf-8")
+
+
+def write_sql_challenge(entry: dict, base: Path) -> None:
+    slug = entry["slug"]
+    challenge_dir = base / slug
+    challenge_dir.mkdir(parents=True, exist_ok=True)
+    public_meta = entry.get("public_tests_meta") or []
+
+    description = build_description_md(
+        slug,
+        entry["title"],
+        entry["difficulty"],
+        "sql",
+        entry["description"],
+        public_meta,
+    )
+
+    yml = f"""slug: {slug}
+title: {entry["title"]}
+difficulty: {entry["difficulty"]}
+language: sql
+default_runtime_version: "17"
+description_md: |
+  {description.replace(chr(10), chr(10) + "  ")}
+gating_config:
+  line_coverage_percent: 0
+limits:
+  per_test_timeout_seconds: 15
+  session_duration_minutes: {session_duration_minutes(entry["difficulty"])}
+starter_main_class: solution
+{format_public_tests_meta_yaml(public_meta)}"""
+    (challenge_dir / "challenge.yml").write_text(yml, encoding="utf-8")
+
+    setup_dir = challenge_dir / "setup"
+    setup_dir.mkdir(parents=True, exist_ok=True)
+    (setup_dir / "schema.sql").write_text(entry["schema"].strip() + "\n", encoding="utf-8")
+
+    starter_dir = challenge_dir / "starter"
+    starter_dir.mkdir(exist_ok=True)
+    (starter_dir / "solution.sql").write_text(entry["starter"].strip() + "\n", encoding="utf-8")
+
+    for scope in ("public", "hidden"):
+        tests_dir = challenge_dir / scope / "tests"
+        tests_dir.mkdir(parents=True, exist_ok=True)
+        tests_key = "public_tests" if scope == "public" else "hidden_tests"
+        for func_name, body in entry[tests_key]:
+            (tests_dir / f"{func_name}.py").write_text(body, encoding="utf-8")
 
 
 def write_python_challenge(entry: dict, base: Path) -> None:
@@ -212,6 +266,7 @@ gating_config:
   line_coverage_percent: 80
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: {session_duration_minutes(entry["difficulty"])}
 starter_main_class: solution
 {format_public_tests_meta_yaml(public_meta)}"""
     (challenge_dir / "challenge.yml").write_text(yml, encoding="utf-8")
@@ -257,6 +312,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: {session_duration_minutes(entry["difficulty"])}
 {format_public_tests_meta_yaml(public_meta)}"""
     (challenge_dir / "challenge.yml").write_text(yml, encoding="utf-8")
 
@@ -328,6 +384,7 @@ def main() -> int:
         (RUST_CHALLENGES + EXTENDED_RUST_CHALLENGES, write_generic_challenge),
         (CPP_CHALLENGES + EXTENDED_CPP_CHALLENGES, write_generic_challenge),
         (all_frontend, write_generic_challenge),
+        (SQL_CHALLENGES, write_sql_challenge),
     ]
 
     for entries, writer in batches:

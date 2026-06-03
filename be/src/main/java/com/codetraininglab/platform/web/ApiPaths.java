@@ -13,6 +13,7 @@ public final class ApiPaths {
   public static final String CHALLENGE_CUSTOM_TESTS = CHALLENGES + "/{slug}/custom-tests";
   public static final String ME = BASE + "/me";
   public static final String ME_PROGRESS = ME + "/progress";
+  public static final String ME_METRICS = ME + "/metrics";
   public static final String SUBMISSIONS = BASE + "/submissions";
   public static final String SUBMISSION_FEEDBACK_ACTIONS = SUBMISSIONS + "/{submissionId}/feedback-actions";
   public static final String FEEDBACK_ACTIONS = BASE + "/feedback-actions";

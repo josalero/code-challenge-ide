@@ -148,7 +148,53 @@ def is_clear_row(inp: str, out: str) -> bool:
     return True
 
 
-def rows_from_meta(meta: list[dict[str, str]], slug: str = "", limit: int = 4) -> list[tuple[str, str]]:
+def parse_sql_reference_row(description: str) -> tuple[str, str] | None:
+    """Map SQL public-test descriptions to reference rows for ## Examples."""
+    text = description.strip()
+    if not text or _VAGUE_DESC.search(text):
+        return None
+    word_nums = {
+        "zero": "0",
+        "one": "1",
+        "two": "2",
+        "three": "3",
+        "four": "4",
+        "five": "5",
+        "six": "6",
+        "seven": "7",
+        "eight": "8",
+        "nine": "9",
+        "ten": "10",
+    }
+    n: str | None = None
+    digit_rows = re.search(r"(\d+)\s+rows?\b", text, re.I) or re.search(
+        r"returns\s+(\d+)\s+rows?", text, re.I
+    )
+    if digit_rows:
+        n = digit_rows.group(1)
+    else:
+        word_rows = re.search(r"returns\s+(\w+)\s+rows?\b", text, re.I)
+        if word_rows:
+            n = word_nums.get(word_rows.group(1).lower())
+    if n is not None:
+        return ("Your SQL query", f"{n} row{'s' if n != '1' else ''}")
+    count = re.search(r"(\d+)\s+employees?", text, re.I) or re.search(
+        r"has\s+(\d+)\b", text, re.I
+    )
+    if count:
+        return ("Your SQL query", f"Checks {count.group(1)}")
+    if re.search(r"no rows|zero rows|0 rows|empty", text, re.I):
+        return ("Your SQL query", text)
+    return ("Public check", text)
+
+
+def rows_from_meta(
+    meta: list[dict[str, str]],
+    slug: str = "",
+    limit: int = 4,
+    *,
+    language: str = "",
+) -> list[tuple[str, str]]:
     curated = SLUG_EXAMPLE_ROWS.get(slug) or SLUG_EXAMPLE_ROWS.get(normalize_slug(slug))
     if curated:
         return list(curated[:limit])
@@ -158,6 +204,8 @@ def rows_from_meta(meta: list[dict[str, str]], slug: str = "", limit: int = 4) -
     for item in meta:
         desc = (item.get("description") or item.get("name") or "").strip()
         parsed = parse_row_from_description(desc)
+        if not parsed and language == "sql":
+            parsed = parse_sql_reference_row(desc)
         if not parsed:
             continue
         inp, out = parsed
@@ -181,11 +229,28 @@ def rows_from_java_tests(test_bodies: list[str], slug: str, limit: int = 4) -> l
     return rows_from_meta(meta, slug, limit)
 
 
-def format_examples_markdown(rows: list[tuple[str, str]]) -> str:
+def format_examples_markdown(rows: list[tuple[str, str]], *, language: str = "") -> str:
     if not rows:
         return ""
     bullets = [f"- `{inp}` → `{out}`" for inp, out in rows]
-    return "\n\n## Examples\n" + "\n".join(bullets)
+    heading = "## Public checks (reference)" if language == "sql" else "## Examples"
+    return f"\n\n{heading}\n" + "\n".join(bullets)
+
+
+def format_public_checks_markdown(meta: list[dict[str, str]]) -> str:
+    """Bullet list of public test names and descriptions (when no I/O rows)."""
+    if not meta:
+        return ""
+    lines = ["\n\n## Public tests (reference)\n"]
+    for item in meta:
+        name = item.get("name", "test")
+        desc = (item.get("description") or "").strip()
+        label = name.replace("test_", "").replace("_", " ").strip() or name
+        if desc:
+            lines.append(f"- **{label}**: {desc}")
+        else:
+            lines.append(f"- **{name}**: checked on Run")
+    return "\n".join(lines)
 
 
 def strip_examples_section(description: str) -> str:

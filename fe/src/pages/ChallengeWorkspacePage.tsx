@@ -13,6 +13,7 @@ import type {
 } from "../api/types";
 import AppLayout from "../components/AppLayout";
 import WorkspaceShell from "../components/workspace/WorkspaceShell";
+import { useAuth } from "../auth/useAuth";
 import type { BottomPanelTab } from "../components/workspace/WorkspaceBottomPanel";
 import type { AttemptRecord } from "../components/workspace/AttemptHistoryTab";
 import type { ActivityEntry, ActivityKind, TrackedTest } from "../domain/runProgressTypes";
@@ -29,7 +30,9 @@ import type { SubmissionKindValue, SubmissionStatusValue } from "../domain/const
 import {
   deriveWorkspaceRunPhase,
 } from "../domain/workspaceRunState";
+import { formatSessionCountdown } from "../utils/challengeSession";
 import { useAutosaveDraft } from "../hooks/useAutosaveDraft";
+import { useChallengeSessionTimer } from "../hooks/useChallengeSessionTimer";
 import { useRunTestsShortcut } from "../hooks/useRunTestsShortcut";
 import { useSubmissionEvents } from "../hooks/useSubmissionEvents";
 import {
@@ -42,6 +45,7 @@ export default function ChallengeWorkspacePage() {
   const { slug = "" } = useParams();
   const queryClient = useQueryClient();
   const { message } = App.useApp();
+  const { user } = useAuth();
 
   const [solutionCode, setSolutionCode] = useState("");
   const [customTestsCode, setCustomTestsCode] = useState("");
@@ -82,6 +86,20 @@ export default function ChallengeWorkspacePage() {
     enabled: Boolean(slug),
   });
 
+  const {
+    active: sessionActive,
+    expired: sessionExpired,
+    formattedRemaining: sessionCountdown,
+    limitSeconds: sessionLimitSeconds,
+    startSession,
+    abandonSession,
+  } = useChallengeSessionTimer(
+    slug,
+    challengeQuery.data?.sessionDurationMinutes ?? 0,
+    challengeQuery.data?.difficulty ?? "",
+    user?.email ?? "anonymous",
+  );
+
   const progressQuery = useQuery({
     queryKey: ["me", "progress"],
     queryFn: () => apiFetch<ProgressEntry[]>(ApiPaths.ME_PROGRESS),
@@ -100,7 +118,7 @@ export default function ChallengeWorkspacePage() {
   const { status: autosaveStatus, loadDraft } = useAutosaveDraft(
     slug,
     solutionCode,
-    Boolean(slug) && Boolean(challengeQuery.data),
+    Boolean(slug) && Boolean(challengeQuery.data) && sessionActive,
   );
 
   useEffect(() => {
@@ -129,6 +147,7 @@ export default function ChallengeWorkspacePage() {
     setSubmissionStatus(null);
     setSubmitError(null);
     setAttempts([]);
+    setBottomTab(detail.sessionDurationMinutes > 0 ? "guide" : "tests");
     lastToastReportId.current = null;
   }, [slug, challengeQuery.data, loadDraft]);
 
@@ -157,6 +176,29 @@ export default function ChallengeWorkspacePage() {
     onError: (e) =>
       message.error(e instanceof ApiError ? e.message : "Could not save custom tests"),
   });
+
+  const handleStartTest = useCallback(() => {
+    if (sessionActive || exerciseLocked) {
+      return;
+    }
+    startSession();
+    const limitLabel = formatSessionCountdown(sessionLimitSeconds);
+    const mins = challengeQuery.data?.sessionDurationMinutes ?? 0;
+    appendActivity(`Timed attempt started — ${limitLabel} on the clock`, "success");
+    message.success(
+      mins > 0
+        ? `Timer started — ${mins} minutes to complete this challenge`
+        : "Timed attempt started",
+    );
+  }, [
+    sessionActive,
+    exerciseLocked,
+    startSession,
+    sessionLimitSeconds,
+    challengeQuery.data?.sessionDurationMinutes,
+    appendActivity,
+    message,
+  ]);
 
   const beginExecution = useCallback(
     (kind: SubmissionKindValue) => {
@@ -226,10 +268,21 @@ export default function ChallengeWorkspacePage() {
     },
   });
 
+  const handleAbandonAttempt = useCallback(() => {
+    abandonSession();
+    setBottomTab("guide");
+    appendActivity(
+      "Attempt abandoned — timer reset. Press Start test when you are ready for a new attempt.",
+      "info",
+    );
+    message.info("Attempt abandoned — press Start test when you are ready to try again");
+  }, [abandonSession, appendActivity, message]);
+
   const redoMutation = useMutation({
     mutationFn: () =>
       apiFetch<void>(ApiPaths.challengeRedo(slug), { method: "POST" }),
     onSuccess: () => {
+      abandonSession();
       void queryClient.invalidateQueries({ queryKey: ["me", "progress"] });
       setReport(null);
       setSubmitError(null);
@@ -238,7 +291,10 @@ export default function ChallengeWorkspacePage() {
       setActiveSubmissionKind(null);
       setLastRunPassed(null);
       setTrackedTests([]);
-      message.success("Exercise unlocked — you can edit and submit again");
+      if ((challengeQuery.data?.sessionDurationMinutes ?? 0) > 0) {
+        setBottomTab("guide");
+      }
+      message.success("Exercise unlocked — timer reset; you can edit and submit again");
     },
     onError: (e) =>
       message.error(e instanceof ApiError ? e.message : "Could not redo exercise"),
@@ -439,19 +495,32 @@ export default function ChallengeWorkspacePage() {
     || submissionStatus === SubmissionStatus.RUNNING
     || submitMutation.isPending;
 
+  const sessionBlocked = sessionExpired || !sessionActive;
+
   const runTests = useCallback(() => {
-    if (!isRunning && !exerciseLocked) {
+    if (!isRunning && !exerciseLocked && !sessionBlocked) {
       submitMutation.mutate(SubmissionKind.RUN);
     }
-  }, [isRunning, exerciseLocked, submitMutation]);
+  }, [isRunning, exerciseLocked, sessionBlocked, submitMutation]);
 
   const submitSolution = useCallback(() => {
-    if (!isRunning && !exerciseLocked) {
+    if (!isRunning && !exerciseLocked && !sessionBlocked) {
       submitMutation.mutate(SubmissionKind.SUBMIT);
     }
-  }, [isRunning, exerciseLocked, submitMutation]);
+  }, [isRunning, exerciseLocked, sessionBlocked, submitMutation]);
 
-  useRunTestsShortcut(Boolean(challenge) && !isRunning && !exerciseLocked, runTests);
+  useRunTestsShortcut(
+    Boolean(challenge) && sessionActive && !isRunning && !exerciseLocked && !sessionExpired,
+    runTests,
+  );
+
+  const showStartGate = Boolean(challenge) && !sessionActive && !exerciseLocked;
+
+  useEffect(() => {
+    if (showStartGate && workspaceTab === "custom") {
+      setWorkspaceTab("solution");
+    }
+  }, [showStartGate, workspaceTab]);
 
   const showLiveRun = isRunning;
   const isTerminal =
@@ -461,6 +530,7 @@ export default function ChallengeWorkspacePage() {
 
   const runPhase = deriveWorkspaceRunPhase({
     challengeLoading: challengeQuery.isLoading,
+    sessionExpired,
     isRunning,
     submissionStatus,
     submitError,
@@ -472,7 +542,7 @@ export default function ChallengeWorkspacePage() {
   });
 
   return (
-    <AppLayout variant="workspace">
+    <AppLayout variant="workspace" focused={sessionActive}>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       {challengeQuery.error && (
         <div
@@ -504,6 +574,13 @@ export default function ChallengeWorkspacePage() {
             exerciseLocked={exerciseLocked}
             onRedo={() => redoMutation.mutate()}
             redoLoading={redoMutation.isPending}
+            onStartTest={handleStartTest}
+            showStartTest={showStartGate}
+            onAbandonAttempt={handleAbandonAttempt}
+            showAbandonAttempt={
+              (sessionActive || sessionExpired) && !exerciseLocked
+            }
+            showStartGate={showStartGate}
             onCancel={
               activeSubmissionId
                 ? () => cancelMutation.mutate(activeSubmissionId)
@@ -537,6 +614,10 @@ export default function ChallengeWorkspacePage() {
             isTerminal={isTerminal}
             submitError={submitError}
             loading={challengeQuery.isLoading}
+            sessionActive={sessionActive}
+            sessionCountdown={sessionActive ? sessionCountdown : null}
+            sessionExpired={sessionExpired}
+            sessionDurationMinutes={challenge.sessionDurationMinutes}
           />
         </div>
       )}
@@ -551,6 +632,7 @@ export default function ChallengeWorkspacePage() {
             starterCode: "",
             difficulty: "",
             language: "java",
+            sessionDurationMinutes: 60,
             gatingConfig: "",
             publicTests: [],
             hiddenTestCount: 0,
@@ -571,7 +653,7 @@ export default function ChallengeWorkspacePage() {
           onSubmit={() => {}}
           showCancel={false}
           onResetStarter={() => {}}
-          bottomTab="tests"
+          bottomTab="guide"
           onBottomTabChange={() => {}}
           submissionStatus={null}
           isSubmitting={false}

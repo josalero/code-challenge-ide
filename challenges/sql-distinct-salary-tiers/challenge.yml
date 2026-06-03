@@ -1,0 +1,29 @@
+slug: sql-distinct-salary-tiers
+title: Distinct salary brackets
+difficulty: medium
+language: sql
+default_runtime_version: "17"
+description_md: |
+  ## What to do
+  Return distinct salaries that are strictly greater than 80000, ordered descending.
+  
+  A string is valid when every opening bracket has a matching closing bracket of the same type and pairs are properly nested. Ignore all other characters.
+  
+  ## Public checks (reference)
+  - `Public check` → `Four distinct salaries above 80k`
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Write your query in `starter/solution.sql`; the runner applies `setup/schema.sql` before each check.
+  - Result sets are compared to expected rows (column order must match unless noted).
+  - Aim for an efficient solution; brute force may time out on large hidden inputs.
+gating_config:
+  line_coverage_percent: 0
+limits:
+  per_test_timeout_seconds: 15
+  session_duration_minutes: 60
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_distinct_count"
+    description: "Four distinct salaries above 80k"

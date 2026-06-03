@@ -4,6 +4,8 @@ Browser UI for Code Training Lab.
 
 **Stack:** React **19**, Vite, TypeScript, **Ant Design 5** (app chrome + legacy panels), **shadcn/ui** (workspace), Tailwind CSS, TanStack Query, Monaco Editor.
 
+**Themes:** Light and dark modes share one component tree. Toggle via the sun/moon control in the app header (and on auth pages). Preference is stored in `localStorage` (`ctl-theme`); `index.html` applies the class before first paint to avoid flash. Tokens live in `fe/src/styles/themes.css` (`html.light` / `html.dark`). Catalog UI uses shadcn semantic tokens (`foreground`, `card`, `muted`, `border`) with `dark:` overrides where slate surfaces are still needed (e.g. workspace).
+
 When this doc disagrees with `fe/package.json` or code, trust the build files.
 
 ---
@@ -30,6 +32,7 @@ import "@ant-design/v5-patch-for-react-19";
 | Path | Page | Notes |
 | --- | --- | --- |
 | `/challenges` | Challenge list | Filters by language + progress |
+| `/metrics` | Learning metrics | Progress, runs, breakdowns by language/difficulty |
 | `/challenges/:slug` | **Coding workspace** | Desktop-first IDE layout |
 | `/challenges/new` | Create challenge | Admin only |
 | `/admin/ops` | Runner/LSP ops | Admin only — Built/Warm status, Maven/LSP warm |

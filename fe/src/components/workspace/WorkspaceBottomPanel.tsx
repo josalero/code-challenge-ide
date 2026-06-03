@@ -1,5 +1,6 @@
 import { useEffect, useMemo, type ReactNode } from "react";
 import {
+  BookOpen,
   Bot,
   Clock3,
   FlaskConical,
@@ -8,6 +9,7 @@ import {
   ShieldCheck,
   Terminal,
 } from "lucide-react";
+import ChallengeSessionGuidePanel from "./ChallengeSessionGuidePanel";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,6 +28,7 @@ import { FeedbackCategory, FeedbackStatus } from "@/domain/constants";
 import { cn } from "@/lib/utils";
 
 export type BottomPanelTab =
+  | "guide"
   | "tests"
   | "compiler"
   | "static-analysis"
@@ -58,9 +61,17 @@ type Props = {
   showLiveRun: boolean;
   isTerminal: boolean;
   exerciseLocked?: boolean;
+  sessionDurationMinutes?: number;
+  sessionActive?: boolean;
+  sessionExpired?: boolean;
+  sessionCountdown?: string | null;
+  showStartTest?: boolean;
+  onStartTest?: () => void;
+  showAbandonAttempt?: boolean;
+  onAbandonAttempt?: () => void;
 };
 
-const TAB_ITEMS = [
+const OUTPUT_TAB_ITEMS = [
   { value: "tests", label: "Tests", icon: ListChecks },
   { value: "compiler", label: "Compiler", icon: Terminal },
   { value: "static-analysis", label: "Analysis", icon: ShieldCheck },
@@ -152,8 +163,25 @@ export default function WorkspaceBottomPanel({
   showLiveRun,
   isTerminal,
   exerciseLocked = false,
+  sessionDurationMinutes = 0,
+  sessionActive = false,
+  sessionExpired = false,
+  sessionCountdown = null,
+  showStartTest = false,
+  onStartTest,
+  showAbandonAttempt = false,
+  onAbandonAttempt,
 }: Props) {
   const sidebar = variant === "sidebar";
+  const showGuideTab = sessionDurationMinutes > 0;
+
+  const tabItems = useMemo(
+    () =>
+      showGuideTab
+        ? [{ value: "guide" as const, label: "Guide", icon: BookOpen }, ...OUTPUT_TAB_ITEMS]
+        : OUTPUT_TAB_ITEMS,
+    [showGuideTab],
+  );
 
   useEffect(() => {
     const suggested = tabForPhase(runPhase);
@@ -185,9 +213,9 @@ export default function WorkspaceBottomPanel({
     [failedTests, runnerLogs, staticIssues, report, attempts.length],
   );
 
-  const activeLabel = TAB_ITEMS.find((t) => t.value === activeTab)?.label ?? "Output";
+  const activeLabel = tabItems.find((t) => t.value === activeTab)?.label ?? "Output";
 
-  const tabTriggers = TAB_ITEMS.map(({ value, label, icon: Icon }) => (
+  const tabTriggers = tabItems.map(({ value, label, icon: Icon }) => (
     <TabsTrigger
       key={value}
       value={value}
@@ -201,7 +229,7 @@ export default function WorkspaceBottomPanel({
     >
       <Icon className="size-4 shrink-0 opacity-80" aria-hidden />
       {!sidebar && <span className="hidden sm:inline">{label}</span>}
-      {tabBadge[value] !== undefined && (
+      {value !== "guide" && tabBadge[value] !== undefined && (
         <Badge
           variant="outline"
           className={cn(
@@ -225,6 +253,26 @@ export default function WorkspaceBottomPanel({
         sidebar ? "flex flex-col px-2 pb-2 pt-1" : "px-3 pb-3 pt-2",
       )}
     >
+      {showGuideTab && (
+        <TabsContent
+          value="guide"
+          className="mt-0 h-full min-h-0 data-[state=inactive]:hidden"
+        >
+          <PanelScroll sidebar={sidebar}>
+            <ChallengeSessionGuidePanel
+              sessionDurationMinutes={sessionDurationMinutes}
+              sessionActive={sessionActive}
+              sessionExpired={sessionExpired}
+              sessionCountdown={sessionCountdown}
+              showStartTest={showStartTest}
+              onStartTest={onStartTest}
+              showAbandonAttempt={showAbandonAttempt}
+              onAbandonAttempt={onAbandonAttempt}
+            />
+          </PanelScroll>
+        </TabsContent>
+      )}
+
       <TabsContent
         value="tests"
         className="mt-0 flex h-full min-h-0 flex-col data-[state=inactive]:hidden"
@@ -395,7 +443,13 @@ export default function WorkspaceBottomPanel({
       <WorkspacePanelHeader
         icon={<Terminal className="size-3.5" aria-hidden />}
         title={sidebar ? activeLabel : "Output"}
-        subtitle={sidebar ? "Run results & coach" : "Tests · compiler · feedback"}
+        subtitle={
+          sidebar
+            ? "Run results & coach"
+            : showGuideTab
+              ? "Guide · tests · feedback"
+              : "Tests · compiler · feedback"
+        }
         className="shrink-0 py-1.5"
       />
 

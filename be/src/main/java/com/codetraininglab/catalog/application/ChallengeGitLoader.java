@@ -85,6 +85,7 @@ public class ChallengeGitLoader implements ApplicationRunner {
       if (existing.isPresent()) {
         syncPublicTestMetadata(dir, meta, existing.get().getId());
         syncDescriptionFromYaml(meta, existing.get());
+        syncSessionDurationFromYaml(meta, existing.get());
         return;
       }
       String language = stringVal(meta, "language");
@@ -96,6 +97,8 @@ public class ChallengeGitLoader implements ApplicationRunner {
       String starter = Files.readString(dir.resolve(files.starterRelativePath()));
       String gatingJson = jsonMapper.writeValueAsString(meta.getOrDefault("gating_config", Map.of()));
       Instant now = clock.instant();
+      String difficulty = stringVal(meta, "difficulty");
+      Integer sessionDurationMinutes = resolveSessionDurationMinutes(meta, difficulty);
       ChallengeEntity entity =
           new ChallengeEntity(
               UUID.randomUUID(),
@@ -105,8 +108,9 @@ public class ChallengeGitLoader implements ApplicationRunner {
               starter,
               gatingJson,
               "git",
-              stringVal(meta, "difficulty"),
+              difficulty,
               language,
+              sessionDurationMinutes,
               now,
               now);
       challengeRepository.save(entity);
@@ -116,6 +120,26 @@ public class ChallengeGitLoader implements ApplicationRunner {
     } catch (IOException e) {
       log.error("Failed to load challenge from {}", dir, e);
     }
+  }
+
+  private void syncSessionDurationFromYaml(Map<String, Object> meta, ChallengeEntity entity) {
+    Integer fromYaml = ChallengeSessionLimits.parseSessionDurationMinutes(meta);
+    if (fromYaml == null || fromYaml.equals(entity.getSessionDurationMinutes())) {
+      return;
+    }
+    entity.setSessionDurationMinutes(fromYaml);
+    entity.setUpdatedAt(clock.instant());
+    challengeRepository.save(entity);
+    log.info("Synced session duration for challenge {}", entity.getSlug());
+  }
+
+  private static Integer resolveSessionDurationMinutes(
+      Map<String, Object> meta, String difficulty) {
+    Integer fromYaml = ChallengeSessionLimits.parseSessionDurationMinutes(meta);
+    if (fromYaml != null) {
+      return fromYaml;
+    }
+    return ChallengeSessionLimits.defaultMinutesForDifficulty(difficulty);
   }
 
   private void syncDescriptionFromYaml(Map<String, Object> meta, ChallengeEntity entity) {

@@ -27,7 +27,8 @@ class RunnerSmokeChallengesTest {
         Arguments.of("cpp", "anagram-check-cpp"),
         Arguments.of("react", "accordion-react"),
         Arguments.of("vue", "computed-filter-vue"),
-        Arguments.of("angular", "double-service-angular"));
+        Arguments.of("angular", "double-service-angular"),
+        Arguments.of("sql", "sql-count-engineering"));
   }
 
   @ParameterizedTest

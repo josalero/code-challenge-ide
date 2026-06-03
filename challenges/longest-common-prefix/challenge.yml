@@ -9,10 +9,10 @@ description_md: |
   
   Read the task and signature carefully. Use the public examples to clarify edge cases before submitting.
   
-  
   ## Examples
-  - `{\"flower\",\"flow\",\"flight\"}` → `\"fl\"`
-  - `{\"dog\",\"racecar\",\"car\"}` → `\"\"`
+  - `{"flower","flow","flight"}` → `"fl"`
+  - `{"dog","racecar","car"}` → `""`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -26,6 +26,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 starter_main_class: com.challenge.Solution
 public_tests_meta:
   - name: "expect_longestcommonprefix_new_string_flower_flo"

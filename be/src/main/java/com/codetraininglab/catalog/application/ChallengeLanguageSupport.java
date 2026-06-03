@@ -25,6 +25,7 @@ public final class ChallengeLanguageSupport {
       case "react" -> new LanguageFiles("starter/solution.tsx", ".test.tsx", WorkspaceLayout.VITEST_REACT);
       case "vue" -> new LanguageFiles("starter/solution.vue", ".test.ts", WorkspaceLayout.VITEST_VUE);
       case "angular" -> new LanguageFiles("starter/solution.ts", ".test.ts", WorkspaceLayout.VITEST_ANGULAR);
+      case "sql" -> new LanguageFiles("starter/solution.sql", ".py", WorkspaceLayout.POSTGRES_SQL);
       default -> javaFiles();
     };
   }
@@ -44,6 +45,7 @@ public final class ChallengeLanguageSupport {
       case "react" -> "19";
       case "vue" -> "3.5";
       case "angular" -> "19";
+      case "sql" -> "17";
       default -> "26";
     };
   }

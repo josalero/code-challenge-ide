@@ -9,10 +9,10 @@ description_md: |
   
   Return `true` if any value appears at least twice in the array.
   
-  
   ## Examples
   - `[1, 2, 3, 1]` → `true`
   - `[1, 2, 3, 4]` → `false`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -21,6 +21,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "containsduplicate_1_2_3_1_should_be_true"
     description: "containsDuplicate([1, 2, 3, 1]) should be true"

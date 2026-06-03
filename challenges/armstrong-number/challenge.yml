@@ -9,10 +9,10 @@ description_md: |
   
   An Armstrong number equals the sum of its digits each raised to the power of the number of digits (e.g. 153 = 1³ + 5³ + 3³).
   
-  
   ## Examples
   - `153` → `true`
   - `10` → `false`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -26,6 +26,7 @@ gating_config:
   line_coverage_percent: 80
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 60
 starter_main_class: solution
 public_tests_meta:
   - name: "test_153"

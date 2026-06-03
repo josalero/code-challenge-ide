@@ -1,0 +1,28 @@
+slug: sql-departments-without-employees
+title: Empty departments
+difficulty: hard
+language: sql
+default_runtime_version: "17"
+description_md: |
+  ## What to do
+  Return department names that have zero employees assigned.
+  
+  Each challenge seeds a small PostgreSQL schema under `setup/schema.sql`. Public checks run on **Run**; hidden checks validate more result shapes on **Submit**.
+  
+  ## Public checks (reference)
+  - `Public check` → `All departments have staff in this dataset`
+  
+  ## Constraints
+  - Implement only the required API; do not change test files.
+  - Hidden tests may include additional edge cases beyond the examples.
+  - Write your query in `starter/solution.sql`; the runner applies `setup/schema.sql` before each check.
+  - Result sets are compared to expected rows (column order must match unless noted).
+gating_config:
+  line_coverage_percent: 0
+limits:
+  per_test_timeout_seconds: 15
+  session_duration_minutes: 60
+starter_main_class: solution
+public_tests_meta:
+  - name: "test_none_empty"
+    description: "All departments have staff in this dataset"

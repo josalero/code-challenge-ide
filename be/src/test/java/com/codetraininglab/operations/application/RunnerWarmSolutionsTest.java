@@ -36,7 +36,8 @@ class RunnerWarmSolutionsTest {
             "anagram-check-cpp",
             "accordion-react",
             "computed-filter-vue",
-            "double-service-angular")) {
+            "double-service-angular",
+            "sql-count-engineering")) {
       assertThat(RunnerWarmSolutions.solutionFor(slug))
           .as("warm solution for %s", slug)
           .isPresent();

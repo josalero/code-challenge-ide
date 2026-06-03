@@ -9,10 +9,10 @@ description_md: |
   
   Both input arrays are sorted in non-decreasing order. Return a new sorted array containing all elements from both inputs.
   
-  
   ## Examples
   - `[1, 2, 3], [2, 5, 6]` → `[1,2,2,3,5,6]`
   - `[], [1]` → `[1]`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -21,6 +21,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "Mergesorted123256ShouldReturn12235"
     description: "mergeSorted([1, 2, 3], [2, 5, 6]) should return [1, 2, 2, 3, 5, 6]"

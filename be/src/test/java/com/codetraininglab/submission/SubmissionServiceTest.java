@@ -89,6 +89,7 @@ class SubmissionServiceTest {
                     "git",
                     "easy",
                     "java",
+                    null,
                     Instant.EPOCH,
                     Instant.EPOCH)));
     ChallengeEntity challenge =

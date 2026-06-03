@@ -68,7 +68,8 @@ class RunnerPoolWarmExecutorLanguageTest {
         Arguments.of("cpp", "anagram-check-cpp", "cmake-test"),
         Arguments.of("react", "accordion-react", "vitest-react"),
         Arguments.of("vue", "computed-filter-vue", "vitest-vue"),
-        Arguments.of("angular", "double-service-angular", "vitest-angular"));
+        Arguments.of("angular", "double-service-angular", "vitest-angular"),
+        Arguments.of("sql", "sql-count-engineering", "postgres-sql"));
   }
 
   private static void assumeSmokeChallengePresent(String slug) {

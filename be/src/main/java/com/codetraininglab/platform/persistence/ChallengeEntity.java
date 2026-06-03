@@ -40,6 +40,9 @@ public class ChallengeEntity {
   @Column(nullable = false)
   private String language;
 
+  @Column(name = "session_duration_minutes")
+  private Integer sessionDurationMinutes;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
@@ -58,6 +61,7 @@ public class ChallengeEntity {
       String source,
       String difficulty,
       String language,
+      Integer sessionDurationMinutes,
       Instant createdAt,
       Instant updatedAt) {
     this.id = id;
@@ -69,6 +73,7 @@ public class ChallengeEntity {
     this.source = source;
     this.difficulty = difficulty;
     this.language = language;
+    this.sessionDurationMinutes = sessionDurationMinutes;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -115,5 +120,13 @@ public class ChallengeEntity {
 
   public String getLanguage() {
     return language;
+  }
+
+  public Integer getSessionDurationMinutes() {
+    return sessionDurationMinutes;
+  }
+
+  public void setSessionDurationMinutes(Integer sessionDurationMinutes) {
+    this.sessionDurationMinutes = sessionDurationMinutes;
   }
 }

@@ -17,6 +17,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "integer_square_root_of_8_should_be_2"
     description: "integer square root of 8 should be 2"

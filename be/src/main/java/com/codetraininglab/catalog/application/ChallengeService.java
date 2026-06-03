@@ -61,6 +61,9 @@ public class ChallengeService {
                     RuntimeVersionOrder.compare(right.getVersion(), left.getVersion()))
             .map(r -> new RuntimeOption(r.getVersion(), r.isActive()))
             .toList();
+    int sessionDurationMinutes =
+        ChallengeSessionLimits.resolveMinutes(
+            entity.getSessionDurationMinutes(), entity.getDifficulty());
     return new ChallengeDetail(
         entity.getSlug(),
         entity.getTitle(),
@@ -68,6 +71,7 @@ public class ChallengeService {
         entity.getStarterCode(),
         entity.getDifficulty(),
         entity.getLanguage(),
+        sessionDurationMinutes,
         entity.getGatingConfig(),
         publicTests,
         hiddenCount,
@@ -92,6 +96,7 @@ public class ChallengeService {
       String starterCode,
       String difficulty,
       String language,
+      int sessionDurationMinutes,
       String gatingConfig,
       List<PublicTestInfo> publicTests,
       int hiddenTestCount,

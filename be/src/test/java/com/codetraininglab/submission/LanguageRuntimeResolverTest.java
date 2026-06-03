@@ -72,6 +72,7 @@ class LanguageRuntimeResolverTest {
         "git",
         "easy",
         language,
+        null,
         Instant.EPOCH,
         Instant.EPOCH);
   }

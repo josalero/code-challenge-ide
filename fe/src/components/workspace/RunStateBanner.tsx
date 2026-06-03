@@ -40,6 +40,13 @@ const CONFIG: Record<
     description: "The runner exceeded its time limit. Simplify or cancel stuck runs.",
     className: "border-red-500/35 bg-red-500/10 text-red-100",
   },
+  "session-expired": {
+    icon: Clock,
+    title: RUN_PHASE_LABELS["session-expired"],
+    description:
+      "Your allotted time for this challenge has ended. Leave the workspace or use Redo if the exercise was already submitted.",
+    className: "border-red-500/35 bg-red-500/10 text-red-100",
+  },
   "service-unavailable": {
     icon: ServerCrash,
     title: RUN_PHASE_LABELS["service-unavailable"],

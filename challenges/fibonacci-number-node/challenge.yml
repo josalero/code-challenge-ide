@@ -9,11 +9,11 @@ description_md: |
   
   Use the standard definition: `F(0) = 0`, `F(1) = 1`, and `F(n) = F(n-1) + F(n-2)`.
   
-  
   ## Examples
   - `0` → `0`
   - `1` → `1`
   - `5` → `5`
+  
   ## Constraints
   - Implement only the required API; do not change test files.
   - Hidden tests may include additional edge cases beyond the examples.
@@ -22,6 +22,7 @@ gating_config:
   checkstyle_max_errors: 0
 limits:
   per_test_timeout_seconds: 10
+  session_duration_minutes: 30
 public_tests_meta:
   - name: "fibonacci_0_should_equal_0"
     description: "fibonacci(0) should equal 0"

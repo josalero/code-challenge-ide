@@ -49,6 +49,7 @@ class CustomTestsServiceTest {
                     "git",
                     "easy",
                     "java",
+                    null,
                     Instant.EPOCH,
                     Instant.EPOCH)));
     when(customTestsRepository.findByUserIdAndChallengeId(any(), any())).thenReturn(Optional.empty());

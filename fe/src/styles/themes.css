@@ -1,0 +1,152 @@
+/**
+ * Theme tokens. Tailwind `slate-*` uses --color-slate-* (tailwind.config.js).
+ * Light and dark both use the standard slate scale (50 = lightest, 900 = darkest).
+ */
+
+/* --- Tailwind slate (standard scale) --- */
+html.light {
+  --color-slate-50: 248 250 252;
+  --color-slate-100: 241 245 249;
+  --color-slate-200: 226 232 240;
+  --color-slate-300: 203 213 225;
+  --color-slate-400: 148 163 184;
+  --color-slate-500: 100 116 139;
+  --color-slate-600: 71 85 105;
+  --color-slate-700: 51 65 85;
+  --color-slate-800: 30 41 59;
+  --color-slate-900: 15 23 42;
+  --color-slate-950: 2 6 23;
+
+  --ctl-bg: #ffffff;
+  --ctl-bg-subtle: #f8fafc;
+  --ctl-surface: #ffffff;
+  --ctl-surface-elevated: #ffffff;
+  --ctl-border: #e2e8f0;
+  --ctl-primary: #059669;
+  --ctl-primary-muted: rgb(16 185 129 / 0.1);
+  --ctl-text: #0f172a;
+  --ctl-text-muted: #475569;
+
+  --ctl-glow: rgb(16 185 129 / 0.08);
+  --ctl-glow-strong: rgb(148 163 184 / 0.15);
+  --ctl-scrollbar-track: 248 250 252;
+  --ctl-scrollbar-thumb: 203 213 225;
+  --ctl-scrollbar-thumb-hover: 148 163 184;
+  --ctl-workspace-editor: #1e1e1e;
+  --ctl-workspace-shell-from: 255 255 255;
+  --ctl-workspace-shell-to: 248 250 252;
+  --ctl-prose: 51 65 85;
+  --ctl-prose-code-bg: 241 245 249;
+  --ctl-prose-code-fg: 4 120 87;
+  --ctl-prose-pre-bg: 15 23 42;
+  --ctl-prose-pre-fg: 226 232 240;
+  --ctl-terminal-bg: 15 23 42;
+}
+
+html.dark {
+  --color-slate-50: 248 250 252;
+  --color-slate-100: 241 245 249;
+  --color-slate-200: 226 232 240;
+  --color-slate-300: 203 213 225;
+  --color-slate-400: 148 163 184;
+  --color-slate-500: 100 116 139;
+  --color-slate-600: 71 85 105;
+  --color-slate-700: 51 65 85;
+  --color-slate-800: 30 41 59;
+  --color-slate-900: 15 23 42;
+  --color-slate-950: 2 6 23;
+
+  --ctl-bg: #0f172a;
+  --ctl-bg-subtle: #141c2e;
+  --ctl-surface: #1e293b;
+  --ctl-surface-elevated: #273449;
+  --ctl-border: rgb(71 85 105 / 0.55);
+  --ctl-primary: #34d399;
+  --ctl-primary-muted: rgb(52 211 153 / 0.15);
+  --ctl-text: #f1f5f9;
+  --ctl-text-muted: #94a3b8;
+
+  --ctl-glow: rgb(51 65 85 / 0.22);
+  --ctl-glow-strong: rgb(51 65 85 / 0.22);
+  --ctl-scrollbar-track: 15 23 42;
+  --ctl-scrollbar-thumb: 30 41 59;
+  --ctl-scrollbar-thumb-hover: 51 65 85;
+  --ctl-workspace-editor: #1e1e1e;
+  --ctl-workspace-shell-from: 15 23 42;
+  --ctl-workspace-shell-to: 8 13 23;
+  --ctl-prose: 203 213 225;
+  --ctl-prose-code-bg: 30 41 59;
+  --ctl-prose-code-fg: 167 243 208;
+  --ctl-prose-pre-bg: 13 17 23;
+  --ctl-prose-pre-fg: 226 232 240;
+  --ctl-terminal-bg: 13 17 23;
+}
+
+/* shadcn semantic tokens — light defaults on :root; dark overrides on .dark */
+@layer base {
+  :root,
+  html.light {
+    --font-heading: var(--font-sans);
+    --font-sans: "Geist Variable", sans-serif;
+    --ctl-radius: 0.75rem;
+
+    --background: #ffffff;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+    --primary: #059669;
+    --primary-foreground: #ffffff;
+    --secondary: #f1f5f9;
+    --secondary-foreground: #0f172a;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+    --accent: #ecfdf5;
+    --accent-foreground: #065f46;
+    --destructive: #dc2626;
+    --destructive-foreground: #ffffff;
+    --border: #e2e8f0;
+    --input: #e2e8f0;
+    --ring: #059669;
+    --radius: 0.625rem;
+    --sidebar: #f8fafc;
+    --sidebar-foreground: #0f172a;
+    --sidebar-primary: #059669;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f1f5f9;
+    --sidebar-accent-foreground: #0f172a;
+    --sidebar-border: #e2e8f0;
+    --sidebar-ring: #059669;
+  }
+
+  .dark {
+    --background: oklch(0.2 0.018 264);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.25 0.018 264);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.25 0.018 264);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.77 0.15 163);
+    --primary-foreground: oklch(0.145 0.02 163);
+    --secondary: oklch(0.3 0.016 264);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.3 0.016 264);
+    --muted-foreground: oklch(0.68 0.012 264);
+    --accent: oklch(0.3 0.016 264);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --destructive-foreground: oklch(0.985 0 0);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.77 0.15 163);
+    --sidebar: oklch(0.26 0.016 264);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+  }
+}

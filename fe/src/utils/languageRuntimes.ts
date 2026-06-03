@@ -77,6 +77,9 @@ export function formatLanguageLabel(language: string): string {
   if (language === "node") {
     return "Node.js";
   }
+  if (language === "sql") {
+    return "SQL";
+  }
   return language.charAt(0).toUpperCase() + language.slice(1);
 }
 
@@ -84,6 +87,7 @@ export function formatLanguageLabel(language: string): string {
 const LANGUAGE_SORT_ORDER = [
   "java",
   "python",
+  "sql",
   "typescript",
   "react",
   "vue",
@@ -116,6 +120,8 @@ export function languageTagColor(language: string): string {
       return "blue";
     case "python":
       return "gold";
+    case "sql":
+      return "cyan";
     case "typescript":
       return "geekblue";
     case "go":
@@ -146,6 +152,7 @@ export function formatRuntimeLabel(language: string, version: string): string {
 const RUNNER_PIPELINE: Record<string, string> = {
   java: "compile · JUnit · coverage",
   python: "pytest · coverage",
+  sql: "PostgreSQL · result sets",
   go: "go test · coverage",
   node: "node:test · coverage",
   typescript: "tsc · node:test · coverage",
