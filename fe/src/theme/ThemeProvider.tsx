@@ -1,14 +1,7 @@
 import { ConfigProvider } from "antd";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { antThemeForMode } from "./antTheme";
+import { ThemeContext } from "./theme-context";
 import {
   readStoredTheme,
   resolveInitialTheme,
@@ -16,14 +9,6 @@ import {
   themeColorMeta,
   type ThemeMode,
 } from "./themeStorage";
-
-type ThemeContextValue = {
-  mode: ThemeMode;
-  setMode: (mode: ThemeMode) => void;
-  toggleMode: () => void;
-};
-
-const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function applyThemeClass(mode: ThemeMode) {
   const root = document.documentElement;
@@ -77,12 +62,4 @@ export function ThemeProvider({ children }: Props) {
       <ConfigProvider theme={antConfig}>{children}</ConfigProvider>
     </ThemeContext.Provider>
   );
-}
-
-export function useTheme(): ThemeContextValue {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) {
-    throw new Error("useTheme must be used within ThemeProvider");
-  }
-  return ctx;
 }

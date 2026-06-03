@@ -479,5 +479,3 @@ export default function WorkspaceBottomPanel({
     </section>
   );
 }
-
-export { tabForPhase };

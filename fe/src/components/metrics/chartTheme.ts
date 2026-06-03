@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useTheme } from "@/theme/ThemeProvider";
+import { useTheme } from "@/theme/useTheme";
 
 export type ChartPalette = {
   passed: string;
