@@ -60,4 +60,19 @@ class DockerRunnerCommandsTest {
         .contains("--ipc", "none")
         .contains("/tmp/challenges/reverse-string:/challenge:ro");
   }
+
+  @Test
+  void ephemeralRunCommandAllowsWritableRootForPostgresSql() {
+    CtlProperties properties = CtlPropertiesTestFixtures.defaults();
+    var command =
+        DockerRunnerCommands.buildEphemeralRunCommand(
+            Path.of("/tmp/challenges/sql-count-engineering"),
+            "code-challenge-ide-runner-postgres-17:local",
+            RunnerLimits.defaults(),
+            WorkspaceLayout.POSTGRES_SQL.id(),
+            properties);
+
+    assertThat(command).doesNotContain("--read-only");
+    assertThat(command).contains("--cap-add", "SETUID", "--cap-add", "SETGID", "--cap-add", "CHOWN");
+  }
 }

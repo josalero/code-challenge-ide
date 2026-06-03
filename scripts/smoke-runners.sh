@@ -69,7 +69,13 @@ PY
     --memory 1024m
     --cpus 2
     --pids-limit 512
-    --read-only
+  )
+  if [[ "${layout}" != "postgres-sql" ]]; then
+    docker_args+=(--read-only)
+  else
+    docker_args+=(--cap-add SETUID --cap-add SETGID --cap-add CHOWN)
+  fi
+  docker_args+=(
     --tmpfs "/tmp:rw,exec,size=768m,mode=1777"
     -v "${mount}:/challenge:ro"
   )
@@ -256,7 +262,13 @@ export class ReversePipe implements PipeTransform {
 }
 EOF
 
-echo "Smoke-testing runners (11 languages)..."
+cat >"${TMP}/sql-count.sql" <<'EOF'
+SELECT COUNT(*) AS engineering_count
+FROM employees
+WHERE department_id = 2;
+EOF
+
+echo "Smoke-testing runners (12 languages)..."
 run_smoke "Java" "${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}" reverse-string maven "${TMP}/reverse.java"
 run_smoke "Python" "${RUNNER_PYTHON_312_IMAGE:-code-challenge-ide-runner-python-312:local}" fizzbuzz-python pytest "${TMP}/fizzbuzz.py"
 run_smoke "Go" "${RUNNER_GO_123_IMAGE:-code-challenge-ide-runner-go-123:local}" gcd-go go-test "${TMP}/gcd.go"
@@ -268,6 +280,7 @@ run_smoke "C++" "${RUNNER_CPP_20_IMAGE:-code-challenge-ide-runner-cpp-20:local}"
 run_smoke "React" "${RUNNER_REACT_19_IMAGE:-code-challenge-ide-runner-react-19:local}" greeting-react vitest-react "${TMP}/greeting.tsx"
 run_smoke "Vue" "${RUNNER_VUE_35_IMAGE:-code-challenge-ide-runner-vue-35:local}" counter-vue vitest-vue "${TMP}/counter.vue"
 run_smoke "Angular" "${RUNNER_ANGULAR_19_IMAGE:-code-challenge-ide-runner-angular-19:local}" reverse-pipe-angular vitest-angular "${TMP}/reverse-pipe.ts"
+run_smoke "SQL" "${RUNNER_POSTGRES_17_IMAGE:-code-challenge-ide-runner-postgres-17:local}" sql-count-engineering postgres-sql "${TMP}/sql-count.sql"
 
 echo "Done: ${PASS} passed, ${FAIL} failed"
 if [[ "${FAIL}" -gt 0 ]]; then

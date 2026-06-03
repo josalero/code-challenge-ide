@@ -20,7 +20,8 @@ final class DockerRunnerCommands {
       RunnerJobPayload.RunnerLimits limits,
       String workspaceLayout,
       CtlProperties properties) {
-    List<String> command = baseRunFlags(limits, true);
+    List<String> command =
+        baseRunFlags(limits, readOnlyRootForLayout(workspaceLayout), workspaceLayout);
     command.add("--rm");
     command.add("-i");
     addMavenCacheMount(command, workspaceLayout, properties);
@@ -36,7 +37,7 @@ final class DockerRunnerCommands {
       RunnerJobPayload.RunnerLimits limits,
       String workspaceLayout,
       CtlProperties properties) {
-    List<String> command = baseRunFlags(limits, false);
+    List<String> command = baseRunFlags(limits, false, workspaceLayout);
     command.add("-i");
     command.add("-d");
     command.add("--name");
@@ -90,7 +91,8 @@ final class DockerRunnerCommands {
     return "ctl-runner-pool-" + body;
   }
 
-  private static List<String> baseRunFlags(RunnerJobPayload.RunnerLimits limits, boolean readOnlyRoot) {
+  private static List<String> baseRunFlags(
+      RunnerJobPayload.RunnerLimits limits, boolean readOnlyRoot, String workspaceLayout) {
     List<String> command = new ArrayList<>();
     command.add("docker");
     command.add("run");
@@ -100,6 +102,7 @@ final class DockerRunnerCommands {
     command.add("ALL");
     command.add("--cap-add");
     command.add("FOWNER");
+    addPostgresSqlSandboxFlags(command, workspaceLayout);
     command.add("--security-opt");
     command.add("no-new-privileges:true");
     command.add("--ipc");
@@ -116,6 +119,22 @@ final class DockerRunnerCommands {
     command.add("--tmpfs");
     command.add("/tmp:rw,exec,size=768m,mode=1777");
     return command;
+  }
+
+  private static boolean readOnlyRootForLayout(String workspaceLayout) {
+    return !WorkspaceLayout.POSTGRES_SQL.id().equals(workspaceLayout);
+  }
+
+  private static void addPostgresSqlSandboxFlags(List<String> command, String workspaceLayout) {
+    if (!WorkspaceLayout.POSTGRES_SQL.id().equals(workspaceLayout)) {
+      return;
+    }
+    command.add("--cap-add");
+    command.add("SETUID");
+    command.add("--cap-add");
+    command.add("SETGID");
+    command.add("--cap-add");
+    command.add("CHOWN");
   }
 
   private static void addMavenCacheMount(

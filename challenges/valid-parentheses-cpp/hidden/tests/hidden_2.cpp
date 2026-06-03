@@ -4,6 +4,6 @@
 
 extern bool is_valid_parentheses(const std::string& s);
 
-TEST_CASE("isValid("{[]}") should be true") {
+TEST_CASE("isValid(\"{[]}\") should be true") {
     REQUIRE(is_valid_parentheses("{[]}") == true);
 }
