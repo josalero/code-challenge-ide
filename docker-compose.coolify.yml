@@ -9,6 +9,7 @@
 # Runner/LSP images are one-shot build services. They exit 0 after /bin/true; the API waits for
 # them so Ops/Run tests see the same image inventory as local docker-compose.yml.
 # Expose in Coolify: service `code-lab-fe`, container port 80 (HTTPS proxy).
+# Direct host access: FE_PORT=3010 publishes http://<vps-ip>:3010 -> code-lab-fe:80.
 # Env: cp .env.coolify.example .env — see docs/coolify.md
 
 name: code-training-lab
@@ -183,6 +184,8 @@ services:
       dockerfile: Dockerfile
     image: ${CTL_FE_IMAGE:-code-challenge-ide-fe:local}
     restart: unless-stopped
+    ports:
+      - "${FE_PORT:-3010}:80"
     expose:
       - "80"
     networks:

@@ -65,6 +65,7 @@ Expose only the frontend service:
 | Service | `code-lab-fe` |
 | Container port | `80` |
 | HTTPS | Enable in Coolify |
+| Direct host port | `FE_PORT=3010` publishes `http://<vps-ip>:3010` if the VPS firewall allows it |
 
 Do not expose the API separately. The frontend Caddy config proxies `/api/` to
 `code-lab-api:8080` on the internal Compose network.
@@ -90,6 +91,7 @@ Set these in Coolify Environment Variables:
 | `JWT_SECRET` | `at-least-32-random-characters` | JWT signing key |
 | `CORS_ALLOWED_ORIGINS` | `https://lab.example.com` | Exact Coolify URL, no trailing slash |
 | `DOCKER_GID` | `998` | Group id of `/var/run/docker.sock` on the VPS |
+| `FE_PORT` | `3010` | Optional public host port for direct HTTP access |
 
 Recommended production values:
 
@@ -178,7 +180,7 @@ docker network create coolify
 | --- | --- |
 | Build fails at `docker/dockerfile:1` | Use current runner Java Dockerfile without the BuildKit syntax directive |
 | 504 during deploy | First deploy may still be building all runner/LSP images; check Coolify build logs |
-| 504 after deploy | Coolify must expose `code-lab-fe` on container port `80` |
+| 504 after deploy | Coolify must expose `code-lab-fe` on container port `80`; direct host access is `http://<vps-ip>:${FE_PORT:-3010}` |
 | 504 when clicking Warm everything | Redeploy the API; warm endpoints enqueue quickly and Docker checks run inside the background job. If it still happens, Docker on the VPS is overloaded or unreachable |
 | API unhealthy | Check Postgres/RabbitMQ credentials, `JWT_SECRET`, and readiness logs |
 | `Docker is not reachable` | Check socket mount and `DOCKER_GID` |
