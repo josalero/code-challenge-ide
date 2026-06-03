@@ -675,7 +675,9 @@ public class RunnerOpsService {
     }
     if (!isDockerAvailable()) {
       throw new ResponseStatusException(
-          HttpStatus.SERVICE_UNAVAILABLE, "Docker CLI is not available on the API host.");
+          HttpStatus.SERVICE_UNAVAILABLE,
+          "Docker is not reachable from the API container — mount /var/run/docker.sock and set"
+              + " DOCKER_GID to the socket group (see docs/coolify.md).");
     }
   }
 
