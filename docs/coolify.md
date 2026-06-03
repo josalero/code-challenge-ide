@@ -233,7 +233,11 @@ Then Admin → **Ops** → **Warm everything** (or `RUNNER_POOL_WARM_ON_STARTUP=
 
 ### 504 / 503 gateway errors
 
-Coolify returns **504** when nothing answers on **`code-lab-fe:80`** (container crash, never started, or wrong port in Coolify).
+Coolify returns **504** when nothing answers on **`code-lab-fe:80`** (container crash, never started, wrong port, or deploy still building).
+
+**Common cause:** `code-lab-fe` waited for `code-lab-api` health while the API was still building (Gradle). Compose now starts FE when the API **container is up** (`service_started`), not when readiness passes. The login page should load; `/api/` may 502 until the API is healthy.
+
+**Runners:** Services use profile **`runners`** — they are **not** started on default `up` (avoids a 20-image build blocking the web stack). Build them with `./scripts/coolify-post-deploy.sh`.
 
 **Coolify domain settings**
 
@@ -256,6 +260,8 @@ docker compose -f docker-compose.coolify.yml logs --tail=80 code-lab-api
 | `code-lab-fe` missing or Restarting | API not healthy yet, nginx config error, or image pull failed — read `code-lab-fe` logs |
 | `code-lab-api` unhealthy | Fix Postgres/RabbitMQ env, `JWT_SECRET`, or wait through `start_period` (up to ~2 min) |
 | Both **Up (healthy)** | Fix Coolify port (must be **80**) and redeploy proxy |
+| Deploy logs show 20+ runner builds | Normal only in post-deploy; default `up` should start **4** services (postgres, rabbitmq, api, fe) |
+| `network coolify not found` | Create external network or let Coolify provision it: `docker network create coolify` |
 
 **Env**
 

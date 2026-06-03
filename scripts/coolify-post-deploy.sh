@@ -45,8 +45,8 @@ RUNNER_SERVICES=(
   runner-lsp-cpp
 )
 
-echo "=== Building runner + LSP images (docker-compose.coolify.yml, :local tags) ==="
-docker compose -f docker-compose.coolify.yml build "${RUNNER_SERVICES[@]}"
+echo "=== Building runner + LSP images (profile: runners, :local tags) ==="
+docker compose -f docker-compose.coolify.yml --profile runners build "${RUNNER_SERVICES[@]}"
 
 if [[ -x "${ROOT}/scripts/smoke-runners.sh" ]]; then
   echo "=== Smoke-check runners (optional) ==="
