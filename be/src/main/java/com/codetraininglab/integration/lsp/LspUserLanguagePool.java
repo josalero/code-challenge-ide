@@ -307,6 +307,14 @@ public class LspUserLanguagePool {
     command.add(POOL_LANGUAGE_LABEL + "=" + pooled.language);
     command.add("--network");
     command.add("none");
+    command.add("--cap-drop");
+    command.add("ALL");
+    command.add("--cap-add");
+    command.add("DAC_OVERRIDE");
+    command.add("--cap-add");
+    command.add("FOWNER");
+    command.add("--security-opt");
+    command.add("no-new-privileges:true");
     command.add("-v");
     command.add(pooled.workspace.toAbsolutePath().normalize() + ":/workspace");
     command.add("-e");

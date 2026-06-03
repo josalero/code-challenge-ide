@@ -62,6 +62,10 @@ PY
   local -a docker_args=(
     docker run --rm -i
     --network none
+    --cap-drop ALL
+    --cap-add FOWNER
+    --security-opt no-new-privileges:true
+    --ipc none
     --memory 1024m
     --cpus 2
     --pids-limit 512
