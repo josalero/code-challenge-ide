@@ -217,6 +217,7 @@ Runner/LSP images are **not** long-running Compose services; the API runs them w
 | `Docker CLI is not available` / `Docker is not reachable` on startup | `DOCKER_GID` = `stat -c '%g' /var/run/docker.sock`; socket volume on `code-lab-api`; `docker exec … docker info` |
 | Run tests fails immediately | Same as above + runner images (`docker images \| grep code-challenge-ide`) |
 | 401 / CORS in browser | `CORS_ALLOWED_ORIGINS` matches exact site URL (scheme + host) |
+| Wrong redirects / links behind HTTPS | API uses `server.forward-headers-strategy: framework` in `application-production.yml` (same as TrailPulse behind Coolify) |
 | Challenges missing | `challenges/` mounted at `/challenges`; API logs for `ChallengeGitLoader` |
 | IntelliSense dead | LSP images built; `CTL_LSP_ENABLED=true`; WebSocket proxy |
 | GHCR pull 401 | Registry credentials in Coolify |
