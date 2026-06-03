@@ -4,6 +4,6 @@
 
 extern bool is_palindrome(const std::string& s);
 
-TEST_CASE("isPalindrome(" ") should be true") {
+TEST_CASE("isPalindrome(\" \") should be true") {
     REQUIRE(is_palindrome(" ") == true);
 }

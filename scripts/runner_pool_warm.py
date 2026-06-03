@@ -146,6 +146,10 @@ export class ReversePipe implements PipeTransform {
   }
 }
 """,
+    "sql-count-engineering": """SELECT COUNT(*) AS engineering_count
+FROM employees
+WHERE department_id = 2;
+""",
 }
 
 # label, image_env, default_image, smoke_slug, workspace_layout
@@ -163,6 +167,7 @@ RUNNER_TARGETS: tuple[tuple[str, str, str, str, str], ...] = (
     ("React", "RUNNER_REACT_19_IMAGE", "code-challenge-ide-runner-react-19:local", "greeting-react", "vitest-react"),
     ("Vue", "RUNNER_VUE_35_IMAGE", "code-challenge-ide-runner-vue-35:local", "counter-vue", "vitest-vue"),
     ("Angular", "RUNNER_ANGULAR_19_IMAGE", "code-challenge-ide-runner-angular-19:local", "reverse-pipe-angular", "vitest-angular"),
+    ("SQL", "RUNNER_POSTGRES_17_IMAGE", "code-challenge-ide-runner-postgres-17:local", "sql-count-engineering", "postgres-sql"),
 )
 
 
@@ -269,6 +274,8 @@ def warm_one(label: str, image: str, slug: str, layout: str) -> tuple[bool, str,
         "-e",
         "CTL_RUNNER_POOLED=1",
     ]
+    if layout == "postgres-sql":
+        create.extend(["--cap-add", "SETUID", "--cap-add", "SETGID", "--cap-add", "CHOWN"])
     if layout == "maven" and MAVEN_CACHE:
         create.extend(["-v", f"{MAVEN_CACHE}:/tmp/home/.m2:rw"])
     create.extend(["--entrypoint", "sleep", image, "infinity"])

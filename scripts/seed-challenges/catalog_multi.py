@@ -5,7 +5,7 @@ Generated from shared CORE_SPECS — mirrors classic DSA exercises in JAVA_CHALL
 
 import json
 
-from test_descriptions import describe_core_case, meta_entry, slugify_name
+from test_descriptions import describe_core_case, escape_cpp_string_literal, meta_entry, slugify_name
 
 CORE_SPECS = [
     {
@@ -570,7 +570,7 @@ def build_cpp(spec: dict) -> dict:
 
 extern {ret} {fn}({params});
 
-TEST_CASE("{desc}") {{
+TEST_CASE("{escape_cpp_string_literal(desc)}") {{
     {cpp_require(case)}
 }}
 """

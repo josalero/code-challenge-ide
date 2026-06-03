@@ -4,6 +4,6 @@
 
 extern std::string reverse_string(const std::string& s);
 
-TEST_CASE("reverseString("a") should be "a"") {
+TEST_CASE("reverseString(\"a\") should be \"a\"") {
     REQUIRE(reverse_string("a") == "a");
 }

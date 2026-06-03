@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 
-from test_descriptions import describe_extended_case, meta_entry, slugify_name
+from test_descriptions import describe_extended_case, escape_cpp_string_literal, meta_entry, slugify_name
 
 EXTENDED_CORE_SPECS = [
     {
@@ -636,7 +636,7 @@ def build_cpp_extended(spec: dict) -> dict:
 
 extern {ret} {fn}({params});
 
-TEST_CASE("{desc}") {{
+TEST_CASE("{escape_cpp_string_literal(desc)}") {{
     {_cpp_assert(slug, case, fn, ret, params)}
 }}
 """

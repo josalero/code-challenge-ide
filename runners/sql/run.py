@@ -19,7 +19,7 @@ OPT = Path("/opt/runner")
 STAMP = WORKSPACE / ".ctl-challenge-slug"
 MAX_LOG_BYTES = 4096
 PG_BIN = Path("/usr/lib/postgresql/15/bin")
-PGDATA = Path("/var/lib/postgresql/data")
+PGDATA = Path(os.environ.get("CTL_PGDATA", "/tmp/pgdata"))
 
 
 def read_job() -> dict:
@@ -44,23 +44,36 @@ def _run_as_postgres(args: list[str], **kwargs) -> subprocess.CompletedProcess:
 def ensure_postgres() -> None:
     if not PG_BIN.is_dir():
         raise RuntimeError("PostgreSQL 15 binaries not found in runner image")
-    PGDATA.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["chown", "-R", "postgres:postgres", str(PGDATA.parent), "/var/run/postgresql"], check=False)
+    PGDATA.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["chown", "-R", "postgres:postgres", str(PGDATA)], check=False)
     if not (PGDATA / "PG_VERSION").is_file():
-        _run_as_postgres(
+        initdb = _run_as_postgres(
             [str(PG_BIN / "initdb"), "-D", str(PGDATA), "--auth-local=trust", "--auth-host=trust"],
-            check=True,
             capture_output=True,
             text=True,
         )
+        if initdb.returncode != 0:
+            detail = (initdb.stderr or initdb.stdout or "initdb failed").strip()
+            raise RuntimeError(detail)
     status = _run_as_postgres([str(PG_BIN / "pg_ctl"), "-D", str(PGDATA), "status"], capture_output=True, text=True)
     if status.returncode != 0:
-        _run_as_postgres(
-            [str(PG_BIN / "pg_ctl"), "-D", str(PGDATA), "-l", "/tmp/pg.log", "-o", "-c listen_addresses=127.0.0.1", "start"],
-            check=True,
+        start = _run_as_postgres(
+            [
+                str(PG_BIN / "pg_ctl"),
+                "-D",
+                str(PGDATA),
+                "-l",
+                "/tmp/pg.log",
+                "-o",
+                "-c listen_addresses=127.0.0.1 -c unix_socket_directories=/tmp",
+                "start",
+            ],
             capture_output=True,
             text=True,
         )
+        if start.returncode != 0:
+            detail = (start.stderr or start.stdout or "pg_ctl start failed").strip()
+            raise RuntimeError(detail)
     for _ in range(50):
         ready = _run_as_postgres([str(PG_BIN / "pg_isready"), "-h", "127.0.0.1", "-p", "5432"], capture_output=True)
         if ready.returncode == 0:

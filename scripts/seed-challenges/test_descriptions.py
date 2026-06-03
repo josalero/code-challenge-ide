@@ -171,6 +171,11 @@ def describe_python_test(func_name: str, body: str) -> str:
     return describe_java_assert(body.replace("assert ", "assertEquals("))
 
 
+def escape_cpp_string_literal(text: str) -> str:
+    """Escape a string for use inside a C++ double-quoted literal."""
+    return text.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def slugify_name(text: str, max_len: int = 48) -> str:
     """Safe identifier fragment for test method/file names."""
     cleaned = re.sub(r"[^a-zA-Z0-9]+", "_", text.lower()).strip("_")
