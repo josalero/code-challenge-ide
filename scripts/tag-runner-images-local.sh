@@ -32,7 +32,14 @@ declare -a PAIRS=(
   "runner-react-19:code-challenge-ide-runner-react-19:local"
   "runner-vue-35:code-challenge-ide-runner-vue-35:local"
   "runner-angular-19:code-challenge-ide-runner-angular-19:local"
+  "runner-postgres-17:code-challenge-ide-runner-postgres-17:local"
   "lsp-java:code-challenge-ide-lsp-java:local"
+  "lsp-python:code-challenge-ide-lsp-python:local"
+  "lsp-go:code-challenge-ide-lsp-go:local"
+  "lsp-typescript:code-challenge-ide-lsp-typescript:local"
+  "lsp-dotnet:code-challenge-ide-lsp-dotnet:local"
+  "lsp-rust:code-challenge-ide-lsp-rust:local"
+  "lsp-cpp:code-challenge-ide-lsp-cpp:local"
 )
 
 for pair in "${PAIRS[@]}"; do

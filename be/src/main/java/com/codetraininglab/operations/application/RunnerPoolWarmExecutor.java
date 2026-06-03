@@ -75,7 +75,8 @@ public class RunnerPoolWarmExecutor {
       if (!filters.isEmpty() && !filters.contains(languageName)) {
         continue;
       }
-      String image = runtime.getDockerImage();
+      String image =
+          properties.runnerImageFor(languageName, runtime.getVersion(), runtime.getDockerImage());
       if (image == null || image.isBlank()) {
         continue;
       }

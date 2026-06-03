@@ -23,6 +23,30 @@ if [[ -f .env ]]; then
   set +a
 fi
 
+# Build the local tags expected by Flyway language_runtimes and the Ops page.
+# Coolify env files may point some RUNNER_* values at GHCR for pull-based deploys;
+# this script is the local-build path, so keep its output aligned with the DB.
+export RUNNER_JAVA_25_IMAGE=code-challenge-ide-runner-java-25:local
+export RUNNER_JAVA_26_IMAGE=code-challenge-ide-runner-java-26:local
+export RUNNER_PYTHON_312_IMAGE=code-challenge-ide-runner-python-312:local
+export RUNNER_GO_123_IMAGE=code-challenge-ide-runner-go-123:local
+export RUNNER_NODE_22_IMAGE=code-challenge-ide-runner-node-22:local
+export RUNNER_DOTNET_8_IMAGE=code-challenge-ide-runner-dotnet-8:local
+export RUNNER_TYPESCRIPT_57_IMAGE=code-challenge-ide-runner-typescript-57:local
+export RUNNER_RUST_184_IMAGE=code-challenge-ide-runner-rust-184:local
+export RUNNER_CPP_20_IMAGE=code-challenge-ide-runner-cpp-20:local
+export RUNNER_REACT_19_IMAGE=code-challenge-ide-runner-react-19:local
+export RUNNER_VUE_35_IMAGE=code-challenge-ide-runner-vue-35:local
+export RUNNER_ANGULAR_19_IMAGE=code-challenge-ide-runner-angular-19:local
+export RUNNER_POSTGRES_17_IMAGE=code-challenge-ide-runner-postgres-17:local
+export LSP_JAVA_IMAGE=code-challenge-ide-lsp-java:local
+export LSP_PYTHON_IMAGE=code-challenge-ide-lsp-python:local
+export LSP_GO_IMAGE=code-challenge-ide-lsp-go:local
+export LSP_TYPESCRIPT_IMAGE=code-challenge-ide-lsp-typescript:local
+export LSP_DOTNET_IMAGE=code-challenge-ide-lsp-dotnet:local
+export LSP_RUST_IMAGE=code-challenge-ide-lsp-rust:local
+export LSP_CPP_IMAGE=code-challenge-ide-lsp-cpp:local
+
 RUNNER_SERVICES=(
   runner-java-25
   runner-java-26

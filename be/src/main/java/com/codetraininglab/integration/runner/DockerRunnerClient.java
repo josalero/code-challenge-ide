@@ -53,14 +53,16 @@ public class DockerRunnerClient implements RunnerClient {
       String runnerImage) {
     RunnerJobPayload.RunnerLimits limits = RunnerJobPayload.RunnerLimits.defaults();
     try {
-      String layout = workspaceLayout(submission);
-      RunnerJobPayload job = buildJob(submission, challengeSlug, hiddenTests, limits, layout);
+      RuntimeContext runtime = runtimeContext(submission);
+      RunnerJobPayload job =
+          buildJob(submission, challengeSlug, hiddenTests, limits, runtime.workspaceLayout());
       String jobJson = jsonMapper.writeValueAsString(job);
-      String image = resolveRunnerImage(runnerImage);
+      String image = resolveRunnerImage(runnerImage, runtime.language(), runtime.version());
       if (runnerContainerPool.isEnabled()) {
-        return runnerContainerPool.execute(image, challengeDir, layout, jobJson, limits);
+        return runnerContainerPool.execute(
+            image, challengeDir, runtime.workspaceLayout(), jobJson, limits);
       }
-      return executeEphemeral(image, challengeDir, layout, jobJson, limits);
+      return executeEphemeral(image, challengeDir, runtime.workspaceLayout(), jobJson, limits);
     } catch (Exception e) {
       return failedResult(e.getMessage() == null ? "Runner error" : e.getMessage());
     }
@@ -132,12 +134,14 @@ public class DockerRunnerClient implements RunnerClient {
         limits);
   }
 
-  private String workspaceLayout(SubmissionEntity submission) {
+  private RuntimeContext runtimeContext(SubmissionEntity submission) {
     LanguageRuntimeEntity runtime =
         runtimeRepository.findById(submission.getRuntimeId()).orElseThrow();
     LanguageEntity language =
         languageRepository.findById(runtime.getLanguageId()).orElseThrow();
-    return WorkspaceLayout.forLanguage(language.getName()).id();
+    String languageName = language.getName().toLowerCase();
+    return new RuntimeContext(
+        languageName, runtime.getVersion(), WorkspaceLayout.forLanguage(languageName).id());
   }
 
   List<String> buildDockerRunCommand(
@@ -149,12 +153,15 @@ public class DockerRunnerClient implements RunnerClient {
         challengeMountDir, image, limits, workspaceLayout, properties);
   }
 
-  private String resolveRunnerImage(String runnerImage) {
-    if (runnerImage != null && !runnerImage.isBlank()) {
-      return runnerImage;
+  private String resolveRunnerImage(String runnerImage, String language, String version) {
+    String resolved = properties.runnerImageFor(language, version, runnerImage);
+    if (resolved != null && !resolved.isBlank()) {
+      return resolved;
     }
     return properties.runnerJava26Image();
   }
+
+  private record RuntimeContext(String language, String version, String workspaceLayout) {}
 
   private RunnerResult failedResult(String message) {
     return new RunnerResult(
