@@ -29,6 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,9 @@ public class RunnerOpsService {
 
   private static final Logger log = LoggerFactory.getLogger(RunnerOpsService.class);
   private static final int LOG_TAIL_MAX = 8000;
+  private static final int DOCKER_INFO_TIMEOUT_SECONDS = 5;
+  private static final int DOCKER_IMAGE_INSPECT_TIMEOUT_SECONDS = 5;
+  private static final int MAVEN_CACHE_CHECK_TIMEOUT_SECONDS = 15;
   private static final List<String> LSP_WARM_LABELS =
       List.of("java", "python", "go", "typescript", "csharp", "rust", "cpp", "vue");
   private static final List<String> RUNNER_WARM_LANGUAGES =
@@ -120,11 +124,12 @@ public class RunnerOpsService {
   }
 
   public RunnerOpsJobResponse startMavenWarm(boolean force) {
-    ensureDockerReady();
+    ensureDockerIntegrationEnabled();
     return startJob(
         "MAVEN_WARM",
         () -> {
           try {
+            ensureDockerReady();
             runMavenWarm(force);
           } catch (IOException | InterruptedException ex) {
             Thread.currentThread().interrupt();
@@ -134,7 +139,7 @@ public class RunnerOpsService {
   }
 
   public RunnerOpsJobResponse startLspWarm(boolean force, List<String> only) {
-    ensureDockerReady();
+    ensureDockerIntegrationEnabled();
     Path repoRoot = RunnerOpsPaths.resolveRepoRoot(environment);
     Path script = repoRoot.resolve("scripts/lsp_warm.py");
     if (!Files.isRegularFile(script)) {
@@ -147,6 +152,7 @@ public class RunnerOpsService {
         "LSP_WARM",
         () -> {
           try {
+            ensureDockerReady();
             runLspWarm(script, force, labels);
           } catch (IOException | InterruptedException ex) {
             Thread.currentThread().interrupt();
@@ -156,7 +162,7 @@ public class RunnerOpsService {
   }
 
   public RunnerOpsJobResponse startRunnerWarm(boolean force, List<String> only) {
-    ensureDockerReady();
+    ensureDockerIntegrationEnabled();
     if (!properties.runnerPoolEnabled()) {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "Runner pool is disabled (RUNNER_POOL_ENABLED=false).");
@@ -171,6 +177,7 @@ public class RunnerOpsService {
         "RUNNER_POOL_WARM",
         () -> {
           try {
+            ensureDockerReady();
             runRunnerPoolWarm(force, languages, executor);
           } catch (IOException | InterruptedException ex) {
             Thread.currentThread().interrupt();
@@ -181,7 +188,7 @@ public class RunnerOpsService {
 
   /** Warms submission runners and editor LSP for the same language set in one job. */
   public RunnerOpsJobResponse startInfraWarm(boolean force, List<String> only) {
-    ensureDockerReady();
+    ensureDockerIntegrationEnabled();
     if (!properties.runnerPoolEnabled()) {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "Runner pool is disabled (RUNNER_POOL_ENABLED=false).");
@@ -200,6 +207,7 @@ public class RunnerOpsService {
         "INFRA_WARM",
         () -> {
           try {
+            ensureDockerReady();
             requireActiveJob().appendLog("=== Runner pool smoke ===\n");
             runRunnerPoolWarm(force, runnerLanguages, executor);
             if (lspAvailable && !lspLabels.isEmpty()) {
@@ -635,16 +643,16 @@ public class RunnerOpsService {
       ProcessBuilder builder =
           new ProcessBuilder("docker", "image", "inspect", image, "--format", "{{.Id}}");
       Process process = builder.start();
-      String output;
-      try (BufferedReader reader =
-          new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-        output = reader.readLine();
-      }
-      int exit = process.waitFor();
-      if (exit != 0 || output == null || output.isBlank()) {
+      if (!waitForProcess(process, DOCKER_IMAGE_INSPECT_TIMEOUT_SECONDS)) {
         return new ImageInspect(false, null);
       }
-      return new ImageInspect(true, output.trim());
+      String output =
+          new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+      process.getErrorStream().transferTo(java.io.OutputStream.nullOutputStream());
+      if (process.exitValue() != 0 || output.isBlank()) {
+        return new ImageInspect(false, null);
+      }
+      return new ImageInspect(true, output.lines().findFirst().orElse("").trim());
     } catch (IOException | InterruptedException ex) {
       Thread.currentThread().interrupt();
       return new ImageInspect(false, null);
@@ -669,24 +677,31 @@ public class RunnerOpsService {
                   "docker",
                   "run",
                   "--rm",
+                  "--pull",
+                  "never",
                   "-v",
                   mavenCacheVolume() + ":/cache",
-                  "alpine:3.20",
-                  "test",
-                  "-f",
-                  "/cache/repository/.warm")
+                  "--entrypoint",
+                  "/bin/sh",
+                  properties.runnerJava26Image(),
+                  "-c",
+                  "test -f /cache/repository/.warm")
               .start();
-      return process.waitFor() == 0;
+      return waitForProcess(process, MAVEN_CACHE_CHECK_TIMEOUT_SECONDS) && process.exitValue() == 0;
     } catch (IOException | InterruptedException ex) {
       Thread.currentThread().interrupt();
       return false;
     }
   }
 
-  private void ensureDockerReady() {
+  private void ensureDockerIntegrationEnabled() {
     if (!properties.dockerEnabled()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Docker integration is disabled.");
     }
+  }
+
+  private void ensureDockerReady() {
+    ensureDockerIntegrationEnabled();
     if (!isDockerAvailable()) {
       throw new ResponseStatusException(
           HttpStatus.SERVICE_UNAVAILABLE,
@@ -698,11 +713,21 @@ public class RunnerOpsService {
   private boolean isDockerAvailable() {
     try {
       Process process = new ProcessBuilder("docker", "info").redirectErrorStream(true).start();
-      return process.waitFor() == 0;
+      return waitForProcess(process, DOCKER_INFO_TIMEOUT_SECONDS) && process.exitValue() == 0;
     } catch (IOException | InterruptedException ex) {
       Thread.currentThread().interrupt();
       return false;
     }
+  }
+
+  private boolean waitForProcess(Process process, long timeoutSeconds) throws InterruptedException {
+    boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
+    if (finished) {
+      return true;
+    }
+    process.destroyForcibly();
+    process.waitFor(2, TimeUnit.SECONDS);
+    return false;
   }
 
   private String mavenCacheVolume() {
