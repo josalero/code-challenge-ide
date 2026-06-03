@@ -25,6 +25,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
         docker.io \
+        gosu \
         python3 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
@@ -34,14 +35,16 @@ WORKDIR /app
 COPY --from=build /workspace/be/build/libs/be-*.jar /app/app.jar
 COPY challenges /challenges
 COPY scripts /app/scripts
+COPY be/docker-entrypoint.sh /docker-entrypoint.sh
 ENV CTL_REPO_ROOT=/app
-RUN chown -R app:app /app /challenges
+RUN mkdir -p /data/ctl-ops \
+    && chown -R app:app /app /challenges /data/ctl-ops \
+    && chmod +x /docker-entrypoint.sh
 
-# Supplementary group for /var/run/docker.sock is set via compose group_add (DOCKER_GID).
-USER app
+# Entrypoint runs as root briefly to chown /data/ctl-ops and align app with DOCKER_GID, then gosu app.
 EXPOSE ${PORT}
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl --fail "http://localhost:${PORT}/actuator/health/readiness" || exit 1
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

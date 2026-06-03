@@ -301,24 +301,50 @@ def current_stamp(targets: tuple[WarmTarget, ...]) -> dict[str, str]:
     return stamp
 
 
+def stamp_file_candidates() -> tuple[Path, ...]:
+    primary = stamp_path()
+    fallback = Path("/app") / STAMP_NAME
+    if fallback == primary:
+        return (primary,)
+    return (primary, fallback)
+
+
 def load_stamp() -> dict[str, str] | None:
-    path = stamp_path()
-    if not path.is_file():
-        return None
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        return data if isinstance(data, dict) else None
-    except (json.JSONDecodeError, OSError):
-        return None
+    for path in stamp_file_candidates():
+        if not path.is_file():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else None
+        except (json.JSONDecodeError, OSError):
+            continue
+    return None
+
+
+def stamp_write_path() -> Path:
+    """Prefer CTL_OPS_DATA_DIR; fall back to /app when the volume is not writable (uid 10001)."""
+    primary = stamp_path()
+    fallback = Path("/app") / STAMP_NAME
+    for candidate in (primary, fallback):
+        try:
+            candidate.parent.mkdir(parents=True, exist_ok=True)
+            probe = candidate.parent / ".write-probe"
+            probe.write_text("", encoding="utf-8")
+            probe.unlink(missing_ok=True)
+            return candidate
+        except OSError:
+            continue
+    return primary
 
 
 def merge_and_save_stamp(new_entries: dict[str, str]) -> None:
     """Merge into existing stamp so partial --only warms do not erase other languages."""
     existing = load_stamp() or {}
     merged = {**existing, **new_entries}
-    path = stamp_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path = stamp_write_path()
     path.write_text(json.dumps(merged, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if path != stamp_path():
+        log(f"  stamp saved to {path} (ops data dir not writable)")
 
 
 def cleanup_orphan_warm_containers() -> None:

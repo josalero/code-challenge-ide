@@ -103,6 +103,7 @@ services:
       RUNNER_MAVEN_CACHE_VOLUME: ${RUNNER_MAVEN_CACHE_VOLUME:-ctl-runner-m2-cache}
       RUNNER_POOL_WARM_ON_STARTUP: ${RUNNER_POOL_WARM_ON_STARTUP:-false}
       CTL_OPS_DATA_DIR: /data/ctl-ops
+      DOCKER_GID: ${DOCKER_GID:?Set DOCKER_GID to the host docker.sock group id}
       LSP_JAVA_IMAGE: ${LSP_JAVA_IMAGE:-code-challenge-ide-lsp-java:local}
       LSP_PYTHON_IMAGE: ${LSP_PYTHON_IMAGE:-code-challenge-ide-lsp-python:local}
       LSP_GO_IMAGE: ${LSP_GO_IMAGE:-code-challenge-ide-lsp-go:local}
