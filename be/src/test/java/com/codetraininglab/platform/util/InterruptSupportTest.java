@@ -8,6 +8,16 @@ import org.junit.jupiter.api.Test;
 class InterruptSupportTest {
 
   @Test
+  void runWithInterruptCleared_runsActionWhenThreadWasNotInterrupted() {
+    AtomicBoolean ran = new AtomicBoolean(false);
+
+    InterruptSupport.runWithInterruptCleared(() -> ran.set(true));
+
+    assertThat(ran).isTrue();
+    assertThat(Thread.currentThread().isInterrupted()).isFalse();
+  }
+
+  @Test
   void runWithInterruptCleared_runsActionWhenThreadWasInterrupted() {
     Thread.currentThread().interrupt();
     AtomicBoolean ran = new AtomicBoolean(false);
