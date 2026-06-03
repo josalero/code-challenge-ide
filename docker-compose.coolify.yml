@@ -50,7 +50,9 @@ configs:
 x-runner-build-only: &runner-build-only
   restart: "no"
   entrypoint: ["/bin/true"]
-  networks: []
+  networks:
+    - code-lab
+    - coolify
 
 services:
   code-lab-postgres:
@@ -58,6 +60,7 @@ services:
     restart: unless-stopped
     networks:
       - code-lab
+      - coolify
     environment:
       POSTGRES_USER: ${PG_USER:-postgres}
       POSTGRES_PASSWORD: ${PG_PASSWORD:?Set PG_PASSWORD}
@@ -75,6 +78,7 @@ services:
     restart: unless-stopped
     networks:
       - code-lab
+      - coolify
     environment:
       RABBITMQ_DEFAULT_USER: ${RMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RMQ_PASSWORD:?Set RMQ_PASSWORD}
@@ -92,6 +96,7 @@ services:
     restart: unless-stopped
     networks:
       - code-lab
+      - coolify
     environment:
       SERVER_PORT: 8080
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-production}
@@ -339,7 +344,9 @@ services:
           echo "Maven cache volume already warm."
         fi
     restart: "no"
-    networks: []
+    networks:
+      - code-lab
+      - coolify
     depends_on:
       runner-java-26:
         condition: service_completed_successfully
