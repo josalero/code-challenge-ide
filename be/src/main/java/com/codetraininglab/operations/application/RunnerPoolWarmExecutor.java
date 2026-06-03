@@ -247,7 +247,7 @@ public class RunnerPoolWarmExecutor {
     return filters;
   }
 
-  private ImageIdentity inspectImage(String image) {
+  ImageIdentity inspectImage(String image) {
     try {
       Process process =
           new ProcessBuilder("docker", "image", "inspect", image, "--format", "{{.Id}}").start();
@@ -283,5 +283,5 @@ public class RunnerPoolWarmExecutor {
       String starterCode,
       List<RunnerJobPayload.HiddenTest> hiddenTests) {}
 
-  private record ImageIdentity(boolean present, String imageId) {}
+  record ImageIdentity(boolean present, String imageId) {}
 }
