@@ -125,6 +125,7 @@ public class RunnerOpsService {
 
   public RunnerOpsJobResponse startMavenWarm(boolean force) {
     ensureDockerIntegrationEnabled();
+    log.info("Runner ops maven warm requested force={}", force);
     return startJob(
         "MAVEN_WARM",
         () -> {
@@ -148,6 +149,11 @@ public class RunnerOpsService {
           "LSP warm script not found. Set CTL_REPO_ROOT or run the API from the repo checkout.");
     }
     List<String> labels = normalizeLspLabels(only);
+    log.info(
+        "Runner ops LSP warm requested force={} labels={} script={}",
+        force,
+        labels,
+        script);
     return startJob(
         "LSP_WARM",
         () -> {
@@ -173,6 +179,7 @@ public class RunnerOpsService {
           HttpStatus.BAD_REQUEST, "Runner pool warm requires Docker integration.");
     }
     List<String> languages = normalizeRunnerWarmLanguages(only);
+    log.info("Runner ops runner pool warm requested force={} languages={}", force, languages);
     return startJob(
         "RUNNER_POOL_WARM",
         () -> {
@@ -203,20 +210,28 @@ public class RunnerOpsService {
     Path repoRoot = RunnerOpsPaths.resolveRepoRoot(environment);
     Path lspScript = repoRoot.resolve("scripts/lsp_warm.py");
     boolean lspAvailable = Files.isRegularFile(lspScript);
+    log.info(
+        "Runner ops infra warm requested force={} runnerLanguages={} lspLabels={} repoRoot={} lspAvailable={}",
+        force,
+        runnerLanguages,
+        lspLabels,
+        repoRoot,
+        lspAvailable);
     return startJob(
         "INFRA_WARM",
         () -> {
           try {
             ensureDockerReady();
-            requireActiveJob().appendLog("=== Runner pool smoke ===\n");
+            JobState job = requireActiveJob();
+            appendJobLog(job, "=== Runner pool smoke ===\n");
             runRunnerPoolWarm(force, runnerLanguages, executor);
             if (lspAvailable && !lspLabels.isEmpty()) {
-              requireActiveJob().appendLog("\n=== Editor (LSP) ===\n");
+              appendJobLog(job, "\n=== Editor (LSP) ===\n");
               runLspWarm(lspScript, force, lspLabels);
             } else if (!lspAvailable) {
-              requireActiveJob()
-                  .appendLog(
-                      "\nSkipping LSP warm — scripts/lsp_warm.py not found (set CTL_REPO_ROOT).\n");
+              appendJobLog(
+                  job,
+                  "\nSkipping LSP warm - scripts/lsp_warm.py not found (set CTL_REPO_ROOT).\n");
             }
           } catch (IOException | InterruptedException ex) {
             Thread.currentThread().interrupt();
@@ -239,13 +254,30 @@ public class RunnerOpsService {
     JobState job = new JobState(UUID.randomUUID(), type, Instant.now());
     jobs.put(job.id, job);
     activeJobId = job.id;
+    log.info("Runner ops job accepted type={} id={}", type, job.id);
     executor.submit(
         () -> {
+          long startedNanos = System.nanoTime();
+          log.info("Runner ops job started type={} id={}", type, job.id);
           try {
             action.run();
             job.complete("Completed successfully.");
+            log.info(
+                "Runner ops job completed type={} id={} elapsedMs={}",
+                type,
+                job.id,
+                elapsedMillis(startedNanos));
           } catch (Exception ex) {
-            job.fail(ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage());
+            String message =
+                ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+            job.fail(message);
+            log.warn(
+                "Runner ops job failed type={} id={} elapsedMs={} message={}",
+                type,
+                job.id,
+                elapsedMillis(startedNanos),
+                message,
+                ex);
           } finally {
             try {
               // InterruptedException handlers set the interrupt flag; JDBC fails with
@@ -277,7 +309,7 @@ public class RunnerOpsService {
   private void runMavenWarm(boolean force) throws IOException, InterruptedException {
     JobState job = requireActiveJob();
     if (!force && isMavenCacheWarm()) {
-      job.appendLog("Maven cache volume already warm.\n");
+      appendJobLog(job, "Maven cache volume already warm.\n");
       return;
     }
     String image = properties.runnerJava26Image();
@@ -347,10 +379,10 @@ public class RunnerOpsService {
       throws IOException, InterruptedException {
     JobState job = requireActiveJob();
     if (needsJavaWarm(only) && !isMavenCacheWarm()) {
-      job.appendLog("Maven cache is cold — warming before Java smoke runs…\n");
+      appendJobLog(job, "Maven cache is cold - warming before Java smoke runs...\n");
       runMavenWarm(force);
     }
-    executor.warm(force, only, job::appendLog);
+    executor.warm(force, only, chunk -> appendJobLog(job, chunk));
   }
 
   private boolean needsJavaWarm(List<String> only) {
@@ -371,7 +403,14 @@ public class RunnerOpsService {
 
   private void runProcess(JobState job, List<String> command, Path workDir)
       throws IOException, InterruptedException {
-    job.appendLog("$ " + String.join(" ", command) + "\n");
+    appendJobLog(job, "$ " + String.join(" ", command) + "\n");
+    long startedNanos = System.nanoTime();
+    log.info(
+        "Runner ops command started id={} type={} workDir={} command={}",
+        job.id,
+        job.type,
+        workDir,
+        command);
     ProcessBuilder builder = new ProcessBuilder(command);
     builder.directory(workDir.toFile());
     builder.redirectErrorStream(true);
@@ -382,12 +421,35 @@ public class RunnerOpsService {
         new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        job.appendLog(line + "\n");
+        appendJobLog(job, line + "\n");
       }
     }
     int exit = process.waitFor();
     if (exit != 0) {
+      log.warn(
+          "Runner ops command failed id={} type={} exit={} elapsedMs={} command={}",
+          job.id,
+          job.type,
+          exit,
+          elapsedMillis(startedNanos),
+          command);
       throw new IllegalStateException("Command failed with exit code " + exit);
+    }
+    log.info(
+        "Runner ops command completed id={} type={} exit={} elapsedMs={} command={}",
+        job.id,
+        job.type,
+        exit,
+        elapsedMillis(startedNanos),
+        command);
+  }
+
+  private void appendJobLog(JobState job, String chunk) {
+    job.appendLog(chunk);
+    for (String line : chunk.split("\\R")) {
+      if (!line.isBlank()) {
+        log.info("Runner ops job log id={} type={} {}", job.id, job.type, line);
+      }
     }
   }
 
@@ -644,6 +706,10 @@ public class RunnerOpsService {
           new ProcessBuilder("docker", "image", "inspect", image, "--format", "{{.Id}}");
       Process process = builder.start();
       if (!waitForProcess(process, DOCKER_IMAGE_INSPECT_TIMEOUT_SECONDS)) {
+        log.warn(
+            "Docker image inspect timed out image={} timeoutSeconds={}",
+            image,
+            DOCKER_IMAGE_INSPECT_TIMEOUT_SECONDS);
         return new ImageInspect(false, null);
       }
       String output =
@@ -653,8 +719,12 @@ public class RunnerOpsService {
         return new ImageInspect(false, null);
       }
       return new ImageInspect(true, output.lines().findFirst().orElse("").trim());
-    } catch (IOException | InterruptedException ex) {
+    } catch (IOException ex) {
+      log.warn("Docker image inspect failed image={} message={}", image, ex.getMessage());
+      return new ImageInspect(false, null);
+    } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
+      log.warn("Docker image inspect interrupted image={}", image);
       return new ImageInspect(false, null);
     }
   }
@@ -685,11 +755,31 @@ public class RunnerOpsService {
                   "/bin/sh",
                   properties.runnerJava26Image(),
                   "-c",
-                  "test -f /cache/repository/.warm")
+              "test -f /cache/repository/.warm")
               .start();
-      return waitForProcess(process, MAVEN_CACHE_CHECK_TIMEOUT_SECONDS) && process.exitValue() == 0;
-    } catch (IOException | InterruptedException ex) {
+      boolean finished = waitForProcess(process, MAVEN_CACHE_CHECK_TIMEOUT_SECONDS);
+      if (!finished) {
+        log.warn(
+            "Maven cache warm check timed out image={} volume={} timeoutSeconds={}",
+            properties.runnerJava26Image(),
+            mavenCacheVolume(),
+            MAVEN_CACHE_CHECK_TIMEOUT_SECONDS);
+        return false;
+      }
+      return process.exitValue() == 0;
+    } catch (IOException ex) {
+      log.warn(
+          "Maven cache warm check failed image={} volume={} message={}",
+          properties.runnerJava26Image(),
+          mavenCacheVolume(),
+          ex.getMessage());
+      return false;
+    } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
+      log.warn(
+          "Maven cache warm check interrupted image={} volume={}",
+          properties.runnerJava26Image(),
+          mavenCacheVolume());
       return false;
     }
   }
@@ -702,21 +792,54 @@ public class RunnerOpsService {
 
   private void ensureDockerReady() {
     ensureDockerIntegrationEnabled();
-    if (!isDockerAvailable()) {
+    long startedNanos = System.nanoTime();
+    log.info("Runner ops Docker readiness check started");
+    DockerProbe probe = dockerInfoProbe();
+    long elapsedMs = elapsedMillis(startedNanos);
+    if (!probe.available()) {
+      log.warn(
+          "Runner ops Docker readiness check failed elapsedMs={} detail={}",
+          elapsedMs,
+          probe.failureDetail());
       throw new ResponseStatusException(
           HttpStatus.SERVICE_UNAVAILABLE,
           "Docker is not reachable from the API container — mount /var/run/docker.sock and set"
               + " DOCKER_GID to the socket group (see docs/coolify.md).");
     }
+    log.info("Runner ops Docker readiness check passed elapsedMs={}", elapsedMs);
   }
 
   private boolean isDockerAvailable() {
+    return dockerInfoProbe().available();
+  }
+
+  private DockerProbe dockerInfoProbe() {
     try {
       Process process = new ProcessBuilder("docker", "info").redirectErrorStream(true).start();
-      return waitForProcess(process, DOCKER_INFO_TIMEOUT_SECONDS) && process.exitValue() == 0;
-    } catch (IOException | InterruptedException ex) {
+      boolean finished = waitForProcess(process, DOCKER_INFO_TIMEOUT_SECONDS);
+      String output =
+          new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+      if (!finished) {
+        return new DockerProbe(false, true, -1, output);
+      }
+      int exit = process.exitValue();
+      return new DockerProbe(exit == 0, false, exit, output);
+    } catch (IOException ex) {
+      return new DockerProbe(false, false, -1, ex.getMessage());
+    } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
-      return false;
+      return new DockerProbe(false, false, -1, "interrupted");
+    }
+  }
+
+  private record DockerProbe(boolean available, boolean timedOut, int exitCode, String output) {
+    private String failureDetail() {
+      String detail = abbreviateOneLine(output, 500);
+      String suffix = detail.isBlank() ? "" : ": " + detail;
+      if (timedOut) {
+        return "docker info timed out after " + DOCKER_INFO_TIMEOUT_SECONDS + "s" + suffix;
+      }
+      return "docker info exited " + exitCode + suffix;
     }
   }
 
@@ -728,6 +851,21 @@ public class RunnerOpsService {
     process.destroyForcibly();
     process.waitFor(2, TimeUnit.SECONDS);
     return false;
+  }
+
+  private static long elapsedMillis(long startedNanos) {
+    return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
+  }
+
+  private static String abbreviateOneLine(String value, int maxLength) {
+    if (value == null || value.isBlank()) {
+      return "";
+    }
+    String oneLine = value.replaceAll("\\s+", " ").trim();
+    if (oneLine.length() <= maxLength) {
+      return oneLine;
+    }
+    return oneLine.substring(0, Math.max(0, maxLength - 3)) + "...";
   }
 
   private String mavenCacheVolume() {
