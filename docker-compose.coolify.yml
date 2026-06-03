@@ -1,17 +1,20 @@
-# Coolify — self-contained stack (no compose include / !reset).
+# Coolify — build everything on the VPS (no GHCR pull).
 #
 # Coolify UI:
 #   Type: Docker Compose
-#   Base directory: repository root
+#   Base directory: repository root (challenges/, runners/, be/, fe/)
 #   Docker Compose file: docker-compose.coolify.yml
-#   Post-deployment command: ./scripts/coolify-post-deploy.sh
+#   Build: enabled (api, fe, and all runner-* / runner-lsp-* images)
+#   Post-deployment command: ./scripts/coolify-post-deploy.sh  (rebuild runners after runner/ changes)
 #
-# Expose in Coolify: service `code-lab-fe`, container port 80 (HTTPS).
-# Postgres and RabbitMQ stay on the internal network (no host ports below).
-#
-# Env: cp .env.coolify.example .env (or Coolify UI) — see docs/coolify.md
+# Includes docker-compose.runners.yml (build-only runner/LSP services; exit immediately on up).
+# Expose: service `code-lab-fe`, container port 80
+# Env: cp .env.coolify.example .env — see docs/coolify.md
 
 name: code-training-lab
+
+include:
+  - path: docker-compose.runners.yml
 
 networks:
   code-lab:
@@ -19,8 +22,6 @@ networks:
   coolify:
     external: true
 
-# Inlined so Coolify does not bind-mount a missing fe/nginx.coolify.conf (Docker creates a directory).
-# Keep in sync with fe/nginx.coolify.conf
 configs:
   code-lab-nginx-default:
     content: |
@@ -82,7 +83,10 @@ services:
       retries: 10
 
   code-lab-api:
-    image: ${CTL_IMAGE_REGISTRY:-ghcr.io}/${CTL_IMAGE_OWNER:?Set CTL_IMAGE_OWNER}/code-challenge-ide-be:${CTL_IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: be/Dockerfile
+    image: ${CTL_API_IMAGE:-code-challenge-ide-be:local}
     restart: unless-stopped
     networks:
       - code-lab
@@ -131,8 +135,6 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      # Do not bind-mount ./challenges here: Coolify often has no checkout at deploy path, which
-      # creates an empty dir and hides challenges baked into the GHCR image at /challenges.
       - ctl-ops-data:/data/ctl-ops
     group_add:
       - "${DOCKER_GID:?Set DOCKER_GID to the host docker.sock group id}"
@@ -145,13 +147,16 @@ services:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness || exit 1"]
       interval: 30s
       timeout: 10s
-      start_period: 120s
+      start_period: 180s
       retries: 5
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
   code-lab-fe:
-    image: ${CTL_IMAGE_REGISTRY:-ghcr.io}/${CTL_IMAGE_OWNER}/code-challenge-ide-fe:${CTL_IMAGE_TAG:-latest}
+    build:
+      context: ./fe
+      dockerfile: Dockerfile
+    image: ${CTL_FE_IMAGE:-code-challenge-ide-fe:local}
     restart: unless-stopped
     networks:
       - code-lab

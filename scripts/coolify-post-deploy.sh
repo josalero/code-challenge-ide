@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Run on the Coolify host after compose deploy (pull GHCR runners, build host-only images).
+# Coolify post-deploy: build runner + LSP images on the host (local Docker context).
+# App images (be/fe) are built by docker-compose.coolify.yml during deploy.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -21,26 +22,31 @@ if [[ -f .env ]]; then
   set +a
 fi
 
-if [[ -z "${CTL_IMAGE_OWNER:-}" ]]; then
-  echo "Set CTL_IMAGE_OWNER in Coolify env (GitHub username, lowercase) or in .env" >&2
-  exit 1
-fi
-
-echo "=== Pulling GHCR runner + lsp-java images ==="
-"${ROOT}/scripts/pull-runner-images.sh"
-
-echo "=== Tagging GHCR images as :local (matches DB language_runtimes) ==="
-"${ROOT}/scripts/tag-runner-images-local.sh"
-
-echo "=== Building runner/LSP images not yet on GHCR (SQL + non-Java LSP) ==="
-docker compose -f docker-compose.yml build \
-  runner-postgres-17 \
-  runner-lsp-python \
-  runner-lsp-go \
-  runner-lsp-typescript \
-  runner-lsp-dotnet \
-  runner-lsp-rust \
+RUNNER_SERVICES=(
+  runner-java-25
+  runner-java-26
+  runner-python-312
+  runner-go-123
+  runner-node-22
+  runner-dotnet-8
+  runner-typescript-57
+  runner-rust-184
+  runner-cpp-20
+  runner-react-19
+  runner-vue-35
+  runner-angular-19
+  runner-postgres-17
+  runner-lsp-java
+  runner-lsp-python
+  runner-lsp-go
+  runner-lsp-typescript
+  runner-lsp-dotnet
+  runner-lsp-rust
   runner-lsp-cpp
+)
+
+echo "=== Building runner + LSP images (docker-compose.coolify.yml, :local tags) ==="
+docker compose -f docker-compose.coolify.yml build "${RUNNER_SERVICES[@]}"
 
 if [[ -x "${ROOT}/scripts/smoke-runners.sh" ]]; then
   echo "=== Smoke-check runners (optional) ==="
