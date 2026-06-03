@@ -64,6 +64,9 @@ jobs:
           - component: runner-angular-19
             context: runners/angular
             dockerfile: runners/angular/Dockerfile
+          - component: runner-postgres-17
+            context: runners/sql
+            dockerfile: runners/sql/Dockerfile
           - component: lsp-java
             context: runners/lsp-java
             dockerfile: runners/lsp-java/Dockerfile

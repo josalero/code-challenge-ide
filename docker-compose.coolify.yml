@@ -100,11 +100,29 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
       CTL_CHALLENGES_PATH: /challenges
       CTL_DOCKER_ENABLED: "true"
+      RUNNER_JAVA_25_IMAGE: ${RUNNER_JAVA_25_IMAGE:-code-challenge-ide-runner-java-25:local}
       RUNNER_JAVA_26_IMAGE: ${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}
+      RUNNER_PYTHON_312_IMAGE: ${RUNNER_PYTHON_312_IMAGE:-code-challenge-ide-runner-python-312:local}
+      RUNNER_GO_123_IMAGE: ${RUNNER_GO_123_IMAGE:-code-challenge-ide-runner-go-123:local}
+      RUNNER_NODE_22_IMAGE: ${RUNNER_NODE_22_IMAGE:-code-challenge-ide-runner-node-22:local}
+      RUNNER_DOTNET_8_IMAGE: ${RUNNER_DOTNET_8_IMAGE:-code-challenge-ide-runner-dotnet-8:local}
+      RUNNER_TYPESCRIPT_57_IMAGE: ${RUNNER_TYPESCRIPT_57_IMAGE:-code-challenge-ide-runner-typescript-57:local}
+      RUNNER_RUST_184_IMAGE: ${RUNNER_RUST_184_IMAGE:-code-challenge-ide-runner-rust-184:local}
+      RUNNER_CPP_20_IMAGE: ${RUNNER_CPP_20_IMAGE:-code-challenge-ide-runner-cpp-20:local}
+      RUNNER_REACT_19_IMAGE: ${RUNNER_REACT_19_IMAGE:-code-challenge-ide-runner-react-19:local}
+      RUNNER_VUE_35_IMAGE: ${RUNNER_VUE_35_IMAGE:-code-challenge-ide-runner-vue-35:local}
+      RUNNER_ANGULAR_19_IMAGE: ${RUNNER_ANGULAR_19_IMAGE:-code-challenge-ide-runner-angular-19:local}
+      RUNNER_POSTGRES_17_IMAGE: ${RUNNER_POSTGRES_17_IMAGE:-code-challenge-ide-runner-postgres-17:local}
       RUNNER_MAVEN_CACHE_VOLUME: ${RUNNER_MAVEN_CACHE_VOLUME:-ctl-runner-m2-cache}
-      RUNNER_POOL_WARM_ON_STARTUP: ${RUNNER_POOL_WARM_ON_STARTUP:-true}
+      RUNNER_POOL_WARM_ON_STARTUP: ${RUNNER_POOL_WARM_ON_STARTUP:-false}
       CTL_OPS_DATA_DIR: /data/ctl-ops
       LSP_JAVA_IMAGE: ${LSP_JAVA_IMAGE:-code-challenge-ide-lsp-java:local}
+      LSP_PYTHON_IMAGE: ${LSP_PYTHON_IMAGE:-code-challenge-ide-lsp-python:local}
+      LSP_GO_IMAGE: ${LSP_GO_IMAGE:-code-challenge-ide-lsp-go:local}
+      LSP_TYPESCRIPT_IMAGE: ${LSP_TYPESCRIPT_IMAGE:-code-challenge-ide-lsp-typescript:local}
+      LSP_DOTNET_IMAGE: ${LSP_DOTNET_IMAGE:-code-challenge-ide-lsp-dotnet:local}
+      LSP_RUST_IMAGE: ${LSP_RUST_IMAGE:-code-challenge-ide-lsp-rust:local}
+      LSP_CPP_IMAGE: ${LSP_CPP_IMAGE:-code-challenge-ide-lsp-cpp:local}
       CTL_LSP_ENABLED: ${CTL_LSP_ENABLED:-true}
       AI_PROVIDER: ${AI_PROVIDER:-openrouter}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}

@@ -216,6 +216,7 @@ Runner/LSP images are **not** long-running Compose services; the API runs them w
 | --- | --- |
 | `Docker CLI is not available` / `Docker is not reachable` on startup | `DOCKER_GID` = `stat -c '%g' /var/run/docker.sock`; socket volume on `code-lab-api`; `docker exec … docker info` |
 | Run tests fails immediately | Same as above + runner images (`docker images \| grep code-challenge-ide`) |
+| Ops shows runner images **missing** | DB expects `:local` tags; run post-deploy (`pull` + `tag-runner-images-local.sh` + build SQL/LSP). See **Runner images on Coolify** below |
 | 401 / CORS in browser | `CORS_ALLOWED_ORIGINS` matches exact site URL (scheme + host) |
 | Wrong redirects / links behind HTTPS | API uses `server.forward-headers-strategy: framework` in `application-production.yml` (same as TrailPulse behind Coolify) |
 | Challenges missing / empty catalog | Do **not** bind-mount `./challenges` on Coolify (empty host dir overrides image). Use GHCR `be` image with baked `/challenges`. API logs: `ChallengeGitLoader` / `Seeded challenge`. Verify: `docker exec <api> ls /challenges \| head` |
@@ -226,6 +227,32 @@ Runner/LSP images are **not** long-running Compose services; the API runs them w
 | `nginx.coolify.conf` mount: not a directory | Remove stray dir on VPS: `rm -rf fe/nginx.coolify.conf` if created by a failed mount; redeploy (compose no longer bind-mounts this file) |
 | **504 / 503** on public URL | Coolify **container port = 80** on `code-lab-fe`; see checks below |
 | Browser `content.js` / `first bit not a valid function name` | Chrome extension noise — not from this app; ignore or disable the extension |
+
+### Runner images on Coolify
+
+The API reads **`language_runtimes.docker_image`** from Postgres (Flyway seeds names like `code-challenge-ide-runner-java-26:local`). Pulling `ghcr.io/josalero/code-challenge-ide-runner-java-26:latest` alone is **not enough** — the host must also have the **`:local` tag** (or run the post-deploy tag script).
+
+**On the VPS (SSH), from the Coolify app directory (git root):**
+
+```bash
+export CTL_IMAGE_OWNER=josalero   # lowercase GitHub user
+export CTL_IMAGE_TAG=latest
+chmod +x scripts/*.sh
+./scripts/pull-runner-images.sh
+./scripts/tag-runner-images-local.sh
+docker compose -f docker-compose.yml build \
+  runner-postgres-17 runner-lsp-python runner-lsp-go runner-lsp-typescript \
+  runner-lsp-dotnet runner-lsp-rust runner-lsp-cpp
+docker images | grep code-challenge-ide
+```
+
+Coolify **Post-deployment command** should be `./scripts/coolify-post-deploy.sh` (runs pull + tag + build).
+
+**GHCR:** Images must exist under `ghcr.io/<CTL_IMAGE_OWNER>/code-challenge-ide-runner-*` (workflow [`.github/workflows/build.yml`](../.github/workflows/build.yml)). Private packages need a Coolify Docker registry (GitHub PAT `read:packages`).
+
+**SQL + non-Java LSP** are not on GHCR until CI publishes `runner-postgres-17`; until then they are **built on the host** (`:local` tags).
+
+After images exist: Admin → **Ops** → **Warm everything** (or set `RUNNER_POOL_WARM_ON_STARTUP=true`).
 
 ### 504 / 503 gateway errors
 
