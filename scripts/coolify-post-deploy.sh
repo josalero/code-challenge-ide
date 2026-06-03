@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Optional: rebuild runner + LSP images on the host (local Docker context).
-# Coolify with Build enabled already builds these via docker-compose.coolify.yml (no profile).
+# Coolify default deploy does not build profile `runners` — run this after deploy or when runners/ change.
 # Use after changes under runners/ or if Ops reports missing :local images.
 set -euo pipefail
 
@@ -47,7 +47,7 @@ RUNNER_SERVICES=(
 )
 
 echo "=== Building runner + LSP images (:local tags) ==="
-docker compose -f docker-compose.coolify.yml build "${RUNNER_SERVICES[@]}"
+docker compose -f docker-compose.coolify.yml --profile runners build "${RUNNER_SERVICES[@]}"
 
 if [[ -x "${ROOT}/scripts/smoke-runners.sh" ]]; then
   echo "=== Smoke-check runners (optional) ==="
