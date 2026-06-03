@@ -3,21 +3,26 @@ package com.codetraininglab.submission.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.codetraininglab.domain.ProgressState;
+import com.codetraininglab.domain.FeedbackCategory;
+import com.codetraininglab.domain.FeedbackStatus;
 import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
 import com.codetraininglab.integration.runner.RunnerResult;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.ChallengeRepository;
+import com.codetraininglab.platform.persistence.FeedbackItemEntity;
 import com.codetraininglab.platform.persistence.FeedbackItemRepository;
 import com.codetraininglab.platform.persistence.LanguageRuntimeEntity;
 import com.codetraininglab.platform.persistence.LanguageRuntimeRepository;
 import com.codetraininglab.platform.persistence.SubmissionEntity;
+import com.codetraininglab.platform.persistence.SubmissionReportEntity;
 import com.codetraininglab.platform.persistence.SubmissionReportRepository;
 import com.codetraininglab.platform.persistence.SubmissionRepository;
 import com.codetraininglab.platform.persistence.UserProgressEntity;
@@ -32,6 +37,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -157,13 +163,30 @@ class SubmissionProcessingStateWriterTest {
         "{\"line_coverage_percent\":80}");
 
     assertThat(submission.getStatus()).isEqualTo(SubmissionStatus.COMPLETED);
-    verify(reportRepository).save(any());
-    verify(feedbackItemRepository).saveAll(any());
-    verify(eventHub).publish(eq(submissionId), eq(SubmissionEventType.DONE.eventName()), any());
+
+    ArgumentCaptor<SubmissionReportEntity> reportCaptor =
+        ArgumentCaptor.forClass(SubmissionReportEntity.class);
+    verify(reportRepository).save(reportCaptor.capture());
+    assertThat(reportCaptor.getValue().isBlocked()).isFalse();
+    assertThat(reportCaptor.getValue().getSummary()).contains("\"blocked\":false");
+
+    verify(feedbackItemRepository)
+        .saveAll(argThat(feedbackHasCorrectness(FeedbackStatus.pass, "All tests passed")));
+
+    verify(eventHub)
+        .publish(
+            eq(submissionId),
+            eq(SubmissionEventType.DONE.eventName()),
+            argThat(
+                payload ->
+                    payload instanceof java.util.Map<?, ?> map
+                        && SubmissionKind.SUBMIT.name().equals(map.get(SsePayloadKeys.KIND))
+                        && map.containsKey(SsePayloadKeys.REPORT_ID)));
 
     ArgumentCaptor<UserProgressEntity> progressCaptor = ArgumentCaptor.forClass(UserProgressEntity.class);
     verify(progressRepository).save(progressCaptor.capture());
     assertThat(progressCaptor.getValue().getState()).isEqualTo(ProgressState.PASSED);
+    assertThat(progressCaptor.getValue().getSubmittedAt()).isEqualTo(Instant.EPOCH);
   }
 
   @Test
@@ -192,6 +215,16 @@ class SubmissionProcessingStateWriterTest {
         "{}");
 
     assertThat(existing.getState()).isEqualTo(ProgressState.FAILED);
+    assertThat(existing.getSubmittedAt()).isEqualTo(Instant.EPOCH);
+
+    ArgumentCaptor<SubmissionReportEntity> reportCaptor =
+        ArgumentCaptor.forClass(SubmissionReportEntity.class);
+    verify(reportRepository).save(reportCaptor.capture());
+    assertThat(reportCaptor.getValue().isBlocked()).isTrue();
+
+    verify(feedbackItemRepository)
+        .saveAll(
+            argThat(feedbackHasCorrectness(FeedbackStatus.fail, "One or more tests failed")));
   }
 
   @Test
@@ -207,12 +240,17 @@ class SubmissionProcessingStateWriterTest {
 
     assertThat(submission.getStatus()).isEqualTo(SubmissionStatus.FAILED);
 
-    ArgumentCaptor<java.util.Map<String, Object>> errorCaptor = ArgumentCaptor.forClass(java.util.Map.class);
-    verify(eventHub).publish(eq(submissionId), eq(SubmissionEventType.ERROR.eventName()), errorCaptor.capture());
-    assertThat(errorCaptor.getValue())
-        .containsEntry(SsePayloadKeys.MESSAGE, "Runner or infrastructure error")
-        .containsEntry(SsePayloadKeys.STDOUT, "stdout")
-        .containsEntry(SsePayloadKeys.STDERR, "stderr");
+    verify(eventHub)
+        .publish(
+            eq(submissionId),
+            eq(SubmissionEventType.ERROR.eventName()),
+            argThat(
+                payload ->
+                    payload instanceof java.util.Map<?, ?> map
+                        && "Runner or infrastructure error"
+                            .equals(map.get(SsePayloadKeys.MESSAGE))
+                        && "stdout".equals(map.get(SsePayloadKeys.STDOUT))
+                        && "stderr".equals(map.get(SsePayloadKeys.STDERR))));
     verify(eventHub).publish(eq(submissionId), eq(SubmissionEventType.DONE.eventName()), any());
   }
 
@@ -241,11 +279,14 @@ class SubmissionProcessingStateWriterTest {
             null,
             null));
 
-    ArgumentCaptor<java.util.Map<String, Object>> statusCaptor = ArgumentCaptor.forClass(java.util.Map.class);
     verify(eventHub)
-        .publish(eq(submissionId), eq(SubmissionEventType.STATUS.eventName()), statusCaptor.capture());
-    assertThat(statusCaptor.getValue().get(SsePayloadKeys.MESSAGE).toString())
-        .contains("2 test result(s)");
+        .publish(
+            eq(submissionId),
+            eq(SubmissionEventType.STATUS.eventName()),
+            argThat(
+                payload ->
+                    payload instanceof java.util.Map<?, ?> map
+                        && map.get(SsePayloadKeys.MESSAGE).toString().contains("2 test result(s)")));
   }
 
   private SubmissionEntity submission(SubmissionStatus status) {
@@ -291,5 +332,17 @@ class SubmissionProcessingStateWriterTest {
         new RunnerResult.CompileOutcome(0, List.of()),
         null,
         null);
+  }
+
+  private static org.mockito.ArgumentMatcher<Iterable<FeedbackItemEntity>>
+      feedbackHasCorrectness(FeedbackStatus status, String message) {
+    return items ->
+        items != null
+            && StreamSupport.stream(items.spliterator(), false)
+                .anyMatch(
+                    item ->
+                        item.getCategory() == FeedbackCategory.CORRECTNESS
+                            && item.getStatus() == status
+                            && message.equals(item.getMessage()));
   }
 }
