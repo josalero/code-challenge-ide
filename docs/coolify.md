@@ -86,7 +86,49 @@ RUNNER_POSTGRES_17_IMAGE=code-challenge-ide-runner-postgres-17:local
 
 SQL and six non-Java LSP images are **built on the server** by the post-deploy script until CI publishes them to GHCR.
 
-### 4. Volumes and mounts (verify in Coolify)
+### 4. Docker socket (required for `code-lab-api`)
+
+The API runs `docker info` and spawns runner/LSP containers on the **host**. Without socket access you will see:
+
+```text
+Runner pool warm on startup could not start: … Docker is not reachable from the API container …
+```
+
+**Fix on the VPS**
+
+1. SSH to the server and read the socket group id:
+
+   ```bash
+   stat -c '%g' /var/run/docker.sock
+   ```
+
+2. In Coolify **Environment Variables**, set `DOCKER_GID` to that number (not `0` unless it matches).
+
+3. Confirm `docker-compose.coolify.yml` still mounts the socket on **`code-lab-api`**:
+
+   ```yaml
+   volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+   group_add:
+     - "${DOCKER_GID}"
+   ```
+
+4. Redeploy the stack.
+
+5. Verify inside the API container:
+
+   ```bash
+   docker ps --filter name=code-lab-api --format '{{.Names}}'
+   docker exec -it <api-container-name> docker info
+   ```
+
+   `docker info` must exit 0. If you get “permission denied”, `DOCKER_GID` is wrong.
+
+**Coolify UI:** Some versions require explicitly allowing the compose project to use the Docker socket (resource **Advanced** / **Docker** settings). If Coolify strips bind mounts, re-add the socket volume or deploy on the same host where Coolify manages Docker.
+
+**Workaround until socket works:** set `RUNNER_POOL_WARM_ON_STARTUP=false`, redeploy, then use Admin → **Ops** → **Warm everything** after fixing `DOCKER_GID`.
+
+### 5. Volumes and mounts (verify in Coolify)
 
 All four services are declared in `docker-compose.coolify.yml`. Confirm Coolify does not strip mounts:
 
@@ -95,11 +137,11 @@ All four services are declared in `docker-compose.coolify.yml`. Confirm Coolify 
 | `code-lab-postgres` | Yes | volume `ctl-postgres-data` |
 | `code-lab-rabbitmq` | Yes | ephemeral (queue state in container) |
 | `code-lab-api` | Yes | `docker.sock`, `./challenges`, `ctl-ops-data`; DNS alias `api` for FE nginx |
-| `code-lab-fe` | Yes (public URL) | proxies `/api/` → `api:8080` (via alias on `code-lab-api`) |
+| `code-lab-fe` | Yes (public URL) | mounts `fe/nginx.coolify.conf` → proxies `/api/` to `code-lab-api:8080` |
 
 **Base directory must be the git root** so `./challenges` resolves.
 
-### 5. Post-deployment command
+### 6. Post-deployment command
 
 | Field | Value |
 | --- | --- |
@@ -113,7 +155,7 @@ This script:
 
 Run it again after every release that changes runner Dockerfiles.
 
-### 6. GHCR authentication (private packages)
+### 7. GHCR authentication (private packages)
 
 If images are private, add a **Docker Registry** in Coolify with a GitHub PAT (`read:packages`) and attach it to the resource before deploy.
 
@@ -171,12 +213,14 @@ Runner/LSP images are **not** long-running Compose services; the API runs them w
 
 | Symptom | Check |
 | --- | --- |
-| Run tests fails immediately | `DOCKER_GID`, docker.sock mount, runner images (`docker images \| grep code-challenge-ide`) |
+| `Docker CLI is not available` / `Docker is not reachable` on startup | `DOCKER_GID` = `stat -c '%g' /var/run/docker.sock`; socket volume on `code-lab-api`; `docker exec … docker info` |
+| Run tests fails immediately | Same as above + runner images (`docker images \| grep code-challenge-ide`) |
 | 401 / CORS in browser | `CORS_ALLOWED_ORIGINS` matches exact site URL (scheme + host) |
 | Challenges missing | `challenges/` mounted at `/challenges`; API logs for `ChallengeGitLoader` |
 | IntelliSense dead | LSP images built; `CTL_LSP_ENABLED=true`; WebSocket proxy |
 | GHCR pull 401 | Registry credentials in Coolify |
 | SQL challenges fail | `runner-postgres-17` built (`coolify-post-deploy.sh`) |
+| `host not found in upstream "api"` (nginx) | Redeploy with current compose: FE uses `fe/nginx.coolify.conf` and upstream `code-lab-api` |
 
 ## Related files
 
