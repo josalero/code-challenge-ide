@@ -1,0 +1,107 @@
+# Coolify — self-contained stack (no compose include / !reset).
+#
+# Coolify UI:
+#   Type: Docker Compose
+#   Base directory: repository root
+#   Docker Compose file: docker-compose.coolify.yml
+#   Post-deployment command: ./scripts/coolify-post-deploy.sh
+#
+# Expose in Coolify: service `code-lab-fe`, container port 80 (HTTPS).
+# Postgres and RabbitMQ stay on the internal network (no host ports below).
+#
+# Env: cp .env.coolify.example .env (or Coolify UI) — see docs/coolify.md
+
+name: code-training-lab
+
+services:
+  code-lab-postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?Set PG_PASSWORD}
+      POSTGRES_DB: ${PG_DB:-code_training_lab}
+    volumes:
+      - ctl-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DB:-code_training_lab}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  code-lab-rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RMQ_PASSWORD:?Set RMQ_PASSWORD}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  code-lab-api:
+    image: ${CTL_IMAGE_REGISTRY:-ghcr.io}/${CTL_IMAGE_OWNER:?Set CTL_IMAGE_OWNER}/code-challenge-ide-be:${CTL_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-production}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://code-lab-postgres:5432/${PG_DB:-code_training_lab}
+      SPRING_DATASOURCE_USERNAME: ${PG_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD}
+      SPRING_RABBITMQ_HOST: code-lab-rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RMQ_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-true}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      CTL_CHALLENGES_PATH: /challenges
+      CTL_DOCKER_ENABLED: "true"
+      RUNNER_JAVA_26_IMAGE: ${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}
+      RUNNER_MAVEN_CACHE_VOLUME: ${RUNNER_MAVEN_CACHE_VOLUME:-ctl-runner-m2-cache}
+      RUNNER_POOL_WARM_ON_STARTUP: ${RUNNER_POOL_WARM_ON_STARTUP:-true}
+      CTL_OPS_DATA_DIR: /data/ctl-ops
+      LSP_JAVA_IMAGE: ${LSP_JAVA_IMAGE:-code-challenge-ide-lsp-java:local}
+      CTL_LSP_ENABLED: ${CTL_LSP_ENABLED:-true}
+      AI_PROVIDER: ${AI_PROVIDER:-openrouter}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./challenges:/challenges:ro
+      - ctl-ops-data:/data/ctl-ops
+    group_add:
+      - "${DOCKER_GID:-0}"
+    depends_on:
+      code-lab-postgres:
+        condition: service_healthy
+      code-lab-rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 5
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      default:
+        aliases:
+          - api
+
+  code-lab-fe:
+    image: ${CTL_IMAGE_REGISTRY:-ghcr.io}/${CTL_IMAGE_OWNER}/code-challenge-ide-fe:${CTL_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${FE_PORT:-3000}:80"
+    depends_on:
+      code-lab-api:
+        condition: service_healthy
+
+volumes:
+  ctl-postgres-data:
+  ctl-ops-data:

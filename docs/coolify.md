@@ -1,55 +1,188 @@
 # Deploy on Coolify
 
-Code Training Lab is a self-hosted stack: API, UI, Postgres, RabbitMQ, and **on-demand** Java runner containers spawned by the API via Docker.
+Code Training Lab is a self-hosted stack: **frontend**, **API**, **Postgres**, **RabbitMQ**, plus **on-demand runner and LSP containers** started by the API through the host Docker socket.
+
+Use **`docker-compose.coolify.yml`** as the single Compose file in Coolify. It defines **code-lab-postgres**, **code-lab-rabbitmq**, **code-lab-api**, and **code-lab-fe** explicitly (no `include` or `!reset` — compatible with Coolify’s Compose parser). **API/FE** pull from GHCR; Postgres and RabbitMQ use upstream images on the internal network only (no host ports).
 
 ## Prerequisites
 
-- Coolify server with Docker socket available to the API container (same pattern as local `docker-compose.yml`)
-- GHCR images published from [`.github/workflows/build.yml`](../.github/workflows/build.yml), or build images on the server
+| Requirement | Notes |
+| --- | --- |
+| **Coolify** on a Linux VPS with Docker | Same host runs Coolify and submission runners |
+| **Docker socket** | API container must mount `/var/run/docker.sock` (already in compose) |
+| **Disk** | ~15–25 GB for images + DB volume |
+| **GHCR images** | Published from [`.github/workflows/build.yml`](../.github/workflows/build.yml) under your GitHub user/org |
+| **Git repo** | Coolify deploys from Bitbucket/GitHub; `challenges/` must be present in the checkout |
+
+## Coolify UI — step by step
+
+### 1. Create a Docker Compose resource
+
+| Field | Value |
+| --- | --- |
+| **Type** | Docker Compose |
+| **Repository** | This project (branch `main` or your release branch) |
+| **Base directory** | `/` (repository root) |
+| **Docker Compose file** | `docker-compose.coolify.yml` |
+| **Build** | Disabled for app images (Compose pulls GHCR `be` / `fe`) |
+
+### 2. Domain and routing
+
+| Field | Value |
+| --- | --- |
+| **Service to expose** | `code-lab-fe` |
+| **Container port** | `80` (nginx inside the FE container) |
+| **HTTPS** | Enable in Coolify (Let’s Encrypt) |
+
+The frontend proxies `/api/` to the internal `api` service. You do **not** need a separate public domain for the API.
+
+**Proxy requirements:** allow long-lived connections and WebSocket upgrade on `/api/` (LSP and submission event streams).
+
+### 3. Environment variables
+
+Set these in Coolify **Environment Variables**, or on the server:
+
+```bash
+cp .env.coolify.example .env
+# edit .env — secrets, CTL_IMAGE_OWNER, CORS_ALLOWED_ORIGINS
+```
+
+Template: [`.env.coolify.example`](../.env.coolify.example). General reference: [`.env.example`](../.env.example).
+
+**Required**
+
+| Variable | Example | Purpose |
+| --- | --- | --- |
+| `CTL_IMAGE_OWNER` | `your-github-user` | GHCR namespace (lowercase) |
+| `PG_PASSWORD` | strong secret | Postgres |
+| `RMQ_PASSWORD` | strong secret | RabbitMQ |
+| `JWT_SECRET` | ≥ 32 random chars | API auth |
+| `CORS_ALLOWED_ORIGINS` | `https://lab.example.com` | Must match your Coolify URL |
+
+**Strongly recommended**
+
+| Variable | Example | Purpose |
+| --- | --- | --- |
+| `CTL_IMAGE_TAG` | `latest` or `v1.0.0` | GHCR tag for `be` / `fe` / runners |
+| `DOCKER_GID` | `999` | Linux: `stat -c '%g' /var/run/docker.sock` |
+| `REGISTRATION_ENABLED` | `false` | Lock sign-up on public instances |
+| `RUNNER_POOL_WARM_ON_STARTUP` | `true` | Pre-warm runners after boot |
+| `OPENROUTER_API_KEY` | (secret) | AI coach (optional) |
+
+**Runner image tags (GHCR)**
+
+After `./scripts/coolify-post-deploy.sh`, point runtime images at GHCR (or keep `:local` for host-built SQL/LSP):
+
+```bash
+CTL_IMAGE_REGISTRY=ghcr.io
+CTL_IMAGE_OWNER=your-github-user
+CTL_IMAGE_TAG=latest
+
+RUNNER_JAVA_26_IMAGE=ghcr.io/your-github-user/code-challenge-ide-runner-java-26:latest
+RUNNER_PYTHON_312_IMAGE=ghcr.io/your-github-user/code-challenge-ide-runner-python-312:latest
+# … see .env.example for all RUNNER_* and LSP_* variables
+RUNNER_POSTGRES_17_IMAGE=code-challenge-ide-runner-postgres-17:local
+```
+
+SQL and six non-Java LSP images are **built on the server** by the post-deploy script until CI publishes them to GHCR.
+
+### 4. Volumes and mounts (verify in Coolify)
+
+All four services are declared in `docker-compose.coolify.yml`. Confirm Coolify does not strip mounts:
+
+| Service | In Coolify stack | Mount / data |
+| --- | --- | --- |
+| `code-lab-postgres` | Yes | volume `ctl-postgres-data` |
+| `code-lab-rabbitmq` | Yes | ephemeral (queue state in container) |
+| `code-lab-api` | Yes | `docker.sock`, `./challenges`, `ctl-ops-data`; DNS alias `api` for FE nginx |
+| `code-lab-fe` | Yes (public URL) | proxies `/api/` → `api:8080` (via alias on `code-lab-api`) |
+
+**Base directory must be the git root** so `./challenges` resolves.
+
+### 5. Post-deployment command
+
+| Field | Value |
+| --- | --- |
+| **Post-deployment / Execute command** | `./scripts/coolify-post-deploy.sh` |
+
+This script:
+
+1. Pulls GHCR runner images (+ `lsp-java`) via [`pull-runner-images.sh`](../scripts/pull-runner-images.sh)
+2. Builds **SQL** (`runner-postgres-17`) and **non-Java LSP** images on the host
+3. Optionally runs [`smoke-runners.sh`](../scripts/smoke-runners.sh)
+
+Run it again after every release that changes runner Dockerfiles.
+
+### 6. GHCR authentication (private packages)
+
+If images are private, add a **Docker Registry** in Coolify with a GitHub PAT (`read:packages`) and attach it to the resource before deploy.
+
+## Manual deploy (SSH on the VPS)
+
+```bash
+git clone <your-repo-url> code-challenge-ide && cd code-challenge-ide
+cp .env.example .env
+# edit .env — set CTL_IMAGE_OWNER, secrets, CORS_ALLOWED_ORIGINS
+
+docker compose -f docker-compose.coolify.yml pull
+./scripts/coolify-post-deploy.sh
+docker compose -f docker-compose.coolify.yml up -d
+```
+
+Alternative (same stack, two-file override):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+./scripts/pull-runner-images.sh
+./scripts/build-lsp-images.sh   # if not using coolify-post-deploy.sh
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
 
 ## Services
 
 | Service | Image | Notes |
 | --- | --- | --- |
-| API | `ghcr.io/<owner>/code-challenge-ide-be:latest` | Mount `docker.sock`, `challenges/` volume |
-| Frontend | `ghcr.io/<owner>/code-challenge-ide-fe:latest` | Proxies `/api` to API |
-| Postgres | `postgres:17` | Persistent volume |
-| RabbitMQ | `rabbitmq:3-management` | Optional management UI |
+| `code-lab-fe` | `ghcr.io/<owner>/code-challenge-ide-fe:<tag>` | Public URL → this service, port **80** |
+| `code-lab-api` | `ghcr.io/<owner>/code-challenge-ide-be:<tag>` | Internal; needs Docker socket + `challenges/` |
+| `code-lab-postgres` | `postgres:17` | Not exposed on host |
+| `code-lab-rabbitmq` | `rabbitmq:3-management-alpine` | Not exposed on host |
 
-Runner images (Java 25/26, Python 3.12, Go, Node, C#, TypeScript, Rust, C++, React, Vue, Angular, LSP) are **not** long-running services. Pull or build them on the host:
+Runner/LSP images are **not** long-running Compose services; the API runs them with `docker run`.
 
-```bash
-./scripts/pull-runner-images.sh
-# or: make runners
-# verify: ./scripts/smoke-runners.sh
-```
+## First login checklist
 
-## Environment (API)
-
-Copy from [`.env.example`](../.env.example):
-
-- `JWT_SECRET` (≥ 32 chars)
-- `PG_*`, `RMQ_*`
-- `CTL_CHALLENGES_PATH=/challenges`
-- `CTL_DOCKER_ENABLED=true`
-- `DOCKER_GID` (Linux: group id of `/var/run/docker.sock`)
-- Runner image tags: `RUNNER_JAVA_*_IMAGE`, `RUNNER_PYTHON_312_IMAGE`, `RUNNER_GO_123_IMAGE`, `RUNNER_NODE_22_IMAGE`, `RUNNER_DOTNET_8_IMAGE`, `RUNNER_TYPESCRIPT_57_IMAGE`, `RUNNER_RUST_184_IMAGE`, `RUNNER_CPP_20_IMAGE`, `RUNNER_REACT_19_IMAGE`, `RUNNER_VUE_35_IMAGE`, `RUNNER_ANGULAR_19_IMAGE`, `LSP_*_IMAGE` (see `.env.example`)
-- `CTL_LSP_ENABLED=true` when LSP sidecar image is available
-
-## Compose reference
-
-Production overlay:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
-
-Map Coolify domains to the frontend service; ensure WebSocket upgrade works for `/api/v1/lsp/{language}` and submission SSE.
+1. Open `https://<your-domain>/`
+2. Sign in (or register if `REGISTRATION_ENABLED=true`)
+3. Admin → **Ops** → **Warm everything** (if not auto-warmed)
+4. Open a Java challenge → **Run tests** to confirm runners work
+5. `GET https://<your-domain>/api/v1/health` or `/actuator/health/readiness`
 
 ## Operations
 
-- Health: `GET /api/v1/health` and `/actuator/health`
-- Dead-letter queue (authenticated):
-  - `GET /api/v1/ops/dead-letter-submissions?limit=20` — peek (non-destructive)
-  - `POST /api/v1/ops/dead-letter-submissions/replay?limit=10` — requeue to `ctl.submissions`
+| Task | How |
+| --- | --- |
+| Health | `GET /api/v1/health`, `/actuator/health/readiness` |
+| Warm state | Admin → **Infrastructure warm-up** (`/admin/ops`) |
+| Dead-letter submissions | `GET /api/v1/ops/dead-letter-submissions?limit=20` |
+| Replay dead-letter | `POST /api/v1/ops/dead-letter-submissions/replay?limit=10` |
+| Logs | Coolify → service logs, or `docker compose -f docker-compose.coolify.yml logs -f api` |
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| Run tests fails immediately | `DOCKER_GID`, docker.sock mount, runner images (`docker images \| grep code-challenge-ide`) |
+| 401 / CORS in browser | `CORS_ALLOWED_ORIGINS` matches exact site URL (scheme + host) |
+| Challenges missing | `challenges/` mounted at `/challenges`; API logs for `ChallengeGitLoader` |
+| IntelliSense dead | LSP images built; `CTL_LSP_ENABLED=true`; WebSocket proxy |
+| GHCR pull 401 | Registry credentials in Coolify |
+| SQL challenges fail | `runner-postgres-17` built (`coolify-post-deploy.sh`) |
+
+## Related files
+
+| File | Role |
+| --- | --- |
+| [`docker-compose.coolify.yml`](../docker-compose.coolify.yml) | Coolify stack: postgres, rabbitmq, api, fe (self-contained) |
+| [`docker-compose.prod.yml`](../docker-compose.prod.yml) | GHCR override only (use with `docker-compose.yml`) |
+| [`scripts/coolify-post-deploy.sh`](../scripts/coolify-post-deploy.sh) | Post-deploy pulls + host builds |
+| [`.env.example`](../.env.example) | Full variable reference |
