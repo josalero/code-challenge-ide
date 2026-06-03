@@ -92,7 +92,7 @@ export default function RegisterPage() {
       )}
       <Form layout="vertical" onFinish={onFinish} requiredMark={false} size="large">
         <Form.Item
-          label={<span className="text-slate-300">Email</span>}
+          label={<span className="text-muted-foreground">Email</span>}
           name="email"
           rules={[
             { required: true, message: "Email is required" },
@@ -102,7 +102,7 @@ export default function RegisterPage() {
           <Input autoComplete="email" placeholder="you@example.com" />
         </Form.Item>
         <Form.Item
-          label={<span className="text-slate-300">Password</span>}
+          label={<span className="text-muted-foreground">Password</span>}
           name="password"
           rules={[
             { required: true, message: "Password is required" },
@@ -112,7 +112,7 @@ export default function RegisterPage() {
           <Input.Password autoComplete="new-password" placeholder="••••••••" />
         </Form.Item>
         <Form.Item
-          label={<span className="text-slate-300">Confirm password</span>}
+          label={<span className="text-muted-foreground">Confirm password</span>}
           name="confirm"
           dependencies={["password"]}
           rules={[
@@ -133,9 +133,12 @@ export default function RegisterPage() {
           {info.bootstrap ? "Create admin account" : "Create account"}
         </Button>
       </Form>
-      <p className="mb-0 mt-6 text-center text-sm text-slate-400">
+      <p className="mb-0 mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link to="/login" className="text-emerald-400 hover:text-emerald-300">
+        <Link
+          to="/login"
+          className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+        >
           Sign in
         </Link>
       </p>

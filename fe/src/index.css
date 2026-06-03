@@ -64,6 +64,12 @@
   backdrop-filter: blur(8px);
 }
 
+html.light .ctl-auth-panel {
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.06),
+    0 8px 24px rgb(15 23 42 / 0.08);
+}
+
 /* Cards */
 .ctl-card .ant-card-head {
   border-bottom-color: var(--ctl-border);

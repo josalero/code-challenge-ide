@@ -55,7 +55,7 @@ export default function LoginPage() {
       )}
       <Form layout="vertical" onFinish={onFinish} requiredMark={false} size="large">
         <Form.Item
-          label={<span className="text-slate-300">Email</span>}
+          label={<span className="text-muted-foreground">Email</span>}
           name="email"
           rules={[
             { required: true, message: "Email is required" },
@@ -65,7 +65,7 @@ export default function LoginPage() {
           <Input autoComplete="email" placeholder="you@example.com" />
         </Form.Item>
         <Form.Item
-          label={<span className="text-slate-300">Password</span>}
+          label={<span className="text-muted-foreground">Password</span>}
           name="password"
           rules={[{ required: true, message: "Password is required" }]}
         >
@@ -76,18 +76,24 @@ export default function LoginPage() {
         </Button>
       </Form>
       {registrationOpen && (
-        <p className="mb-0 mt-6 text-center text-sm text-slate-400">
+        <p className="mb-0 mt-6 text-center text-sm text-muted-foreground">
           {registrationQuery.data?.bootstrap ? (
             <>
               First time here?{" "}
-              <Link to="/register" className="text-emerald-400 hover:text-emerald-300">
+              <Link
+                to="/register"
+                className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+              >
                 Set up admin account
               </Link>
             </>
           ) : (
             <>
               No account?{" "}
-              <Link to="/register" className="text-emerald-400 hover:text-emerald-300">
+              <Link
+                to="/register"
+                className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+              >
                 Create one
               </Link>
             </>
