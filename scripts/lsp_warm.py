@@ -215,7 +215,8 @@ class WarmTarget:
 
 # One target per unique image. Vue shares lsp-typescript (entrypoint switch only) — skipped by default.
 WARM_TARGETS: tuple[WarmTarget, ...] = (
-    WarmTarget("java", "java", "LSP_JAVA_IMAGE", "code-challenge-ide-lsp-java:local", 90),
+    # JDT LS JVM + initialize handshake; slow on small VPS (often 60–120s, sometimes longer).
+    WarmTarget("java", "java", "LSP_JAVA_IMAGE", "code-challenge-ide-lsp-java:local", 180),
     WarmTarget("python", "python", "LSP_PYTHON_IMAGE", "code-challenge-ide-lsp-python:local", 30),
     WarmTarget(
         "go",
@@ -272,6 +273,10 @@ OPTIONAL_WARM_TARGETS: tuple[WarmTarget, ...] = (
         smoke_args=("--version",),
     ),
 )
+
+
+def log(message: str) -> None:
+    print(message, flush=True)
 
 
 def resolve_image(target: WarmTarget) -> str:
@@ -449,9 +454,13 @@ def warm_one(target: WarmTarget, image: str, dry_run: bool) -> tuple[str, float]
             image,
         ]
         if dry_run:
-            print(f"[dry-run] {' '.join(command)}")
+            log(f"[dry-run] {' '.join(command)}")
             return target.label, 0.0
 
+        log(
+            f"  Starting {target.label} LSP container ({image}), "
+            f"timeout {target.timeout_seconds}s (JVM startup can take 1–3 min on a small VPS)…"
+        )
         process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
@@ -492,9 +501,14 @@ def warm_one(target: WarmTarget, image: str, dry_run: bool) -> tuple[str, float]
         buffer = bytearray()
         deadline = time.monotonic() + target.timeout_seconds
         initialize_ok = False
+        last_progress = started
         while time.monotonic() < deadline:
             if process.poll() is not None:
                 break
+            now = time.monotonic()
+            if now - last_progress >= 15:
+                log(f"  … still waiting for {target.label} initialize ({int(now - started)}s elapsed)")
+                last_progress = now
             ready, _, _ = select.select([process.stdout], [], [], 0.2)
             if not ready:
                 continue
@@ -530,17 +544,17 @@ def warm_targets(
     if parallel <= 1 or dry_run:
         for target in targets:
             image = resolve_image(target)
-            print(f"Warming LSP {target.label} ({image})…")
+            log(f"Warming LSP {target.label} ({image})…")
             try:
                 label, elapsed = warm_one(target, image, dry_run)
                 if not dry_run:
-                    print(f"  OK: {label} ({elapsed:.1f}s)")
+                    log(f"  OK: {label} ({elapsed:.1f}s)")
             except Exception as exc:  # noqa: BLE001
                 failures.append(f"{target.label}: {exc}")
-                print(f"  FAIL: {target.label}: {exc}", file=sys.stderr)
+                log(f"  FAIL: {target.label}: {exc}")
         return failures
 
-    print(f"Warming {len(targets)} LSP images in parallel (workers={parallel})…")
+    log(f"Warming {len(targets)} LSP images in parallel (workers={parallel})…")
     with ThreadPoolExecutor(max_workers=parallel) as pool:
         futures = {
             pool.submit(warm_one, target, resolve_image(target), dry_run): target
@@ -550,10 +564,10 @@ def warm_targets(
             target = futures[future]
             try:
                 label, elapsed = future.result()
-                print(f"  OK: {label} ({elapsed:.1f}s)")
+                log(f"  OK: {label} ({elapsed:.1f}s)")
             except Exception as exc:  # noqa: BLE001
                 failures.append(f"{target.label}: {exc}")
-                print(f"  FAIL: {target.label}: {exc}", file=sys.stderr)
+                log(f"  FAIL: {target.label}: {exc}")
     return failures
 
 

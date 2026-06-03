@@ -309,6 +309,7 @@ public class RunnerOpsService {
     JobState job = requireActiveJob();
     List<String> command = new ArrayList<>();
     command.add("python3");
+    command.add("-u");
     command.add(script.toString());
     if (force) {
       command.add("--force");
@@ -367,6 +368,7 @@ public class RunnerOpsService {
     builder.directory(workDir.toFile());
     builder.redirectErrorStream(true);
     builder.environment().put("CTL_OPS_DATA_DIR", RunnerOpsPaths.resolveOpsDataDir(environment).toString());
+    builder.environment().put("PYTHONUNBUFFERED", "1");
     Process process = builder.start();
     try (BufferedReader reader =
         new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
