@@ -29,6 +29,9 @@ fi
 echo "=== Pulling GHCR runner + lsp-java images ==="
 "${ROOT}/scripts/pull-runner-images.sh"
 
+echo "=== Tagging GHCR images as :local (matches DB language_runtimes) ==="
+"${ROOT}/scripts/tag-runner-images-local.sh"
+
 echo "=== Building runner/LSP images not yet on GHCR (SQL + non-Java LSP) ==="
 docker compose -f docker-compose.yml build \
   runner-postgres-17 \
