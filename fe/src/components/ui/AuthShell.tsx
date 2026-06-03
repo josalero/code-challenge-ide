@@ -39,7 +39,7 @@ export default function AuthShell({ title, subtitle, children }: Props) {
             aria-label="Code Training Lab"
           >
             <span className="flex size-9 items-center justify-center rounded-md bg-emerald-500/15 ring-1 ring-emerald-500/25">
-              <Code2 className="size-5 text-emerald-400" aria-hidden />
+              <Code2 className="size-5 text-emerald-600 dark:text-emerald-400" aria-hidden />
             </span>
             <span className="min-w-0">
               <Typography.Text className="!text-foreground block text-sm font-semibold leading-tight">
@@ -64,11 +64,11 @@ export default function AuthShell({ title, subtitle, children }: Props) {
           <div>
             <Typography.Title
               level={1}
-              className="!mb-4 !mt-0 max-w-2xl !text-4xl !font-semibold !leading-tight !text-white xl:!text-5xl"
+              className="!mb-4 !mt-0 max-w-2xl !text-4xl !font-semibold !leading-tight !text-foreground xl:!text-5xl"
             >
               Build confidence by running code against the same gates every time.
             </Typography.Title>
-            <Typography.Paragraph className="!mb-0 max-w-xl !text-base !leading-relaxed !text-slate-400">
+            <Typography.Paragraph className="!mb-0 max-w-xl !text-base !leading-relaxed !text-muted-foreground">
               A focused lab for practicing challenges, publishing tests, and reading clear feedback from real execution.
             </Typography.Paragraph>
           </div>
@@ -77,15 +77,15 @@ export default function AuthShell({ title, subtitle, children }: Props) {
             {FEATURES.map(({ icon: Icon, title: featureTitle, text }) => (
               <article
                 key={featureTitle}
-                className="rounded-lg border border-slate-800/80 bg-slate-900/60 p-4"
+                className="rounded-lg border border-border bg-card p-4 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none"
               >
-                <span className="mb-3 flex size-9 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20">
+                <span className="mb-3 flex size-9 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-400">
                   <Icon className="size-4" aria-hidden />
                 </span>
-                <h2 className="mb-1 text-sm font-semibold text-slate-100">
+                <h2 className="mb-1 text-sm font-semibold text-foreground">
                   {featureTitle}
                 </h2>
-                <p className="mb-0 text-sm leading-relaxed text-slate-500">{text}</p>
+                <p className="mb-0 text-sm leading-relaxed text-muted-foreground">{text}</p>
               </article>
             ))}
           </div>
@@ -93,11 +93,11 @@ export default function AuthShell({ title, subtitle, children }: Props) {
 
         <section className="flex min-h-[calc(100dvh-10rem)] items-center justify-center lg:min-h-0">
           <div className="w-full max-w-md">
-            <div className="ctl-auth-panel rounded-lg border border-slate-800/80 bg-slate-900/95 p-6 shadow-xl shadow-black/20 sm:p-8">
-              <Typography.Title level={2} className="!mb-1 !mt-0 !text-white">
+            <div className="ctl-auth-panel rounded-lg border border-border bg-card p-6 shadow-lg sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/95 dark:shadow-xl dark:shadow-black/20">
+              <Typography.Title level={2} className="!mb-1 !mt-0 !text-foreground">
                 {title}
               </Typography.Title>
-              <Typography.Paragraph className="!mb-6 !text-slate-400">
+              <Typography.Paragraph className="!mb-6 !text-muted-foreground">
                 {subtitle}
               </Typography.Paragraph>
               {children}
@@ -106,9 +106,9 @@ export default function AuthShell({ title, subtitle, children }: Props) {
         </section>
       </main>
 
-      <footer className="border-t border-slate-700/60 bg-slate-900/90">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between md:px-6">
-          <span className="font-medium text-slate-400">Code Training Lab</span>
+      <footer className="border-t border-border bg-background/90">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between md:px-6">
+          <span className="font-medium text-foreground">Code Training Lab</span>
           <span>Docker sandbox · hidden tests · feedback reports</span>
         </div>
       </footer>
