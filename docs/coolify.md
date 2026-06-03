@@ -4,7 +4,7 @@ Code Training Lab is a self-hosted stack: **frontend**, **API**, **Postgres**, *
 
 Use **`docker-compose.coolify.yml`** as the single Compose file in Coolify. It defines **code-lab-postgres**, **code-lab-rabbitmq**, **code-lab-api**, and **code-lab-fe** (no `include` — compatible with Coolify’s Compose parser).
 
-**Default: local Docker build** — `docker-compose.coolify.yml` includes **`docker-compose.runners.yml`** and builds `code-lab-api`, `code-lab-fe`, and all `runner-*` / `runner-lsp-*` images on the VPS (`*:local` tags). Post-deploy rebuilds runners after `runners/` changes. No GHCR pull required.
+**Default: local Docker build** — `docker-compose.coolify.yml` defines `code-lab-api`, `code-lab-fe`, and all `runner-*` / `runner-lsp-*` services inline and builds them on the VPS (`*:local` tags). Post-deploy rebuilds runners after `runners/` changes. No GHCR pull required.
 
 Postgres and RabbitMQ use upstream images on the internal network only (no host ports).
 
@@ -28,7 +28,7 @@ Postgres and RabbitMQ use upstream images on the internal network only (no host 
 | **Repository** | This project (branch `main` or your release branch) |
 | **Base directory** | `/` (repository root) |
 | **Docker Compose file** | `docker-compose.coolify.yml` |
-| **Build** | **Enabled** — Compose builds `code-lab-api`, `code-lab-fe`, and runner/LSP images (via include) |
+| **Build** | **Enabled** — Compose builds `code-lab-api`, `code-lab-fe`, and runner/LSP images (same file) |
 
 ### 2. Domain and routing
 
@@ -74,7 +74,7 @@ Template: [`.env.coolify.example`](../.env.coolify.example). General reference: 
 
 **Runner / LSP images (`:local`)**
 
-Defaults in [`.env.coolify.example`](../.env.coolify.example) match Flyway (`code-challenge-ide-runner-*:local`). Included in `docker-compose.coolify.yml` from `docker-compose.runners.yml` — no GHCR required.
+Defaults in [`.env.coolify.example`](../.env.coolify.example) match Flyway (`code-challenge-ide-runner-*:local`). Defined inline in `docker-compose.coolify.yml` — no GHCR required.
 
 Optional GHCR override: set `RUNNER_*_IMAGE` / `LSP_*_IMAGE` to `ghcr.io/...` only if you publish images via [`.github/workflows/build.yml`](../.github/workflows/build.yml) and pull them yourself.
 
