@@ -4,10 +4,10 @@
 #   Type: Docker Compose
 #   Base directory: repository root (challenges/, runners/, be/, fe/)
 #   Docker Compose file: docker-compose.coolify.yml
-#   Build: enabled (api, fe, and all runner-* / runner-lsp-* images)
-#   Post-deployment command: ./scripts/coolify-post-deploy.sh  (rebuild runners after runner/ changes)
+#   Build: enabled — Coolify builds api, fe, and all runner-* / runner-lsp-* on each deploy (no profile).
+#   Post-deployment command: optional (see scripts/coolify-post-deploy.sh for manual rebuild / smoke).
 #
-# Runner/LSP services use profile `runners` — not started on default `up` (build via post-deploy).
+# Runner/LSP services: build-only (entrypoint /bin/true, restart no) — images for API docker run; not long-running.
 # Expose in Coolify: service `code-lab-fe`, container port 80 (HTTPS proxy).
 # Optional host bind: FE_PORT=3010 → ports 3010:80 (direct http://<vps-ip>:3010).
 # Env: cp .env.coolify.example .env — see docs/coolify.md
@@ -49,7 +49,6 @@ configs:
       }
 
 x-runner-build-only: &runner-build-only
-  profiles: [runners]
   restart: "no"
   entrypoint: ["/bin/true"]
   networks:
@@ -332,7 +331,6 @@ services:
     image: ${LSP_CPP_IMAGE:-code-challenge-ide-lsp-cpp:local}
 
   runner-m2-warm:
-    profiles: [runners]
     image: ${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}
     user: "0:0"
     volumes:
