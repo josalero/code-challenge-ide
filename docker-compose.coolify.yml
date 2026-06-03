@@ -113,7 +113,8 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./challenges:/challenges:ro
+      # Do not bind-mount ./challenges here: Coolify often has no checkout at deploy path, which
+      # creates an empty dir and hides challenges baked into the GHCR image at /challenges.
       - ctl-ops-data:/data/ctl-ops
     group_add:
       - "${DOCKER_GID:?Set DOCKER_GID to the host docker.sock group id}"
