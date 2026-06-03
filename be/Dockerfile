@@ -22,7 +22,10 @@ ENV PORT=${PORT}
 ENV SPRING_PROFILES_ACTIVE=production
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl docker.io \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        docker.io \
+        python3 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 10001 --create-home app
