@@ -209,6 +209,7 @@ Runner/LSP images are **not** long-running Compose services; the API runs them w
 | Wrong redirects / links behind HTTPS | API uses `server.forward-headers-strategy: framework` in `application-production.yml` (same as TrailPulse behind Coolify) |
 | Challenges missing / empty catalog | Do **not** bind-mount `./challenges` on Coolify (empty host dir overrides image). Use GHCR `be` image with baked `/challenges`. API logs: `ChallengeGitLoader` / `Seeded challenge`. Verify: `docker exec <api> ls /challenges \| head` |
 | IntelliSense dead | LSP images built; `CTL_LSP_ENABLED=true`; WebSocket proxy |
+| Ops LSP warm: `python3` not found | Rebuild **API** image (`be/Dockerfile` installs `python3` for `scripts/lsp_warm.py`) |
 | GHCR pull 401 | Registry credentials in Coolify |
 | SQL challenges fail | `runner-postgres-17` built (`coolify-post-deploy.sh`) |
 | `host not found in upstream "api"` (nginx) | Use current `docker-compose.coolify.yml` (inlined nginx `configs`, upstream `code-lab-api`) |
