@@ -137,7 +137,7 @@ All four services are declared in `docker-compose.coolify.yml`. Confirm Coolify 
 | `code-lab-postgres` | Yes | volume `ctl-postgres-data` |
 | `code-lab-rabbitmq` | Yes | ephemeral (queue state in container) |
 | `code-lab-api` | Yes | `docker.sock`, `./challenges`, `ctl-ops-data`; DNS alias `api` for FE nginx |
-| `code-lab-fe` | Yes (public URL) | mounts `fe/nginx.coolify.conf` → proxies `/api/` to `code-lab-api:8080` |
+| `code-lab-fe` | Yes (public URL) | nginx config inlined in compose (`configs`) → `code-lab-api:8080` |
 
 **Base directory must be the git root** so `./challenges` resolves.
 
@@ -220,7 +220,8 @@ Runner/LSP images are **not** long-running Compose services; the API runs them w
 | IntelliSense dead | LSP images built; `CTL_LSP_ENABLED=true`; WebSocket proxy |
 | GHCR pull 401 | Registry credentials in Coolify |
 | SQL challenges fail | `runner-postgres-17` built (`coolify-post-deploy.sh`) |
-| `host not found in upstream "api"` (nginx) | Redeploy with current compose: FE uses `fe/nginx.coolify.conf` and upstream `code-lab-api` |
+| `host not found in upstream "api"` (nginx) | Use current `docker-compose.coolify.yml` (inlined nginx `configs`, upstream `code-lab-api`) |
+| `nginx.coolify.conf` mount: not a directory | Remove stray dir on VPS: `rm -rf fe/nginx.coolify.conf` if created by a failed mount; redeploy (compose no longer bind-mounts this file) |
 
 ## Related files
 
