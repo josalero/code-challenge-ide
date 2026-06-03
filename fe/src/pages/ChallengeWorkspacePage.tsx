@@ -335,11 +335,19 @@ export default function ChallengeWorkspacePage() {
     }
     lastToastReportId.current = report.id;
     if (report.blocked) {
+      appendActivity(
+        "Challenge not passed — one or more tests failed; feedback is ready.",
+        "warning",
+      );
       message.warning("Submission complete — review feedback for next steps");
     } else {
+      appendActivity(
+        "Challenge passed — all tests passed and progress was saved.",
+        "success",
+      );
       message.success("Submitted — all checks passed!");
     }
-  }, [report, message]);
+  }, [appendActivity, report, message]);
 
   const pollSubmission = useCallback(
     async (submissionId: string) => {
