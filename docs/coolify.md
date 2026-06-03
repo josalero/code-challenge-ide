@@ -31,7 +31,8 @@ Use **`docker-compose.coolify.yml`** as the single Compose file in Coolify. It d
 | Field | Value |
 | --- | --- |
 | **Service to expose** | `code-lab-fe` |
-| **Container port** | `80` (nginx inside the FE container) |
+| **Container port** | **`80`** (not 3000 — nginx listens on 80 inside the container) |
+| **Port mappings** | Coolify attaches to the container port; `FE_PORT` host mapping in compose is optional |
 | **HTTPS** | Enable in Coolify (Let’s Encrypt) |
 
 The frontend proxies `/api/` to the internal `api` service. You do **not** need a separate public domain for the API.
@@ -222,6 +223,42 @@ Runner/LSP images are **not** long-running Compose services; the API runs them w
 | SQL challenges fail | `runner-postgres-17` built (`coolify-post-deploy.sh`) |
 | `host not found in upstream "api"` (nginx) | Use current `docker-compose.coolify.yml` (inlined nginx `configs`, upstream `code-lab-api`) |
 | `nginx.coolify.conf` mount: not a directory | Remove stray dir on VPS: `rm -rf fe/nginx.coolify.conf` if created by a failed mount; redeploy (compose no longer bind-mounts this file) |
+| **504 / 503** on public URL | Coolify **container port = 80** on `code-lab-fe`; see checks below |
+| Browser `content.js` / `first bit not a valid function name` | Chrome extension noise — not from this app; ignore or disable the extension |
+
+### 504 / 503 gateway errors
+
+Coolify returns **504** when nothing answers on **`code-lab-fe:80`** (container crash, never started, or wrong port in Coolify).
+
+**Coolify domain settings**
+
+| Field | Value |
+| --- | --- |
+| Service | `code-lab-fe` |
+| Port | **80** |
+
+**On the VPS (SSH)**
+
+```bash
+cd /data/coolify/applications/<your-app-id>
+docker compose -f docker-compose.coolify.yml ps
+docker compose -f docker-compose.coolify.yml logs --tail=80 code-lab-fe
+docker compose -f docker-compose.coolify.yml logs --tail=80 code-lab-api
+```
+
+| `ps` shows | Meaning |
+| --- | --- |
+| `code-lab-fe` missing or Restarting | API not healthy yet, nginx config error, or image pull failed — read `code-lab-fe` logs |
+| `code-lab-api` unhealthy | Fix Postgres/RabbitMQ env, `JWT_SECRET`, or wait through `start_period` (up to ~2 min) |
+| Both **Up (healthy)** | Fix Coolify port (must be **80**) and redeploy proxy |
+
+**Env**
+
+```bash
+CORS_ALLOWED_ORIGINS=https://code-challenge-lab.5.78.76.98.sslip.io
+```
+
+(match your real URL, no trailing slash)
 
 ## Related files
 
