@@ -4,10 +4,10 @@
 #   Type: Docker Compose
 #   Base directory: repository root (challenges/, runners/, be/, fe/)
 #   Docker Compose file: docker-compose.coolify.yml
-#   Build: enabled — Coolify builds api, fe, and all runner-* / runner-lsp-* on each deploy (no profile).
-#   Post-deployment command: optional (see scripts/coolify-post-deploy.sh for manual rebuild / smoke).
+#   Build: enabled — Coolify builds api, fe; runner/LSP use profile `runners` (post-deploy or --profile runners build).
+#   Post-deployment command: optional ./scripts/coolify-post-deploy.sh (rebuild runners after runners/ changes).
 #
-# Runner/LSP services: build-only (entrypoint /bin/true, restart no) — images for API docker run; not long-running.
+# Runner/LSP: profile `runners` so default deploy starts FE quickly (avoids 504 while 20+ images build).
 # Expose in Coolify: service `code-lab-fe`, container port 80 (HTTPS proxy).
 # Optional host bind: FE_PORT=3010 → ports 3010:80 (direct http://<vps-ip>:3010).
 # Env: cp .env.coolify.example .env — see docs/coolify.md
@@ -20,35 +20,10 @@ networks:
   coolify:
     external: true
 
-configs:
-  code-lab-nginx-default:
-    content: |
-      server {
-          listen 80;
-          server_name _;
-          root /usr/share/nginx/html;
-          index index.html;
-
-          location / {
-              try_files $$uri $$uri/ /index.html;
-          }
-
-          location /api/ {
-              proxy_pass http://code-lab-api:8080;
-              proxy_http_version 1.1;
-              proxy_set_header Host $$host;
-              proxy_set_header X-Real-IP $$remote_addr;
-              proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
-              proxy_set_header X-Forwarded-Proto $$scheme;
-              proxy_set_header Upgrade $$http_upgrade;
-              proxy_set_header Connection "upgrade";
-              proxy_buffering off;
-              proxy_cache off;
-              proxy_read_timeout 3600s;
-          }
-      }
+# FE nginx: fe/nginx.conf baked in image (service name code-lab-api). Avoid compose configs — some Coolify parsers drop them.
 
 x-runner-build-only: &runner-build-only
+
   restart: "no"
   entrypoint: ["/bin/true"]
   networks:
@@ -173,12 +148,6 @@ services:
     networks:
       - code-lab
       - coolify
-    configs:
-      - source: code-lab-nginx-default
-        target: /etc/nginx/conf.d/default.conf
-    depends_on:
-      code-lab-api:
-        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
       interval: 15s

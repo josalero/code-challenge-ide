@@ -4,7 +4,7 @@ Code Training Lab is a self-hosted stack: **frontend**, **API**, **Postgres**, *
 
 Use **`docker-compose.coolify.yml`** as the single Compose file in Coolify. It defines **code-lab-postgres**, **code-lab-rabbitmq**, **code-lab-api**, and **code-lab-fe** (no `include` — compatible with Coolify’s Compose parser).
 
-**Default: local Docker build** — `docker-compose.coolify.yml` defines `code-lab-api`, `code-lab-fe`, and all `runner-*` / `runner-lsp-*` inline. With Coolify **Build** enabled, every deploy builds runner/LSP images on the VPS (`*:local` tags). No separate post-deploy step required. No GHCR pull required.
+**Default: local Docker build** — `docker-compose.coolify.yml` builds **api** + **fe** on each deploy; runner/LSP use Compose profile **`runners`** (build via post-deploy script so the site is reachable sooner). No GHCR pull required.
 
 Postgres and RabbitMQ use upstream images on the internal network only (no host ports).
 
@@ -16,7 +16,7 @@ Postgres and RabbitMQ use upstream images on the internal network only (no host 
 | **Docker socket** | API container must mount `/var/run/docker.sock` (already in compose) |
 | **Disk** | ~25–40 GB for local builds + image layers + DB volume |
 | **Git repo** | Coolify deploys from Bitbucket/GitHub; full repo root (`challenges/`, `runners/`, `be/`, `fe/`) |
-| **Build time** | First deploy: API + FE + all runners/LSP in one Compose build — allow 30–90+ minutes |
+| **Build time** | First deploy: API + FE (~10–25 min); runners/LSP via post-deploy (~20–60 min extra) |
 
 ## Coolify UI — step by step
 
@@ -138,9 +138,9 @@ All four services are declared in `docker-compose.coolify.yml`. Confirm Coolify 
 
 | Field | Value |
 | --- | --- |
-| **Post-deployment / Execute command** | *(leave empty)* or `./scripts/coolify-post-deploy.sh` |
+| **Post-deployment / Execute command** | `./scripts/coolify-post-deploy.sh` (recommended) |
 
-Coolify **Build** already builds all `runner-*` / `runner-lsp-*` services in `docker-compose.coolify.yml` (no Compose profile). Use the script only for a **manual** rebuild on SSH, or to run [`smoke-runners.sh`](../scripts/smoke-runners.sh).
+Default deploy builds only **4** running services; the script builds profile **`runners`**. Without it, the UI loads but **Run tests** / LSP fail until images exist.
 
 Runner compose services use `entrypoint: /bin/true` — they show as **Exited** after `up`; that is normal (images are for `docker run` from the API).
 
@@ -241,7 +241,9 @@ Coolify returns **504** when nothing answers on **`code-lab-fe:80`** (container 
 
 **Common cause:** `code-lab-fe` waited for `code-lab-api` health while the API was still building (Gradle). Compose now starts FE when the API **container is up** (`service_started`), not when readiness passes. The login page should load; `/api/` may 502 until the API is healthy.
 
-**Runners:** All `runner-*` / `runner-lsp-*` are in the same Compose file and built on deploy (Coolify **Build**). First deploy logs will show many image builds — allow extra time before the API is ready.
+**504 during deploy:** If every `runner-*` is built on deploy (no profile), nothing listens on `code-lab-fe:80` until **all** images finish — Coolify shows **504** for a long time. Use profile **`runners`** (current compose) + post-deploy script.
+
+**Runners:** Build with `./scripts/coolify-post-deploy.sh` or `docker compose -f docker-compose.coolify.yml --profile runners build`.
 
 **Coolify domain settings**
 
