@@ -19,15 +19,19 @@
 		-Server
 	}
 
-	@api path /api/*
-	reverse_proxy @api code-lab-api:8080 {
-		flush_interval -1
-		stream_close_delay 5m
-		transport http {
-			dial_timeout 30s
+	@api path /api /api/*
+	handle @api {
+		reverse_proxy code-lab-api:8080 {
+			flush_interval -1
+			stream_close_delay 5m
+			transport http {
+				dial_timeout 30s
+			}
 		}
 	}
 
-	try_files {path} /index.html
-	file_server
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
 }
