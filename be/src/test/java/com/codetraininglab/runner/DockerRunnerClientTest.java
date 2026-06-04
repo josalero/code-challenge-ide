@@ -51,8 +51,8 @@ class DockerRunnerClientTest {
         base.ollamaModel(),
         true,
         base.lspEnabled(),
-        false);
-  }
+        false,
+                0);  }
 
   private DockerRunnerClient client(CtlProperties properties) {
     return new DockerRunnerClient(

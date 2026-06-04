@@ -76,8 +76,17 @@ export const ApiPaths = {
   AUTH_LOGIN: "/api/v1/auth/login",
   AUTH_REGISTER: "/api/v1/auth/register",
   AUTH_REGISTRATION_INFO: "/api/v1/auth/registration-info",
+  AUTH_ACCESS_REQUEST: "/api/v1/auth/access-request",
   AUTH_PASSWORD_REQUIREMENTS: "/api/v1/auth/password-requirements",
   ADMIN_USERS: "/api/v1/admin/users",
+  adminUserChallengeReport: (userId: string) =>
+    `/api/v1/admin/users/${userId}/challenge-report`,
+  adminUserChallengeDetail: (userId: string, challengeSlug: string) =>
+    `/api/v1/admin/users/${userId}/challenges/${encodeURIComponent(challengeSlug)}/detail`,
+  adminUserDeactivate: (userId: string) => `/api/v1/admin/users/${userId}/deactivate`,
+  adminUserChallengeQuota: (userId: string) => `/api/v1/admin/users/${userId}/challenge-quota`,
+  ADMIN_DASHBOARD: "/api/v1/admin/dashboard",
+  ADMIN_ACCESS_REQUESTS: "/api/v1/admin/access-requests",
   ME_PASSWORD: "/api/v1/me/password",
   CHALLENGES: "/api/v1/challenges",
   LANGUAGES: "/api/v1/languages",

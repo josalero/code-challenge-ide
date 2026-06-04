@@ -72,7 +72,8 @@ class ChallengePublisherTest {
             "model",
             false,
             false,
-            false);
+            false,
+            0);
     publisher =
         new ChallengePublisher(
             properties,

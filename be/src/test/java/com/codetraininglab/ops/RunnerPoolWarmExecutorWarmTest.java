@@ -81,8 +81,8 @@ class RunnerPoolWarmExecutorWarmTest {
             "qwen",
             true,
             false,
-            false);
-    when(warmStateStore.runnerPoolStampByImage()).thenReturn(new java.util.LinkedHashMap<>());
+            false,
+                    0);    when(warmStateStore.runnerPoolStampByImage()).thenReturn(new java.util.LinkedHashMap<>());
     executor =
         new RunnerPoolWarmExecutor(
             properties,

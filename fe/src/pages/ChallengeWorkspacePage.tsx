@@ -14,6 +14,11 @@ import type {
 import AppLayout from "../components/AppLayout";
 import WorkspaceShell from "../components/workspace/WorkspaceShell";
 import { useAuth } from "../auth/useAuth";
+import {
+  isQuotaBlockedForNewChallenge,
+  challengeQuotaMessage,
+  useChallengeQuota,
+} from "../hooks/useChallengeQuota";
 import type { BottomPanelTab } from "../components/workspace/WorkspaceBottomPanel";
 import type { AttemptRecord } from "../components/workspace/AttemptHistoryTab";
 import type { ActivityEntry, ActivityKind, TrackedTest } from "../domain/runProgressTypes";
@@ -46,6 +51,9 @@ export default function ChallengeWorkspacePage() {
   const queryClient = useQueryClient();
   const { message } = App.useApp();
   const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+
+  const quotaQuery = useChallengeQuota(Boolean(user) && !isAdmin);
 
   const [solutionCode, setSolutionCode] = useState("");
   const [customTestsCode, setCustomTestsCode] = useState("");
@@ -107,6 +115,14 @@ export default function ChallengeWorkspacePage() {
 
   const exerciseLocked =
     progressQuery.data?.find((entry) => entry.challengeSlug === slug)?.submitted ?? false;
+
+  const quotaBlocked = isQuotaBlockedForNewChallenge(
+    quotaQuery.data,
+    progressQuery.data,
+    slug,
+  );
+  const quotaMessage =
+    quotaBlocked && quotaQuery.data ? challengeQuotaMessage(quotaQuery.data) : null;
 
   const customTestsQuery = useQuery({
     queryKey: ["custom-tests", slug],
@@ -247,6 +263,7 @@ export default function ChallengeWorkspacePage() {
     onSuccess: (submission) => {
       setActiveSubmissionId(submission.id);
       setSubmissionStatus(submission.status as SubmissionStatusValue);
+      void queryClient.invalidateQueries({ queryKey: ["me", "metrics"] });
       appendActivity("Submission created — connecting live stream…");
       setAttempts((prev) => [
         {
@@ -506,16 +523,42 @@ export default function ChallengeWorkspacePage() {
   const sessionBlocked = sessionExpired || !sessionActive;
 
   const runTests = useCallback(() => {
+    if (quotaBlocked) {
+      setSubmitError(quotaMessage);
+      message.warning(quotaMessage ?? "Exercise limit reached");
+      return;
+    }
     if (!isRunning && !exerciseLocked && !sessionBlocked) {
       submitMutation.mutate(SubmissionKind.RUN);
     }
-  }, [isRunning, exerciseLocked, sessionBlocked, submitMutation]);
+  }, [
+    isRunning,
+    exerciseLocked,
+    sessionBlocked,
+    submitMutation,
+    quotaBlocked,
+    quotaMessage,
+    message,
+  ]);
 
   const submitSolution = useCallback(() => {
+    if (quotaBlocked) {
+      setSubmitError(quotaMessage);
+      message.warning(quotaMessage ?? "Exercise limit reached");
+      return;
+    }
     if (!isRunning && !exerciseLocked && !sessionBlocked) {
       submitMutation.mutate(SubmissionKind.SUBMIT);
     }
-  }, [isRunning, exerciseLocked, sessionBlocked, submitMutation]);
+  }, [
+    isRunning,
+    exerciseLocked,
+    sessionBlocked,
+    submitMutation,
+    quotaBlocked,
+    quotaMessage,
+    message,
+  ]);
 
   useRunTestsShortcut(
     Boolean(challenge) && sessionActive && !isRunning && !exerciseLocked && !sessionExpired,
@@ -552,6 +595,15 @@ export default function ChallengeWorkspacePage() {
   return (
     <AppLayout variant="workspace" focused={sessionActive}>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+      {quotaMessage && (
+        <div
+          className="shrink-0 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-900 dark:text-amber-100"
+          role="status"
+        >
+          {quotaMessage}
+        </div>
+      )}
+
       {challengeQuery.error && (
         <div
           className="shrink-0 border-b border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-red-200"

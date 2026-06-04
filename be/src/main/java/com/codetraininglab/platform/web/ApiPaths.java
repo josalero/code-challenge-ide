@@ -8,6 +8,7 @@ public final class ApiPaths {
   public static final String AUTH_LOGIN = AUTH + "/login";
   public static final String AUTH_REGISTER = AUTH + "/register";
   public static final String AUTH_REGISTRATION_INFO = AUTH + "/registration-info";
+  public static final String AUTH_ACCESS_REQUEST = AUTH + "/access-request";
   public static final String LANGUAGES = BASE + "/languages";
   public static final String CHALLENGES = BASE + "/challenges";
   public static final String CHALLENGE_CUSTOM_TESTS = CHALLENGES + "/{slug}/custom-tests";
@@ -17,6 +18,8 @@ public final class ApiPaths {
   public static final String ME_PASSWORD = ME + "/password";
   public static final String AUTH_PASSWORD_REQUIREMENTS = AUTH + "/password-requirements";
   public static final String ADMIN_USERS = BASE + "/admin/users";
+  public static final String ADMIN_DASHBOARD = BASE + "/admin/dashboard";
+  public static final String ADMIN_ACCESS_REQUESTS = BASE + "/admin/access-requests";
   public static final String SUBMISSIONS = BASE + "/submissions";
   public static final String SUBMISSION_FEEDBACK_ACTIONS = SUBMISSIONS + "/{submissionId}/feedback-actions";
   public static final String FEEDBACK_ACTIONS = BASE + "/feedback-actions";

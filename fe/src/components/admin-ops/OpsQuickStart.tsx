@@ -47,14 +47,14 @@ export default function OpsQuickStart({ status, dockerReady }: Props) {
 
   return (
     <Collapse
-      className="mb-6 !border-slate-800/80 !bg-slate-900/40 [&_.ant-collapse-header]:!text-slate-200"
+      className="mb-6 !border-border !bg-muted/20 [&_.ant-collapse-header]:!text-foreground"
       defaultActiveKey={dockerReady && !imagesMissing ? [] : ["guide"]}
       items={[
         {
           key: "guide",
           label: (
             <span className="inline-flex items-center gap-2 text-sm font-medium">
-              <ListOrdered className="size-4 text-sky-400" aria-hidden />
+              <ListOrdered className="size-4 text-sky-600 dark:text-sky-400" aria-hidden />
               Before you warm — quick checklist
             </span>
           ),
@@ -73,21 +73,21 @@ export default function OpsQuickStart({ status, dockerReady }: Props) {
                 return (
                   <li
                     key={step.key}
-                    className="flex gap-3 rounded-md border border-slate-800/60 bg-slate-950/40 px-3 py-2.5"
+                    className="flex gap-3 rounded-md border border-border bg-muted/30 px-3 py-2.5"
                   >
                     <span
                       className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
                         done
-                          ? "bg-emerald-500/20 text-emerald-300"
-                          : "bg-slate-800 text-slate-400"
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                          : "bg-muted text-muted-foreground"
                       }`}
                       aria-hidden
                     >
                       {done ? "✓" : index + 1}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-200">{step.title}</p>
-                      <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+                      <p className="text-sm font-medium text-foreground">{step.title}</p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
                         {step.key === "docker"
                           ? step.detail(dockerReady, status.dockerEnabled)
                           : step.detail()}

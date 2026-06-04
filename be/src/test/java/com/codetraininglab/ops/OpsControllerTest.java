@@ -39,6 +39,7 @@ class OpsControllerTest {
                 List.of(),
                 List.of(),
                 List.of(),
+                null,
                 null));
     assertThat(controller.runnerStatus().dockerAvailable()).isTrue();
   }

@@ -174,7 +174,7 @@ export default function MetricsPage() {
                     Catalog completion
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    Challenges you have fully passed
+                    Passed challenges out of those you have started
                   </p>
                 </div>
               </div>
@@ -189,7 +189,7 @@ export default function MetricsPage() {
               aria-valuenow={data.completionPercent}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label={`${data.completionPercent}% of catalog passed`}
+              aria-label={`${data.completionPercent}% of started challenges passed`}
             >
               <div
                 className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-[width] duration-500"
@@ -198,8 +198,9 @@ export default function MetricsPage() {
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
               <span className="font-medium text-foreground">{data.passed}</span> passed of{" "}
-              <span className="font-medium text-foreground">{data.catalogTotal}</span> in the
-              catalog
+              <span className="font-medium text-foreground">{data.challengesStarted}</span> started
+              {" · "}
+              <span className="font-medium text-foreground">{data.catalogTotal}</span> in catalog
             </p>
           </section>
 
@@ -223,8 +224,17 @@ export default function MetricsPage() {
               icon={<CircleDashed className="size-4" aria-hidden />}
             />
             <StatCard
-              label="Catalog size"
-              value={data.catalogTotal}
+              label={data.maxStartedChallenges != null ? "Exercise slots" : "Catalog size"}
+              value={
+                data.maxStartedChallenges != null
+                  ? `${data.challengesStarted}/${data.maxStartedChallenges}`
+                  : data.catalogTotal
+              }
+              hint={
+                data.maxStartedChallenges != null
+                  ? `${data.challengesRemaining ?? 0} new exercises available`
+                  : undefined
+              }
               icon={<BarChart3 className="size-4" aria-hidden />}
             />
           </div>

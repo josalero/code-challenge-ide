@@ -5,7 +5,7 @@ import { apiFetch } from "../api/client";
 import type { RegistrationInfoResponse } from "../api/types";
 import { ApiPaths } from "../domain/constants";
 import AdminBootstrapSetupPage from "../pages/AdminBootstrapSetupPage";
-import AdminCreateUserPage from "../pages/AdminCreateUserPage";
+import AdminUsersPage from "../pages/AdminUsersPage";
 import { useAuth } from "./useAuth";
 
 export default function AdminUsersRoute() {
@@ -41,5 +41,5 @@ export default function AdminUsersRoute() {
     return <Navigate to="/challenges" replace />;
   }
 
-  return <AdminCreateUserPage />;
+  return <AdminUsersPage />;
 }

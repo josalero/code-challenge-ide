@@ -60,11 +60,11 @@ export default function ChallengesHero({ stats, extra }: Props) {
       aria-labelledby="challenges-hero-heading"
     >
       <div
-        className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-emerald-500/15 blur-3xl dark:bg-emerald-500/10"
+        className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-emerald-500/5 blur-3xl dark:bg-emerald-500/10"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -bottom-24 left-1/3 size-48 rounded-full bg-sky-500/10 blur-3xl dark:bg-sky-500/5"
+        className="pointer-events-none absolute -bottom-24 left-1/3 size-48 rounded-full bg-sky-500/5 blur-3xl dark:bg-sky-500/5"
         aria-hidden
       />
 

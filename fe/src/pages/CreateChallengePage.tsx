@@ -880,22 +880,22 @@ export default function CreateChallengePage() {
             <aside className="xl:sticky xl:top-24 xl:self-start" aria-label="Publishing">
               <CtlCard title="Publish">
                 <div className="flex flex-col gap-4">
-                  <div className="rounded-lg border border-slate-800/80 bg-slate-950/40 px-3 py-3">
-                    <p className="mb-1 text-sm font-medium text-slate-200">
+                  <div className="rounded-lg border border-border bg-muted/30 px-3 py-3">
+                    <p className="mb-1 text-sm font-medium text-foreground">
                       Runtime target
                     </p>
-                    <p className="mb-0 text-xs leading-relaxed text-slate-500">
+                    <p className="mb-0 text-xs leading-relaxed text-muted-foreground">
                       {defaultRuntimeVersion
                         ? formatRuntimeLabel(language, defaultRuntimeVersion)
                         : "Select language and runtime"}
                     </p>
                   </div>
 
-                  <div className="rounded-lg border border-slate-800/80 bg-slate-950/40 px-3 py-3">
-                    <p className="mb-1 text-sm font-medium text-slate-200">
+                  <div className="rounded-lg border border-border bg-muted/30 px-3 py-3">
+                    <p className="mb-1 text-sm font-medium text-foreground">
                       Coverage gate
                     </p>
-                    <p className="mb-0 text-xs leading-relaxed text-slate-500">
+                    <p className="mb-0 text-xs leading-relaxed text-muted-foreground">
                       {lineCoveragePercent}% minimum line coverage.
                     </p>
                   </div>

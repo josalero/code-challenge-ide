@@ -59,6 +59,7 @@ class RunnerPoolWarmStartupTest {
         base.ollamaModel(),
         dockerEnabled,
         base.lspEnabled(),
-        warmOnStartup);
+        warmOnStartup,
+        base.userMaxStartedChallenges());
   }
 }

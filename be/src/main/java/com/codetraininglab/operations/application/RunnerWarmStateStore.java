@@ -3,6 +3,8 @@ package com.codetraininglab.operations.application;
 import com.codetraininglab.operations.api.RunnerImageStatusResponse;
 import com.codetraininglab.platform.persistence.LspWarmStateEntity;
 import com.codetraininglab.platform.persistence.LspWarmStateRepository;
+import com.codetraininglab.platform.persistence.OpsPlatformStateEntity;
+import com.codetraininglab.platform.persistence.OpsPlatformStateRepository;
 import com.codetraininglab.platform.persistence.RunnerPoolWarmStateEntity;
 import com.codetraininglab.platform.persistence.RunnerPoolWarmStateRepository;
 import jakarta.annotation.PostConstruct;
@@ -14,6 +16,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -30,6 +33,7 @@ public class RunnerWarmStateStore {
 
   private final RunnerPoolWarmStateRepository runnerPoolRepository;
   private final LspWarmStateRepository lspRepository;
+  private final OpsPlatformStateRepository platformStateRepository;
   private final Environment environment;
   private final JsonMapper jsonMapper;
   private final Clock clock;
@@ -37,11 +41,13 @@ public class RunnerWarmStateStore {
   public RunnerWarmStateStore(
       RunnerPoolWarmStateRepository runnerPoolRepository,
       LspWarmStateRepository lspRepository,
+      OpsPlatformStateRepository platformStateRepository,
       Environment environment,
       JsonMapper jsonMapper,
       Clock clock) {
     this.runnerPoolRepository = runnerPoolRepository;
     this.lspRepository = lspRepository;
+    this.platformStateRepository = platformStateRepository;
     this.environment = environment;
     this.jsonMapper = jsonMapper;
     this.clock = clock;
@@ -54,6 +60,25 @@ public class RunnerWarmStateStore {
     } catch (Exception ex) {
       log.warn("Could not migrate legacy warm stamp files into Postgres: {}", ex.getMessage());
     }
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<Instant> lastWarmUpAt() {
+    return platformStateRepository
+        .findById(OpsPlatformStateEntity.DEFAULT_ID)
+        .map(OpsPlatformStateEntity::getLastWarmUpAt)
+        .filter(instant -> instant != null);
+  }
+
+  @Transactional
+  public void recordLastWarmUpAt(Instant warmedAt) {
+    platformStateRepository
+        .findById(OpsPlatformStateEntity.DEFAULT_ID)
+        .ifPresentOrElse(
+            existing -> existing.setLastWarmUpAt(warmedAt),
+            () ->
+                platformStateRepository.save(
+                    new OpsPlatformStateEntity(OpsPlatformStateEntity.DEFAULT_ID, warmedAt)));
   }
 
   @Transactional(readOnly = true)
@@ -188,9 +213,13 @@ public class RunnerWarmStateStore {
         .findById(dockerImage)
         .ifPresentOrElse(
             existing -> {
+              String previousImageId = existing.getImageId();
+              boolean wasWarmed = existing.isWarmed();
               existing.setImageId(imageId);
               existing.setWarmed(warmed);
-              existing.setWarmedAt(warmedAt);
+              if (shouldRefreshWarmTimestamp(wasWarmed, warmed, previousImageId, imageId)) {
+                existing.setWarmedAt(warmedAt);
+              }
             },
             () ->
                 runnerPoolRepository.save(
@@ -204,13 +233,31 @@ public class RunnerWarmStateStore {
         .findById(id)
         .ifPresentOrElse(
             existing -> {
+              String previousImageId = existing.getImageId();
+              boolean wasWarmed = existing.isWarmed();
               existing.setImageId(imageId);
               existing.setWarmed(warmed);
-              existing.setWarmedAt(warmedAt);
+              if (shouldRefreshWarmTimestamp(wasWarmed, warmed, previousImageId, imageId)) {
+                existing.setWarmedAt(warmedAt);
+              }
             },
             () ->
                 lspRepository.save(
                     new LspWarmStateEntity(label, dockerImage, imageId, warmed, warmedAt)));
+  }
+
+  private static boolean shouldRefreshWarmTimestamp(
+      boolean wasWarmed, boolean warmed, String previousImageId, String imageId) {
+    if (!warmed) {
+      return true;
+    }
+    if (!wasWarmed) {
+      return true;
+    }
+    if (imageId == null) {
+      return false;
+    }
+    return !imageId.equals(previousImageId);
   }
 
   record LspScope(String label, String dockerImage) {}

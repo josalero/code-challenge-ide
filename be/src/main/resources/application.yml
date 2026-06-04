@@ -104,9 +104,13 @@ ctl:
   repo-root: ${CTL_REPO_ROOT:}
   ops-data-dir: ${CTL_OPS_DATA_DIR:}
   runner-pool-warm-on-startup: ${RUNNER_POOL_WARM_ON_STARTUP:false}
+  user-max-started-challenges: ${CTL_USER_MAX_STARTED_CHALLENGES:5}
   runner-infra-warm-scheduled-enabled: ${RUNNER_INFRA_WARM_SCHEDULED_ENABLED:false}
   runner-infra-warm-interval-minutes: ${RUNNER_INFRA_WARM_INTERVAL_MINUTES:30}
   runner-infra-warm-initial-delay-minutes: ${RUNNER_INFRA_WARM_INITIAL_DELAY_MINUTES:5}
+  access:
+    requests-enabled: ${ACCESS_REQUESTS_ENABLED:true}
+    notify-email: ${CTL_MAIL_ACCESS_REQUEST_TO:}
   mail:
     enabled: ${CTL_MAIL_ENABLED:false}
     host: ${CTL_MAIL_HOST:mail.privateemail.com}

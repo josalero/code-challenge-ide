@@ -104,6 +104,14 @@ services:
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder}
+      ACCESS_REQUESTS_ENABLED: ${ACCESS_REQUESTS_ENABLED:-true}
+      CTL_MAIL_ENABLED: ${CTL_MAIL_ENABLED:-false}
+      CTL_MAIL_HOST: ${CTL_MAIL_HOST:-mail.privateemail.com}
+      CTL_MAIL_PORT: ${CTL_MAIL_PORT:-587}
+      CTL_MAIL_USERNAME: ${CTL_MAIL_USERNAME:-}
+      CTL_MAIL_PASSWORD: ${CTL_MAIL_PASSWORD:-}
+      CTL_MAIL_LOGIN_URL: ${CTL_MAIL_LOGIN_URL:-http://localhost:3000/login}
+      CTL_MAIL_ACCESS_REQUEST_TO: ${CTL_MAIL_ACCESS_REQUEST_TO:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ctl-ops-data:/data/ctl-ops

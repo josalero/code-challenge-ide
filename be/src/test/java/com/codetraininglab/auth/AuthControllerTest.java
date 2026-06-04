@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.codetraininglab.identity.application.AccessRequestService;
 import com.codetraininglab.identity.application.AuthService;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,12 +22,15 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class AuthControllerTest {
 
   @Mock private AuthService authService;
+  @Mock private AccessRequestService accessRequestService;
 
   private MockMvc mockMvc;
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService)).build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(new AuthController(authService, accessRequestService))
+            .build();
   }
 
   @Test

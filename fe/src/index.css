@@ -66,8 +66,13 @@
 
 html.light .ctl-auth-panel {
   box-shadow:
-    0 1px 2px rgb(15 23 42 / 0.06),
-    0 8px 24px rgb(15 23 42 / 0.08);
+    0 1px 2px rgb(15 23 42 / 0.08),
+    0 10px 28px rgb(15 23 42 / 0.1);
+}
+
+html.light .ctl-auth-panel,
+html.light .ctl-auth-bg header {
+  background-color: var(--card);
 }
 
 /* Cards */
@@ -79,11 +84,28 @@ html.light .ctl-auth-panel {
   color: var(--ctl-text);
 }
 
+html.light .ctl-card.ant-card {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.06),
+    0 0 0 1px rgb(181 193 206 / 0.55);
+}
+
+html.light .ctl-card .ant-card-body {
+  color: var(--foreground);
+}
+
 /* Challenges catalog */
 html.light .ctl-challenges-hero {
   box-shadow:
-    0 1px 2px rgb(15 23 42 / 0.06),
-    0 0 0 1px rgb(226 232 240 / 0.9);
+    0 1px 2px rgb(15 23 42 / 0.07),
+    0 0 0 1px rgb(181 193 206 / 0.65);
+  background: linear-gradient(
+    135deg,
+    var(--card) 0%,
+    color-mix(in srgb, var(--card) 88%, var(--muted) 12%) 100%
+  ) !important;
 }
 
 html.dark .ctl-challenges-hero {
@@ -92,18 +114,54 @@ html.dark .ctl-challenges-hero {
 
 /* Ant Design chrome follows active theme */
 html.light .ant-layout-header {
-  background: var(--background) !important;
+  background: var(--card) !important;
+  border-bottom: 1px solid var(--border);
 }
 
 html.light .ant-layout-footer {
-  background: var(--background) !important;
+  background: color-mix(in srgb, var(--background) 88%, var(--muted) 12%) !important;
   color: var(--muted-foreground);
+  border-top: 1px solid var(--border);
 }
 
 html.light .ant-layout-header .ant-avatar {
   background-color: #059669 !important;
   color: #ffffff !important;
   font-weight: 600;
+}
+
+html.light .ant-table-wrapper .ant-table {
+  background: transparent;
+}
+
+html.light .ant-table-wrapper .ant-table-thead > tr > th {
+  background: var(--muted) !important;
+  color: var(--muted-foreground) !important;
+  border-bottom-color: var(--border) !important;
+}
+
+html.light .ant-table-wrapper .ant-table-tbody > tr > td {
+  border-bottom-color: var(--border) !important;
+  color: var(--foreground);
+}
+
+html.light .ant-collapse {
+  background: var(--card);
+  border-color: var(--border);
+}
+
+html.light .ant-collapse > .ant-collapse-item {
+  border-bottom-color: var(--border);
+}
+
+html.light .ant-collapse .ant-collapse-header {
+  color: var(--foreground) !important;
+}
+
+html.light .ant-collapse .ant-collapse-content {
+  color: var(--foreground);
+  background: var(--card);
+  border-top-color: var(--border);
 }
 
 .ctl-challenges-filters {
@@ -170,6 +228,10 @@ html.light .ant-layout-header .ant-avatar {
 }
 
 .challenge-table .ant-table-tbody > tr > td {
+  border-bottom-color: var(--ctl-border) !important;
+}
+
+html.dark .challenge-table .ant-table-tbody > tr > td {
   border-bottom-color: rgb(51 65 85 / 0.4) !important;
 }
 
@@ -183,12 +245,20 @@ html.light .ant-layout-header .ant-avatar {
 
 /* Collapse (challenge brief) */
 .challenge-brief-collapse .ant-collapse-item {
-  border-color: rgb(51 65 85 / 0.6);
+  border-color: var(--ctl-border);
 }
 
 .challenge-brief-collapse .ant-collapse-header {
-  color: rgb(226 232 240) !important;
+  color: var(--foreground) !important;
   padding-inline: 0 !important;
+}
+
+html.dark .challenge-brief-collapse .ant-collapse-item {
+  border-color: rgb(51 65 85 / 0.6);
+}
+
+html.dark .challenge-brief-collapse .ant-collapse-header {
+  color: rgb(226 232 240) !important;
 }
 
 .challenge-brief-collapse .ant-collapse-content-box {

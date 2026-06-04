@@ -1,5 +1,6 @@
 package com.codetraininglab.operations.api;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,4 +17,5 @@ public record RunnerOpsStatusResponse(
     List<RunnerImageStatusResponse> runnerImages,
     List<RunnerImageStatusResponse> lspImages,
     List<LanguageWarmStatusResponse> languages,
-    UUID activeJobId) {}
+    UUID activeJobId,
+    Instant lastWarmUpAt) {}

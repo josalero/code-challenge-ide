@@ -1,6 +1,7 @@
 package com.codetraininglab.platform.security;
 
 import com.codetraininglab.domain.UserRole;
+import com.codetraininglab.platform.persistence.UserRepository;
 import com.codetraininglab.platform.web.ApiPaths;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -20,9 +21,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
+  private final UserRepository userRepository;
 
-  public JwtAuthenticationFilter(JwtService jwtService) {
+  public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
     this.jwtService = jwtService;
+    this.userRepository = userRepository;
   }
 
   @Override
@@ -34,10 +37,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       try {
         UUID userId = jwtService.parseUserId(token);
         UserRole role = jwtService.parseRole(token);
-        var auth =
-            new UsernamePasswordAuthenticationToken(
-                userId, null, List.of(new SimpleGrantedAuthority(role.authority())));
-        SecurityContextHolder.getContext().setAuthentication(auth);
+        boolean active =
+            userRepository
+                .findById(userId)
+                .filter(user -> user.getDeletedAt() == null)
+                .isPresent();
+        if (active) {
+          var auth =
+              new UsernamePasswordAuthenticationToken(
+                  userId, null, List.of(new SimpleGrantedAuthority(role.authority())));
+          SecurityContextHolder.getContext().setAuthentication(auth);
+        } else {
+          SecurityContextHolder.clearContext();
+        }
       } catch (RuntimeException ignored) {
         SecurityContextHolder.clearContext();
       }

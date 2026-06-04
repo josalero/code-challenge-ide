@@ -1,18 +1,15 @@
-import { Avatar, Button, Layout, Typography } from "antd";
-import {
-  BarChart3,
-  Code2,
-  ListChecks,
-  LogOut,
-  Plus,
-  ServerCog,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
+import { Avatar, Button, Layout } from "antd";
+import { LogOut, ShieldCheck } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "../auth/useAuth";
+import AdminNavMenu from "./AdminNavMenu";
+import AppFooterNav from "./AppFooterNav";
+import AppLogo from "./AppLogo";
+import PoweredByFooter from "./PoweredByFooter";
 import ThemeToggle from "./ThemeToggle";
 import { cn } from "../lib/utils";
+import { PRIMARY_NAV_ITEMS, resolveSelectedNavKey } from "./appNavItems";
 
 const { Header, Content, Footer } = Layout;
 
@@ -31,11 +28,23 @@ function shellLayoutClasses(contentLayout: ContentLayout, workspace: boolean) {
   return { maxWidth: "max-w-7xl", paddingX: "px-4 md:px-6" };
 }
 
+function accountInitials(email: string, fullName: string | null | undefined): string {
+  const name = fullName?.trim();
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  }
+  return email.slice(0, 2).toUpperCase();
+}
+
 export default function AppLayout({
   children,
   variant = "default",
   focused = false,
-  contentLayout = "default",
+  contentLayout = "wide",
 }: {
   children: React.ReactNode;
   variant?: "default" | "workspace";
@@ -48,58 +57,14 @@ export default function AppLayout({
   const location = useLocation();
   const navigate = useNavigate();
 
-  const selectedKey = location.pathname.startsWith("/admin/ops")
-    ? "ops"
-    : location.pathname.startsWith("/admin/users")
-      ? "users"
-      : location.pathname.startsWith("/challenges/new")
-      ? "create"
-      : location.pathname.startsWith("/metrics")
-        ? "metrics"
-        : location.pathname.startsWith("/challenges")
-          ? "challenges"
-          : "";
-  const initials = user?.email?.slice(0, 2).toUpperCase() ?? "?";
+  const selectedKey = resolveSelectedNavKey(location.pathname);
+  const initials = user ? accountInitials(user.email, user.fullName) : "?";
+  const accountName = user?.fullName?.trim() || null;
   const isWorkspace = variant === "workspace";
   const hideChrome = isWorkspace && focused;
   const shell = shellLayoutClasses(contentLayout, isWorkspace);
 
-  const navItems = [
-    {
-      key: "challenges",
-      to: "/challenges",
-      label: "Challenges",
-      icon: ListChecks,
-    },
-    {
-      key: "metrics",
-      to: "/metrics",
-      label: "Metrics",
-      icon: BarChart3,
-    },
-    ...(isAdmin
-      ? [
-          {
-            key: "create",
-            to: "/challenges/new",
-            label: "Create",
-            icon: Plus,
-          },
-          {
-            key: "users",
-            to: "/admin/users",
-            label: "Users",
-            icon: Users,
-          },
-          {
-            key: "ops",
-            to: "/admin/ops",
-            label: "Ops",
-            icon: ServerCog,
-          },
-        ]
-      : []),
-  ];
+  const primaryNavItems = PRIMARY_NAV_ITEMS;
 
   return (
     <Layout
@@ -113,7 +78,7 @@ export default function AppLayout({
       </a>
       <Header
         className={cn(
-          "z-30 shrink-0 !h-auto border-b border-border bg-background !px-0 !leading-normal shadow-sm dark:bg-background/90 dark:shadow-none",
+          "z-30 shrink-0 !h-auto border-b border-border bg-card !px-0 !leading-normal shadow-sm dark:bg-background/90 dark:shadow-none",
           isWorkspace ? "sticky top-0" : "sticky top-0",
         )}
       >
@@ -125,44 +90,24 @@ export default function AppLayout({
           )}
         >
           {hideChrome ? (
-            <div
-              className="flex shrink-0 items-center gap-2.5 text-foreground"
-              aria-label="Code Training Lab"
-            >
-              <span className="flex size-9 items-center justify-center rounded-md bg-emerald-50 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:ring-emerald-500/25">
-                <Code2 className="size-5 text-emerald-700 dark:text-emerald-400" aria-hidden />
-              </span>
-              <Typography.Text className="!text-foreground text-sm font-semibold leading-tight">
-                Code Training Lab
-              </Typography.Text>
-            </div>
+            <AppLogo showTagline={false} className="shrink-0 text-foreground" />
           ) : (
             <Link
-              to="/challenges"
-              className="flex shrink-0 items-center gap-2.5 text-foreground no-underline"
+              to={isAdmin ? "/admin/dashboard" : "/challenges"}
+              className="shrink-0 text-foreground no-underline"
               aria-label="Code Training Lab home"
             >
-              <span className="flex size-9 items-center justify-center rounded-md bg-emerald-50 ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:ring-emerald-500/25">
-                <Code2 className="size-5 text-emerald-700 dark:text-emerald-400" aria-hidden />
-              </span>
-              <span className="min-w-0">
-                <Typography.Text className="!text-foreground block text-sm font-semibold leading-tight">
-                  Code Training Lab
-                </Typography.Text>
-                <Typography.Text className="!text-muted-foreground hidden text-xs sm:block">
-                  Practice · test · improve
-                </Typography.Text>
-              </span>
+              <AppLogo />
             </Link>
           )}
 
           {!hideChrome && (
           <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
             <nav
-              className="flex min-w-0 shrink gap-0.5 overflow-x-auto sm:gap-1"
+              className="flex min-w-0 shrink items-center gap-0.5 overflow-x-auto sm:gap-1"
               aria-label="Primary navigation"
             >
-              {navItems.map(({ key, to, label, icon: Icon }) => (
+              {primaryNavItems.map(({ key, to, label, icon: Icon }) => (
                 <Link
                   key={key}
                   to={to}
@@ -178,6 +123,16 @@ export default function AppLayout({
                   {label}
                 </Link>
               ))}
+
+              {isAdmin && (
+                <>
+                  <span
+                    className="mx-0.5 hidden h-6 w-px shrink-0 bg-border sm:mx-1 md:inline-block"
+                    aria-hidden
+                  />
+                  <AdminNavMenu selectedKey={selectedKey} />
+                </>
+              )}
             </nav>
 
             <span
@@ -188,24 +143,39 @@ export default function AppLayout({
             <ThemeToggle />
 
             {user && (
-              <div
-                className="hidden min-w-0 items-center gap-2.5 rounded-lg border border-border bg-muted/60 px-2.5 py-1 md:flex"
-                aria-label="Signed in as"
-              >
-                <Avatar
-                  size="small"
-                  className={cn(
-                    "!flex !shrink-0 !items-center !justify-center",
-                    "!bg-emerald-600 !text-[11px] !font-semibold !leading-none !text-white",
-                    "dark:!bg-emerald-500/30 dark:!text-emerald-100",
-                  )}
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <div
+                      className="hidden min-w-0 cursor-default items-center gap-2.5 rounded-lg border border-border bg-muted/60 px-2.5 py-1 md:flex"
+                      aria-label={
+                        accountName
+                          ? `Signed in as ${accountName}, ${user.email}`
+                          : `Signed in as ${user.email}`
+                      }
+                    />
+                  }
                 >
-                  {initials}
-                </Avatar>
-                <Typography.Text className="!text-slate-800 dark:!text-slate-300 max-w-[200px] truncate text-sm font-medium">
-                  {user.email}
-                </Typography.Text>
-              </div>
+                  <Avatar
+                    size="small"
+                    className={cn(
+                      "!flex !shrink-0 !items-center !justify-center",
+                      "!bg-emerald-600 !text-[11px] !font-semibold !leading-none !text-white",
+                      "dark:!bg-emerald-500/30 dark:!text-emerald-100",
+                    )}
+                  >
+                    {initials}
+                  </Avatar>
+                  {accountName && (
+                    <span className="max-w-[160px] truncate text-sm font-medium text-foreground">
+                      {accountName}
+                    </span>
+                  )}
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="end">
+                  <span className="block">{user.email}</span>
+                </TooltipContent>
+              </Tooltip>
             )}
             <Button
               type="text"
@@ -238,28 +208,38 @@ export default function AppLayout({
         {children}
       </Content>
       {!isWorkspace && (
-      <Footer className="border-t border-border bg-background/95 !px-0 !py-0">
+      <Footer className="border-t border-border bg-background/95 !px-0 !py-0 dark:bg-background/95">
         <div
           className={cn(
-            "mx-auto flex w-full flex-col gap-2 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between",
+            "mx-auto flex w-full flex-col gap-3 py-3 text-xs text-muted-foreground",
             shell.maxWidth,
             shell.paddingX,
           )}
         >
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="font-medium text-foreground">Code Training Lab</span>
-            <span className="hidden text-border sm:inline" aria-hidden>
-              ·
-            </span>
-            <span>Docker sandbox · hidden tests · AI coach</span>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="font-medium text-foreground">Code Training Lab</span>
+              <span className="hidden text-border sm:inline" aria-hidden>
+                ·
+              </span>
+              <span>Docker sandbox · hidden tests · AI coach</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <PoweredByFooter />
+              <span className="hidden text-border sm:inline" aria-hidden>
+                ·
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <ShieldCheck className="size-3.5 text-emerald-500/80" aria-hidden />
+                Private lab instance
+              </span>
+              {user?.role && <span>{user.role.toLowerCase()}</span>}
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck className="size-3.5 text-emerald-500/80" aria-hidden />
-              Private lab instance
-            </span>
-            {user?.role && <span>{user.role.toLowerCase()}</span>}
-          </div>
+
+          {!hideChrome && (
+            <AppFooterNav selectedKey={selectedKey} isAdmin={isAdmin} />
+          )}
         </div>
       </Footer>
       )}

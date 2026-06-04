@@ -101,8 +101,8 @@ class RunnerPoolWarmExecutorLanguageTest {
             "qwen",
             true,
             false,
-            false);
-    return new RunnerPoolWarmExecutor(
+            false,
+                    0);    return new RunnerPoolWarmExecutor(
         properties,
         mock(LanguageRuntimeRepository.class),
         mock(LanguageRepository.class),

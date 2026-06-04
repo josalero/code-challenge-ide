@@ -47,12 +47,24 @@ class UserWelcomeEmailSenderTest {
   void sendWelcomeEmailUsesMailServiceWhenReady() {
     org.mockito.Mockito.when(mailService.isReady()).thenReturn(true);
 
-    sender.sendWelcomeEmail("learner@test.com", "Ada Lovelace", "TempPass1", "USER");
+    boolean sent =
+        sender.sendWelcomeEmail("learner@test.com", "Ada Lovelace", "TempPass1", "USER");
 
+    assertThat(sent).isTrue();
     verify(mailService)
         .sendHtmlEmail(
             eq("learner@test.com"),
-            eq("Your Code Training Lab account"),
+            eq("Your Code Training Lab account was created"),
             argThat(html -> html.contains("Ada Lovelace")));
+  }
+
+  @Test
+  void sendWelcomeEmailReturnsFalseWhenMailNotReady() {
+    org.mockito.Mockito.when(mailService.isReady()).thenReturn(false);
+
+    boolean sent =
+        sender.sendWelcomeEmail("learner@test.com", "Ada Lovelace", "TempPass1", "USER");
+
+    assertThat(sent).isFalse();
   }
 }

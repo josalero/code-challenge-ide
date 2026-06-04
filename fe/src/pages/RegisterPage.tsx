@@ -45,14 +45,22 @@ export default function RegisterPage() {
     return (
       <AuthShell
         title="Registration closed"
-        subtitle="Accounts are created by administrators. Contact your admin for access."
+        subtitle="Accounts are created by administrators after an access request is approved."
       >
         <Alert type="info" showIcon message="Self-service registration is not available." className="mb-4" />
-        <Link to="/login">
-          <Button type="primary" block>
-            Sign in
-          </Button>
-        </Link>
+        {info?.accessRequestsEnabled ? (
+          <Link to="/request-access">
+            <Button type="primary" block>
+              Request access
+            </Button>
+          </Link>
+        ) : (
+          <Link to="/login">
+            <Button type="primary" block>
+              Sign in
+            </Button>
+          </Link>
+        )}
       </AuthShell>
     );
   }

@@ -33,6 +33,119 @@ export type CreateUserResponse = {
   fullName: string;
   temporaryPassword: string;
   role: UserRole;
+  welcomeEmailSent: boolean;
+};
+
+export type AdminUserSummary = {
+  id: string;
+  email: string;
+  fullName: string;
+  role: UserRole;
+  createdAt: string;
+  active: boolean;
+  lastActivityAt: string | null;
+  submissionsTotal: number;
+  practiceRuns: number;
+  gradedSubmits: number;
+  challengesPassed: number;
+  challengesStarted: number;
+  completionPercent: number;
+  platformDefaultChallengeLimit: number;
+  challengeQuotaOverride: number | null;
+  effectiveChallengeLimit: number | null;
+};
+
+export type UserChallengeQuotaResponse = {
+  userId: string;
+  platformDefault: number;
+  challengeQuotaOverride: number | null;
+  effectiveChallengeLimit: number | null;
+  challengesStarted: number;
+  challengesRemaining: number | null;
+};
+
+export type ChallengeEngagementStatus =
+  | "NOT_STARTED"
+  | "IN_PROGRESS"
+  | "PASSED"
+  | "FAILED"
+  | "LIKELY_ABANDONED";
+
+export type AdminUserChallengeReportRow = {
+  challengeSlug: string;
+  title: string;
+  language: string;
+  difficulty: string | null;
+  sessionLimitMinutes: number | null;
+  progressState: string;
+  engagementStatus: ChallengeEngagementStatus;
+  submitted: boolean;
+  submittedAt: string | null;
+  firstActivityAt: string | null;
+  lastActivityAt: string | null;
+  practiceRuns: number;
+  gradedSubmits: number;
+  gradedPasses: number;
+  gradedFails: number;
+  passRatePercent: number | null;
+  timeToPassMs: number | null;
+  avgProcessingMs: number | null;
+  enhancementRequests: number;
+  feedbackItems: number;
+  feedbackWarnings: number;
+  cancelledSubmissions: number;
+  likelyAbandoned: boolean;
+};
+
+export type AdminUserChallengeReportResponse = {
+  user: {
+    id: string;
+    email: string;
+    fullName: string | null;
+    role: UserRole;
+    active: boolean;
+  };
+  summary: {
+    catalogTotal: number;
+    started: number;
+    passed: number;
+    attempted: number;
+    failed: number;
+    notStarted: number;
+    completionPercent: number;
+    likelyAbandoned: number;
+    submissionsTotal: number;
+    practiceRuns: number;
+    gradedSubmits: number;
+    gradedPassRatePercent: number | null;
+  };
+  challenges: AdminUserChallengeReportRow[];
+};
+
+export type AdminUserChallengeDetailSubmission = {
+  id: string;
+  kind: string;
+  status: string;
+  runtimeVersion: string | null;
+  createdAt: string;
+  updatedAt: string;
+  processingMs: number | null;
+  solutionCode: string;
+  customTestsCode: string | null;
+  report: {
+    id: string;
+    blocked: boolean;
+    summary: string;
+    runnerLogs: RunnerLogs | null;
+    feedback: FeedbackItem[];
+  } | null;
+  feedbackActions: FeedbackActionResponse[];
+};
+
+export type AdminUserChallengeDetailResponse = {
+  user: AdminUserChallengeReportResponse["user"];
+  stats: AdminUserChallengeReportRow;
+  submissions: AdminUserChallengeDetailSubmission[];
 };
 
 export type ChangePasswordRequest = {
@@ -43,6 +156,51 @@ export type ChangePasswordRequest = {
 export type RegistrationInfoResponse = {
   registrationOpen: boolean;
   bootstrap: boolean;
+  accessRequestsEnabled: boolean;
+  accessRequestsConfigured?: boolean;
+};
+
+export type AccessRequestResponse = {
+  message: string;
+};
+
+export type AccessRequestSummary = {
+  id: string;
+  email: string;
+  fullName: string;
+  message: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED" | string;
+  createdAt: string;
+  reviewedAt: string | null;
+  reviewNotes: string | null;
+};
+
+export type ApproveAccessRequestRequest = {
+  temporaryPassword: string;
+  role: UserRole;
+};
+
+export type AdminDashboardStats = {
+  users: {
+    total: number;
+    admins: number;
+    learners: number;
+  };
+  accessRequests: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  challenges: {
+    total: number;
+  };
+  submissions: {
+    total: number;
+    completed: number;
+    failed: number;
+    running: number;
+    pending: number;
+  };
 };
 
 export type ProgressEntry = {
@@ -61,6 +219,9 @@ export type MetricsBreakdownRow = {
 
 export type MeMetricsResponse = {
   catalogTotal: number;
+  challengesStarted: number;
+  maxStartedChallenges: number | null;
+  challengesRemaining: number | null;
   notStarted: number;
   attempted: number;
   passed: number;
@@ -237,6 +398,7 @@ export type RunnerOpsStatus = {
   lspImages: RunnerImageStatus[];
   languages: LanguageWarmStatus[];
   activeJobId: string | null;
+  lastWarmUpAt: string | null;
 };
 
 export type RunnerOpsJob = {

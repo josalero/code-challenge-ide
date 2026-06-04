@@ -1,5 +1,6 @@
 package com.codetraininglab.identity.api;
 
+import com.codetraininglab.identity.application.AccessRequestService;
 import com.codetraininglab.identity.application.AuthService;
 import com.codetraininglab.identity.api.RegistrationInfoResponse;
 import com.codetraininglab.platform.web.ApiPaths;
@@ -15,9 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
   private final AuthService authService;
+  private final AccessRequestService accessRequestService;
 
-  public AuthController(AuthService authService) {
+  public AuthController(AuthService authService, AccessRequestService accessRequestService) {
     this.authService = authService;
+    this.accessRequestService = accessRequestService;
   }
 
   @GetMapping("/registration-info")
@@ -33,6 +36,11 @@ public class AuthController {
   @PostMapping("/login")
   AuthResponse login(@Valid @RequestBody LoginRequest request) {
     return authService.login(request);
+  }
+
+  @PostMapping("/access-request")
+  AccessRequestResponse submitAccessRequest(@Valid @RequestBody AccessRequest request) {
+    return accessRequestService.submit(request);
   }
 
   @GetMapping("/password-requirements")

@@ -34,7 +34,7 @@ export default function OpsJobPanel({ job, busy }: Props) {
       title="Current job"
       extra={
         busy ? (
-          <span className="inline-flex items-center gap-1.5 text-xs text-sky-400">
+          <span className="inline-flex items-center gap-1.5 text-xs text-sky-600 dark:text-sky-400">
             <Loader2 className="size-3.5 animate-spin" aria-hidden />
             In progress
           </span>
@@ -44,11 +44,11 @@ export default function OpsJobPanel({ job, busy }: Props) {
       {!job ? (
         <div className="space-y-3 py-4">
           <div className="flex flex-col items-center gap-2 text-center">
-            <CircleAlert className="size-8 text-slate-600" aria-hidden />
-            <p className="text-sm text-slate-400">No job yet</p>
+            <CircleAlert className="size-8 text-muted-foreground/60" aria-hidden />
+            <p className="text-sm text-muted-foreground">No job yet</p>
           </div>
-          <div className="rounded-md border border-slate-800/60 bg-slate-950/50 px-3 py-2.5 text-xs leading-relaxed text-slate-500">
-            <p className="font-medium text-slate-400">What happens when you warm?</p>
+          <div className="rounded-md border border-border bg-muted/30 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
+            <p className="font-medium text-foreground">What happens when you warm?</p>
             <ol className="mt-2 list-decimal space-y-1 pl-4">
               <li>Starts a smoke submission in each runner image (validates Run tests).</li>
               <li>Starts each editor language server once (speeds up IntelliSense).</li>
@@ -61,19 +61,19 @@ export default function OpsJobPanel({ job, busy }: Props) {
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             {jobStatusTag(job.status)}
-            <Typography.Text className="text-xs text-slate-400">
+            <Typography.Text className="text-xs text-muted-foreground">
               {JOB_TYPE_LABELS[job.type] ?? job.type}
             </Typography.Text>
           </div>
-          <p className="text-sm text-slate-300">{job.message || "Working…"}</p>
+          <p className="text-sm text-foreground">{job.message || "Working…"}</p>
           {job.status === "COMPLETED" && (
-            <p className="inline-flex items-center gap-1.5 text-xs text-emerald-400">
+            <p className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="size-3.5" aria-hidden />
               Finished — language status above will update within a few seconds.
             </p>
           )}
           {job.status === "FAILED" && (
-            <p className="inline-flex items-center gap-1.5 text-xs text-red-400">
+            <p className="inline-flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">
               <XCircle className="size-3.5" aria-hidden />
               Failed — check the log below. Languages that completed before the error may show as partially ready.
             </p>
@@ -81,14 +81,13 @@ export default function OpsJobPanel({ job, busy }: Props) {
           {job.logTail ? (
             <pre
               className={cn(
-                "max-h-[min(28rem,55vh)] overflow-auto rounded-md border border-slate-800/80",
-                "bg-slate-950/80 p-3 font-mono text-[11px] leading-relaxed text-slate-300",
+                "ctl-workspace-terminal max-h-[min(28rem,55vh)] overflow-auto p-3 font-mono text-[11px] leading-relaxed",
               )}
             >
               {job.logTail}
             </pre>
           ) : (
-            <p className="text-xs text-slate-500">Waiting for log output…</p>
+            <p className="text-xs text-muted-foreground">Waiting for log output…</p>
           )}
         </div>
       )}

@@ -1,5 +1,6 @@
 package com.codetraininglab.submission.application;
 
+import com.codetraininglab.catalog.application.ChallengeQuotaService;
 import com.codetraininglab.platform.config.CtlProperties;
 import com.codetraininglab.domain.SubmissionStatus;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
@@ -46,6 +47,7 @@ public class SubmissionService {
   private final ChallengeRepository challengeRepository;
   private final LanguageRuntimeResolver runtimeResolver;
   private final UserProgressRepository progressRepository;
+  private final ChallengeQuotaService challengeQuotaService;
   private final RabbitTemplate rabbitTemplate;
   private final SubmissionEventHub eventHub;
   private final CtlProperties properties;
@@ -59,6 +61,7 @@ public class SubmissionService {
       ChallengeRepository challengeRepository,
       LanguageRuntimeResolver runtimeResolver,
       UserProgressRepository progressRepository,
+      ChallengeQuotaService challengeQuotaService,
       RabbitTemplate rabbitTemplate,
       SubmissionEventHub eventHub,
       CtlProperties properties,
@@ -70,6 +73,7 @@ public class SubmissionService {
     this.challengeRepository = challengeRepository;
     this.runtimeResolver = runtimeResolver;
     this.progressRepository = progressRepository;
+    this.challengeQuotaService = challengeQuotaService;
     this.rabbitTemplate = rabbitTemplate;
     this.eventHub = eventHub;
     this.properties = properties;
@@ -93,6 +97,7 @@ public class SubmissionService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
     LanguageRuntimeEntity runtime = runtimeResolver.resolve(challenge, request.runtimeVersion());
     SubmissionKind kind = resolveKind(request.kind());
+    challengeQuotaService.ensureMayStartChallenge(userId, challenge.getId());
     if (kind == SubmissionKind.SUBMIT) {
       ensureExerciseNotLocked(userId, challenge.getId());
     }
