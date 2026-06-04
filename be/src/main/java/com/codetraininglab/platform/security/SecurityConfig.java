@@ -24,14 +24,18 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+  /** BCrypt password encoder for {@code users.password_hash} (Spring Security standard). */
   @Bean
   PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
+    return new BCryptPasswordEncoder(12);
   }
 
   @Bean
   SecurityFilterChain securityFilterChain(
-      HttpSecurity http, JwtAuthenticationFilter jwtFilter, CtlProperties properties)
+      HttpSecurity http,
+      JwtAuthenticationFilter jwtFilter,
+      PasswordChangeRequiredFilter passwordChangeRequiredFilter,
+      CtlProperties properties)
       throws Exception {
     http.csrf(csrf -> csrf.disable())
         .cors(cors -> cors.configurationSource(corsConfigurationSource(properties)))
@@ -49,6 +53,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, ApiPaths.AUTH_REGISTRATION_INFO)
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, ApiPaths.AUTH_PASSWORD_REQUIREMENTS)
+                    .permitAll()
                     .requestMatchers(
                         "/actuator/health",
                         "/actuator/health/**",
@@ -60,7 +66,8 @@ public class SecurityConfig {
                     .permitAll()
                     .anyRequest()
                     .authenticated())
-        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(passwordChangeRequiredFilter, JwtAuthenticationFilter.class);
     return http.build();
   }
 

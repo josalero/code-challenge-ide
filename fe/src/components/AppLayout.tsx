@@ -7,6 +7,7 @@ import {
   Plus,
   ServerCog,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
@@ -49,7 +50,9 @@ export default function AppLayout({
 
   const selectedKey = location.pathname.startsWith("/admin/ops")
     ? "ops"
-    : location.pathname.startsWith("/challenges/new")
+    : location.pathname.startsWith("/admin/users")
+      ? "users"
+      : location.pathname.startsWith("/challenges/new")
       ? "create"
       : location.pathname.startsWith("/metrics")
         ? "metrics"
@@ -81,6 +84,12 @@ export default function AppLayout({
             to: "/challenges/new",
             label: "Create",
             icon: Plus,
+          },
+          {
+            key: "users",
+            to: "/admin/users",
+            label: "Users",
+            icon: Users,
           },
           {
             key: "ops",

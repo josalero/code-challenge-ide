@@ -1,5 +1,6 @@
 package com.codetraininglab.identity.api;
 
+import com.codetraininglab.identity.application.AuthService;
 import com.codetraininglab.identity.application.MeMetricsService;
 import com.codetraininglab.identity.application.MeMetricsService.MeMetricsResponse;
 import com.codetraininglab.platform.persistence.UserEntity;
@@ -12,8 +13,11 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -24,16 +28,19 @@ public class MeController {
   private final UserProgressRepository progressRepository;
   private final ChallengeRepository challengeRepository;
   private final MeMetricsService metricsService;
+  private final AuthService authService;
 
   public MeController(
       UserRepository userRepository,
       UserProgressRepository progressRepository,
       ChallengeRepository challengeRepository,
-      MeMetricsService metricsService) {
+      MeMetricsService metricsService,
+      AuthService authService) {
     this.userRepository = userRepository;
     this.progressRepository = progressRepository;
     this.challengeRepository = challengeRepository;
     this.metricsService = metricsService;
+    this.authService = authService;
   }
 
   @GetMapping
@@ -43,7 +50,19 @@ public class MeController {
         userRepository
             .findById(userId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    return new MeResponse(user.getId(), user.getEmail(), user.getRole().name());
+    return new MeResponse(
+        user.getId(),
+        user.getEmail(),
+        user.getFullName(),
+        user.getRole().name(),
+        user.isPasswordMustChange());
+  }
+
+  @PostMapping("/password")
+  AuthResponse changePassword(
+      Authentication authentication, @Valid @RequestBody ChangePasswordRequest request) {
+    UUID userId = (UUID) authentication.getPrincipal();
+    return authService.changePassword(userId, request);
   }
 
   @GetMapping("/progress")
@@ -69,7 +88,8 @@ public class MeController {
     return new ProgressEntry(slug, entity.getState().name(), entity.isSubmitted());
   }
 
-  public record MeResponse(UUID id, String email, String role) {}
+  public record MeResponse(
+      UUID id, String email, String fullName, String role, boolean mustChangePassword) {}
 
   public record ProgressEntry(String challengeSlug, String state, boolean submitted) {}
 }

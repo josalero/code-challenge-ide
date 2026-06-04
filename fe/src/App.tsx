@@ -1,7 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import AdminRoute from "./auth/AdminRoute";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import AdminUsersRoute from "./auth/AdminUsersRoute";
 import AdminOpsPage from "./pages/AdminOpsPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ChallengeWorkspacePage from "./pages/ChallengeWorkspacePage";
 import ChallengesPage from "./pages/ChallengesPage";
 import MetricsPage from "./pages/MetricsPage";
@@ -14,7 +16,9 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/admin/users" element={<AdminUsersRoute />} />
       <Route element={<ProtectedRoute />}>
+        <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/challenges" element={<ChallengesPage />} />
         <Route path="/metrics" element={<MetricsPage />} />
         <Route

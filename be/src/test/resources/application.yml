@@ -20,6 +20,15 @@ ctl:
   lsp-enabled: false
   ai-provider: openrouter
   openrouter-api-key: ""
+  mail:
+    enabled: false
+    host: ""
+    port: 587
+    username: ""
+    password: ""
+    from-name: Code Training Lab
+    login-url: http://localhost:5173/login
+    debug: false
 
 logging:
   level:

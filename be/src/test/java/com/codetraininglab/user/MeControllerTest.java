@@ -17,12 +17,14 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class MeControllerTest {
@@ -31,10 +33,17 @@ class MeControllerTest {
   @Mock private UserProgressRepository progressRepository;
   @Mock private ChallengeRepository challengeRepository;
   @Mock private MeMetricsService metricsService;
+  @Mock private com.codetraininglab.identity.application.AuthService authService;
 
   @InjectMocks private MeController controller;
 
   private final UUID userId = UUID.randomUUID();
+  private String passwordHash;
+
+  @BeforeEach
+  void setUp() {
+    passwordHash = new BCryptPasswordEncoder(12).encode("Password1");
+  }
 
   @Test
   void returnsProfile() {
@@ -42,10 +51,11 @@ class MeControllerTest {
         .thenReturn(
             Optional.of(
                 new UserEntity(
-                    userId, "a@b.com", "hash", UserRole.USER, Instant.EPOCH, Instant.EPOCH)));
+                    userId, "a@b.com", passwordHash, UserRole.USER, Instant.EPOCH, Instant.EPOCH)));
     var response =
         controller.me(new UsernamePasswordAuthenticationToken(userId, null, List.of()));
     assertThat(response.email()).isEqualTo("a@b.com");
+    assertThat(response.mustChangePassword()).isFalse();
   }
 
   @Test

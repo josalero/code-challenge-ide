@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.codetraininglab.domain.UserRole;
 import com.codetraininglab.identity.api.AuthResponse;
+import com.codetraininglab.identity.api.ChangePasswordRequest;
 import com.codetraininglab.identity.api.LoginRequest;
 import com.codetraininglab.identity.api.RegisterRequest;
 import com.codetraininglab.platform.config.CtlProperties;
@@ -27,6 +28,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,11 +37,11 @@ class AuthServiceTest {
   @Mock private UserRepository userRepository;
 
   private AuthService authService;
-  private BCryptPasswordEncoder passwordEncoder;
+  private PasswordEncoder passwordEncoder;
 
   @BeforeEach
   void setUp() {
-    passwordEncoder = new BCryptPasswordEncoder();
+    passwordEncoder = new BCryptPasswordEncoder(12);
     JwtService jwtService =
         new JwtService(
             CtlPropertiesTestFixtures.defaults(), Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
@@ -48,19 +50,16 @@ class AuthServiceTest {
             userRepository,
             passwordEncoder,
             jwtService,
-            CtlPropertiesTestFixtures.defaults(),
             Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
   }
 
   @Test
-  void registerCreatesUser() {
+  void registerForbiddenWhenUsersExist() {
     when(userRepository.countByDeletedAtIsNull()).thenReturn(1L);
-    when(userRepository.findByEmailIgnoreCaseAndDeletedAtIsNull("a@b.com")).thenReturn(Optional.empty());
-    when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-    AuthResponse response = authService.register(new RegisterRequest("A@B.com", "password1"));
-    assertThat(response.accessToken()).isNotBlank();
-    assertThat(response.email()).isEqualTo("a@b.com");
-    assertThat(response.role()).isEqualTo("USER");
+
+    assertThatThrownBy(() -> authService.register(new RegisterRequest("a@b.com", "Password1")))
+        .isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("Registration is disabled");
   }
 
   @Test
@@ -69,7 +68,7 @@ class AuthServiceTest {
     when(userRepository.findByEmailIgnoreCaseAndDeletedAtIsNull("admin@x.com")).thenReturn(Optional.empty());
     when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-    AuthResponse response = authService.register(new RegisterRequest("admin@x.com", "password1"));
+    AuthResponse response = authService.register(new RegisterRequest("admin@x.com", "Password1"));
 
     assertThat(response.role()).isEqualTo("ADMIN");
     ArgumentCaptor<UserEntity> saved = ArgumentCaptor.forClass(UserEntity.class);
@@ -88,12 +87,12 @@ class AuthServiceTest {
   }
 
   @Test
-  void registrationInfoHonorsRegistrationFlagWhenUsersExist() {
+  void registrationInfoClosedWhenUsersExist() {
     when(userRepository.countByDeletedAtIsNull()).thenReturn(2L);
 
     var info = authService.registrationInfo();
 
-    assertThat(info.registrationOpen()).isTrue();
+    assertThat(info.registrationOpen()).isFalse();
     assertThat(info.bootstrap()).isFalse();
   }
 
@@ -126,7 +125,6 @@ class AuthServiceTest {
             userRepository,
             passwordEncoder,
             new JwtService(closedRegistration, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)),
-            closedRegistration,
             Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
     when(userRepository.countByDeletedAtIsNull()).thenReturn(1L);
 
@@ -165,37 +163,36 @@ class AuthServiceTest {
             userRepository,
             passwordEncoder,
             new JwtService(closedRegistration, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)),
-            closedRegistration,
             Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
     when(userRepository.countByDeletedAtIsNull()).thenReturn(1L);
 
-    assertThatThrownBy(() -> closed.register(new RegisterRequest("a@b.com", "password1")))
+    assertThatThrownBy(() -> closed.register(new RegisterRequest("a@b.com", "Password1")))
         .isInstanceOf(ResponseStatusException.class)
         .hasMessageContaining("Registration is disabled");
   }
 
   @Test
   void registerRejectsDuplicateEmail() {
-    when(userRepository.countByDeletedAtIsNull()).thenReturn(1L);
+    when(userRepository.countByDeletedAtIsNull()).thenReturn(0L);
     when(userRepository.findByEmailIgnoreCaseAndDeletedAtIsNull("a@b.com"))
         .thenReturn(
             Optional.of(
                 new UserEntity(
                     UUID.randomUUID(),
                     "a@b.com",
-                    "hash",
-                    UserRole.USER,
+                    passwordEncoder.encode("Password1"),
+                    UserRole.ADMIN,
                     Instant.EPOCH,
                     Instant.EPOCH)));
 
-    assertThatThrownBy(() -> authService.register(new RegisterRequest("a@b.com", "password1")))
+    assertThatThrownBy(() -> authService.register(new RegisterRequest("a@b.com", "Password1")))
         .isInstanceOf(ResponseStatusException.class)
         .hasMessageContaining("Email already registered");
   }
 
   @Test
   void registerRejectsShortPassword() {
-    when(userRepository.countByDeletedAtIsNull()).thenReturn(1L);
+    when(userRepository.countByDeletedAtIsNull()).thenReturn(0L);
 
     assertThatThrownBy(() -> authService.register(new RegisterRequest("a@b.com", "short")))
         .isInstanceOf(ResponseStatusException.class)
@@ -203,10 +200,20 @@ class AuthServiceTest {
   }
 
   @Test
-  void registerRejectsPasswordEqualToEmail() {
-    when(userRepository.countByDeletedAtIsNull()).thenReturn(1L);
+  void registerRejectsPasswordWithoutDigit() {
+    when(userRepository.countByDeletedAtIsNull()).thenReturn(0L);
 
-    assertThatThrownBy(() -> authService.register(new RegisterRequest("same@x.com", "same@x.com")))
+    assertThatThrownBy(() -> authService.register(new RegisterRequest("a@b.com", "Password")))
+        .isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("digit");
+  }
+
+  @Test
+  void registerRejectsPasswordEqualToEmail() {
+    when(userRepository.countByDeletedAtIsNull()).thenReturn(0L);
+
+    String email = "Test1@x.com";
+    assertThatThrownBy(() -> authService.register(new RegisterRequest(email, email)))
         .isInstanceOf(ResponseStatusException.class)
         .hasMessageContaining("must not match email");
   }
@@ -217,15 +224,61 @@ class AuthServiceTest {
         new UserEntity(
             UUID.randomUUID(),
             "a@b.com",
-            passwordEncoder.encode("password1"),
+            passwordEncoder.encode("Password1"),
             UserRole.USER,
             Instant.EPOCH,
             Instant.EPOCH);
     when(userRepository.findByEmailIgnoreCaseAndDeletedAtIsNull("a@b.com"))
         .thenReturn(Optional.of(user));
-    AuthResponse response = authService.login(new LoginRequest("A@B.com", "password1"));
+    AuthResponse response = authService.login(new LoginRequest("A@B.com", "Password1"));
     assertThat(response.accessToken()).isNotBlank();
     assertThat(response.role()).isEqualTo("USER");
+    assertThat(response.mustChangePassword()).isFalse();
+  }
+
+  @Test
+  void loginSignalsMustChangePassword() {
+    UserEntity user =
+        new UserEntity(
+            UUID.randomUUID(),
+            "temp@x.com",
+            passwordEncoder.encode("TempPass1"),
+            UserRole.USER,
+            Instant.EPOCH,
+            Instant.EPOCH,
+            "Temp User",
+            true);
+    when(userRepository.findByEmailIgnoreCaseAndDeletedAtIsNull("temp@x.com"))
+        .thenReturn(Optional.of(user));
+
+    AuthResponse response = authService.login(new LoginRequest("temp@x.com", "TempPass1"));
+
+    assertThat(response.mustChangePassword()).isTrue();
+  }
+
+  @Test
+  void changePasswordClearsMustChangeFlag() {
+    UUID userId = UUID.randomUUID();
+    UserEntity user =
+        new UserEntity(
+            userId,
+            "temp@x.com",
+            passwordEncoder.encode("TempPass1"),
+            UserRole.USER,
+            Instant.EPOCH,
+            Instant.EPOCH,
+            "Temp User",
+            true);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    AuthResponse response =
+        authService.changePassword(
+            userId, new ChangePasswordRequest("TempPass1", "NewSecret9"));
+
+    assertThat(response.mustChangePassword()).isFalse();
+    assertThat(user.isPasswordMustChange()).isFalse();
+    assertThat(passwordEncoder.matches("NewSecret9", user.getPasswordHash())).isTrue();
   }
 
   @Test
@@ -244,7 +297,7 @@ class AuthServiceTest {
         new UserEntity(
             UUID.randomUUID(),
             "a@b.com",
-            passwordEncoder.encode("password1"),
+            passwordEncoder.encode("Password1"),
             UserRole.USER,
             Instant.EPOCH,
             Instant.EPOCH);

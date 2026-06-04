@@ -34,4 +34,9 @@ public class AuthController {
   AuthResponse login(@Valid @RequestBody LoginRequest request) {
     return authService.login(request);
   }
+
+  @GetMapping("/password-requirements")
+  PasswordRequirementsResponse passwordRequirements() {
+    return authService.passwordRequirements();
+  }
 }

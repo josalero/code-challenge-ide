@@ -2,10 +2,11 @@ package com.codetraininglab.identity.application;
 
 import com.codetraininglab.domain.UserRole;
 import com.codetraininglab.identity.api.AuthResponse;
+import com.codetraininglab.identity.api.ChangePasswordRequest;
 import com.codetraininglab.identity.api.LoginRequest;
+import com.codetraininglab.identity.api.PasswordRequirementsResponse;
 import com.codetraininglab.identity.api.RegisterRequest;
 import com.codetraininglab.identity.api.RegistrationInfoResponse;
-import com.codetraininglab.platform.config.CtlProperties;
 import com.codetraininglab.platform.persistence.UserEntity;
 import com.codetraininglab.platform.persistence.UserRepository;
 import com.codetraininglab.platform.security.JwtService;
@@ -24,40 +25,41 @@ public class AuthService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
-  private final CtlProperties properties;
   private final Clock clock;
 
   public AuthService(
       UserRepository userRepository,
       PasswordEncoder passwordEncoder,
       JwtService jwtService,
-      CtlProperties properties,
       Clock clock) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
-    this.properties = properties;
     this.clock = clock;
   }
 
   public RegistrationInfoResponse registrationInfo() {
     boolean bootstrap = userRepository.countByDeletedAtIsNull() == 0;
-    boolean registrationOpen = bootstrap || properties.registrationEnabled();
-    return new RegistrationInfoResponse(registrationOpen, bootstrap);
+    return new RegistrationInfoResponse(bootstrap, bootstrap);
+  }
+
+  public PasswordRequirementsResponse passwordRequirements() {
+    return new PasswordRequirementsResponse(PasswordPolicy.REQUIREMENT_DESCRIPTIONS);
   }
 
   @Transactional
   public AuthResponse register(RegisterRequest request) {
     boolean bootstrap = userRepository.countByDeletedAtIsNull() == 0;
-    if (!bootstrap && !properties.registrationEnabled()) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Registration is disabled");
+    if (!bootstrap) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Registration is disabled. Contact an administrator.");
     }
     String email = request.email().trim().toLowerCase();
-    validatePassword(email, request.password());
+    PasswordPolicy.validateNewPassword(email, request.password());
     if (userRepository.findByEmailIgnoreCaseAndDeletedAtIsNull(email).isPresent()) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
     }
-    UserRole role = bootstrap ? UserRole.ADMIN : UserRole.USER;
+    UserRole role = UserRole.ADMIN;
     Instant now = clock.instant();
     UserEntity user =
         new UserEntity(
@@ -66,7 +68,9 @@ public class AuthService {
             passwordEncoder.encode(request.password()),
             role,
             now,
-            now);
+            now,
+            null,
+            false);
     userRepository.save(user);
     return tokenFor(user);
   }
@@ -84,20 +88,34 @@ public class AuthService {
     return tokenFor(user);
   }
 
+  @Transactional
+  public AuthResponse changePassword(UUID userId, ChangePasswordRequest request) {
+    UserEntity user =
+        userRepository
+            .findById(userId)
+            .filter(entity -> entity.getDeletedAt() == null)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+    }
+    if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "New password must be different from the current password");
+    }
+    PasswordPolicy.validateNewPassword(user.getEmail(), request.newPassword());
+    user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+    user.setPasswordMustChange(false);
+    user.setUpdatedAt(clock.instant());
+    userRepository.save(user);
+    return tokenFor(user);
+  }
+
   private AuthResponse tokenFor(UserEntity user) {
     return new AuthResponse(
         jwtService.createToken(user.getId(), user.getEmail(), user.getRole()),
         user.getId(),
         user.getEmail(),
-        user.getRole().name());
-  }
-
-  private void validatePassword(String email, String password) {
-    if (password == null || password.length() < 8) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must be at least 8 characters");
-    }
-    if (password.equalsIgnoreCase(email)) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must not match email");
-    }
+        user.getRole().name(),
+        user.isPasswordMustChange());
   }
 }

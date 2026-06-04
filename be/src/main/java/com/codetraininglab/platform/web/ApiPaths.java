@@ -14,6 +14,9 @@ public final class ApiPaths {
   public static final String ME = BASE + "/me";
   public static final String ME_PROGRESS = ME + "/progress";
   public static final String ME_METRICS = ME + "/metrics";
+  public static final String ME_PASSWORD = ME + "/password";
+  public static final String AUTH_PASSWORD_REQUIREMENTS = AUTH + "/password-requirements";
+  public static final String ADMIN_USERS = BASE + "/admin/users";
   public static final String SUBMISSIONS = BASE + "/submissions";
   public static final String SUBMISSION_FEEDBACK_ACTIONS = SUBMISSIONS + "/{submissionId}/feedback-actions";
   public static final String FEEDBACK_ACTIONS = BASE + "/feedback-actions";

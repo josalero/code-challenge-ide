@@ -32,7 +32,7 @@ class AuthControllerTest {
   @Test
   void loginReturnsToken() throws Exception {
     when(authService.login(any()))
-        .thenReturn(new AuthResponse("token", UUID.randomUUID(), "a@b.com", "USER"));
+        .thenReturn(new AuthResponse("token", UUID.randomUUID(), "a@b.com", "USER", false));
     mockMvc
         .perform(
             post("/api/v1/auth/login")

@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { apiFetch } from "../api/client";
-import type { AuthResponse, MeResponse } from "../api/types";
+import type { AuthResponse, ChangePasswordRequest, MeResponse } from "../api/types";
 import { ApiPaths } from "../domain/constants";
 import { clearAccessToken, getAccessToken, setAccessToken } from "./authStorage";
 import { AuthContext, type AuthContextValue } from "./authContext";
@@ -41,7 +41,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const applyAuth = useCallback((response: AuthResponse) => {
     setAccessToken(response.accessToken);
     setToken(response.accessToken);
-    setUser({ id: response.userId, email: response.email, role: response.role });
+    setUser({
+      id: response.userId,
+      email: response.email,
+      fullName: null,
+      role: response.role,
+      mustChangePassword: response.mustChangePassword,
+    });
     setLoading(false);
   }, []);
 
@@ -52,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
       applyAuth(response);
+      return response.mustChangePassword;
     },
     [applyAuth],
   );
@@ -67,6 +74,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [applyAuth],
   );
 
+  const changePassword = useCallback(
+    async (currentPassword: string, newPassword: string) => {
+      const body: ChangePasswordRequest = { currentPassword, newPassword };
+      const response = await apiFetch<AuthResponse>(ApiPaths.ME_PASSWORD, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      applyAuth(response);
+      const me = await apiFetch<MeResponse>(ApiPaths.ME);
+      setUser(me);
+    },
+    [applyAuth],
+  );
+
   const logout = useCallback(() => {
     clearAccessToken();
     setToken(null);
@@ -76,8 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = user?.role === "ADMIN";
 
   const value = useMemo(
-    () => ({ token, user, loading, isAdmin, login, register, logout }),
-    [token, user, loading, isAdmin, login, register, logout],
+    () => ({ token, user, loading, isAdmin, login, register, changePassword, logout }),
+    [token, user, loading, isAdmin, login, register, changePassword, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
