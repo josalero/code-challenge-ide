@@ -161,7 +161,7 @@ public class UserAdminService {
             .findById(targetUserId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     if (user.getDeletedAt() != null) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "User is already deactivated");
+      return;
     }
     if (user.getRole() == UserRole.ADMIN
         && userRepository.countByDeletedAtIsNullAndRoleAndIdNot(UserRole.ADMIN, targetUserId) == 0) {

@@ -148,11 +148,22 @@ export default function AdminUsersPage() {
       void queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       void queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
     },
-    onError: (error) =>
-      message.error(error instanceof ApiError ? error.message : "Could not deactivate user"),
+    onError: (error) => {
+      void queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      if (error instanceof ApiError) {
+        message.error(error.message);
+        return;
+      }
+      message.error("Could not deactivate user");
+    },
   });
 
   const users = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
+
+  const soleActiveAdminId = useMemo(() => {
+    const activeAdmins = users.filter((row) => row.active && row.role === "ADMIN");
+    return activeAdmins.length === 1 ? activeAdmins[0]!.id : null;
+  }, [users]);
 
   const insights = useMemo(() => {
     const activeUsers = users.filter((row) => row.active);
@@ -364,16 +375,30 @@ export default function AdminUsersPage() {
                     Limit
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-xs text-destructive hover:text-destructive"
-                  disabled={row.id === currentUser?.id}
-                  onClick={() => setDeactivateTarget(row)}
+                <Tooltip
+                  title={
+                    row.id === soleActiveAdminId
+                      ? "At least one administrator must stay active"
+                      : row.id === currentUser?.id
+                        ? "You cannot deactivate your own account"
+                        : undefined
+                  }
                 >
-                  <UserX className="size-3.5" aria-hidden />
-                  Deactivate
-                </Button>
+                  <span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                      disabled={
+                        row.id === currentUser?.id || row.id === soleActiveAdminId
+                      }
+                      onClick={() => setDeactivateTarget(row)}
+                    >
+                      <UserX className="size-3.5" aria-hidden />
+                      Deactivate
+                    </Button>
+                  </span>
+                </Tooltip>
               </>
             ) : null}
           </div>
@@ -631,9 +656,10 @@ export default function AdminUsersPage() {
         okText="Deactivate"
         okButtonProps={{ danger: true, loading: deactivateMutation.isPending }}
         onOk={() => {
-          if (deactivateTarget) {
-            deactivateMutation.mutate(deactivateTarget.id);
+          if (!deactivateTarget) {
+            return;
           }
+          return deactivateMutation.mutateAsync(deactivateTarget.id);
         }}
         onCancel={() => setDeactivateTarget(null)}
       >
@@ -642,6 +668,13 @@ export default function AdminUsersPage() {
             Deactivate <strong className="text-foreground">{deactivateTarget.fullName}</strong> (
             {deactivateTarget.email})? They will not be able to sign in again. Submission history is
             retained.
+            {deactivateTarget.role === "ADMIN" && soleActiveAdminId === deactivateTarget.id && (
+              <>
+                {" "}
+                This account is the only active administrator and cannot be deactivated while you
+                remain signed in.
+              </>
+            )}
           </p>
         )}
       </Modal>
