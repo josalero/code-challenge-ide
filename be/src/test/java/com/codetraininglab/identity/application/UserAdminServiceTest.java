@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -188,6 +189,28 @@ class UserAdminServiceTest {
         .isInstanceOf(ResponseStatusException.class)
         .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
         .isEqualTo(HttpStatus.BAD_REQUEST);
+  }
+
+  @Test
+  void deactivateUserIsIdempotentWhenAlreadyDeactivated() {
+    UUID actorId = UUID.randomUUID();
+    UUID targetId = UUID.randomUUID();
+    UserEntity target =
+        new UserEntity(
+            targetId,
+            "learner@x.com",
+            passwordEncoder.encode("TempPass1"),
+            UserRole.USER,
+            Instant.EPOCH,
+            Instant.EPOCH,
+            "Learner",
+            false);
+    target.markDeleted(Instant.EPOCH);
+    when(userRepository.findById(targetId)).thenReturn(Optional.of(target));
+
+    userAdminService.deactivateUser(actorId, targetId);
+
+    verify(userRepository, never()).save(any());
   }
 
   @Test
