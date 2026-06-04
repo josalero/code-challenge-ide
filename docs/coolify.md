@@ -101,7 +101,11 @@ Recommended production values:
 | --- | --- | --- |
 | `REGISTRATION_ENABLED` | `false` | Keep public sign-up closed unless needed |
 | `RUNNER_POOL_ENABLED` | `true` | Required for stable Docker-out-of-Docker execution |
-| `RUNNER_POOL_WARM_ON_STARTUP` | `false` | Use Ops -> Warm everything after first deploy |
+| `RUNNER_POOL_IDLE_MINUTES` | `60` | Idle runner containers are evicted after this many minutes |
+| `RUNNER_POOL_WARM_ON_STARTUP` | `false` | Avoid heavy warm work during boot |
+| `RUNNER_INFRA_WARM_SCHEDULED_ENABLED` | `true` | Lets the API enqueue Warm everything automatically |
+| `RUNNER_INFRA_WARM_INTERVAL_MINUTES` | `30` | Keeps pooled runners warm before the 60 minute idle eviction |
+| `RUNNER_INFRA_WARM_INITIAL_DELAY_MINUTES` | `5` | Gives Coolify a short settling period after deploy |
 | `CTL_LSP_ENABLED` | `true` | Enables editor language servers |
 
 The Coolify env file includes local image names for every runner and LSP image,

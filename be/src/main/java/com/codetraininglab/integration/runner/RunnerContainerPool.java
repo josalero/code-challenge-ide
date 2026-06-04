@@ -68,6 +68,22 @@ public class RunnerContainerPool {
     return isPoolRunningOnHost(image);
   }
 
+  public boolean refreshIdleTimerForImage(String image) {
+    if (image == null || image.isBlank()) {
+      return false;
+    }
+    PooledRunner pooled = pools.get(image);
+    if (pooled == null) {
+      return false;
+    }
+    String containerId = pooled.containerId.get();
+    if (containerId == null || !isRunning(containerId)) {
+      return false;
+    }
+    pooled.lastUsedAt.set(clock.instant());
+    return true;
+  }
+
   private boolean isPoolRunningOnHost(String image) {
     try {
       Process process =
