@@ -118,6 +118,15 @@ def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:
     return text[: limit - 3] + "..."
 
 
+def safe_float(value: object, default: float = 0.0) -> float:
+    try:
+        if value is None or value == "":
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def run_tests(wall_seconds: int) -> tuple[int, str, str]:
     junit = WORKSPACE / "junit.xml"
     test_files = sorted(TESTS_DIR.glob("*.test.js"))
@@ -153,7 +162,7 @@ def parse_c8_coverage() -> dict:
     data = json.loads(summary.read_text(encoding="utf-8"))
     total = data.get("total", {})
     lines = total.get("lines", {})
-    pct = float(lines.get("pct", 0.0))
+    pct = safe_float(lines.get("pct", 0.0))
     return {"line_percent": round(pct, 1), "branch_percent": 0.0}
 
 
@@ -178,10 +187,7 @@ def parse_junit() -> list[dict]:
     for case in _iter_junit_cases(root):
         name = case.attrib.get("name", "unknown")
         raw_time = case.attrib.get("time", "0")
-        try:
-            duration_ms = int(float(raw_time) * 1000)
-        except ValueError:
-            duration_ms = 0
+        duration_ms = int(safe_float(raw_time) * 1000)
         failure = case.find("failure")
         error = case.find("error")
         skipped = case.find("skipped")

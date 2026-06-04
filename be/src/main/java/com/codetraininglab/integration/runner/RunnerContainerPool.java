@@ -61,7 +61,9 @@ public class RunnerContainerPool {
     PooledRunner pooled = pools.get(image);
     if (pooled != null) {
       String containerId = pooled.containerId.get();
-      if (containerId != null && isRunning(containerId)) {
+      if (containerId != null
+          && isRunning(containerId)
+          && containerUsesCurrentImage(containerId, image)) {
         return true;
       }
     }
@@ -77,7 +79,9 @@ public class RunnerContainerPool {
       return false;
     }
     String containerId = pooled.containerId.get();
-    if (containerId == null || !isRunning(containerId)) {
+    if (containerId == null
+        || !isRunning(containerId)
+        || !containerUsesCurrentImage(containerId, image)) {
       return false;
     }
     pooled.lastUsedAt.set(clock.instant());
@@ -107,7 +111,7 @@ public class RunnerContainerPool {
           new BufferedReader(
               new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
         String line = reader.readLine();
-        return line != null && !line.isBlank();
+        return line != null && !line.isBlank() && containerUsesCurrentImage(line.trim(), image);
       }
     } catch (IOException | InterruptedException ex) {
       Thread.currentThread().interrupt();
@@ -256,7 +260,13 @@ public class RunnerContainerPool {
       throws RunnerPoolException {
     String containerId = pooled.containerId.get();
     if (containerId != null && isRunning(containerId)) {
-      return;
+      if (containerUsesCurrentImage(containerId, pooled.image)) {
+        return;
+      }
+      log.info(
+          "Pooled runner container {} for image {} was created from an older image id; recreating",
+          pooled.containerName,
+          pooled.image);
     }
     destroyContainer(pooled);
     List<String> createCommand =
@@ -477,6 +487,40 @@ public class RunnerContainerPool {
     } catch (Exception ex) {
       return false;
     }
+  }
+
+  private static boolean containerUsesCurrentImage(String containerId, String image) {
+    String containerImageId = dockerOutput("docker", "inspect", "-f", "{{.Image}}", containerId);
+    String currentImageId =
+        dockerOutput("docker", "image", "inspect", image, "--format", "{{.Id}}");
+    if (containerImageId == null || currentImageId == null) {
+      return false;
+    }
+    return normalizeImageId(containerImageId).equals(normalizeImageId(currentImageId));
+  }
+
+  private static String dockerOutput(String... command) {
+    try {
+      Process process = new ProcessBuilder(command).start();
+      boolean finished = process.waitFor(10, TimeUnit.SECONDS);
+      if (!finished || process.exitValue() != 0) {
+        return null;
+      }
+      try (BufferedReader reader =
+          new BufferedReader(
+              new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+        String output = reader.readLine();
+        return output == null || output.isBlank() ? null : output.trim();
+      }
+    } catch (IOException | InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      return null;
+    }
+  }
+
+  private static String normalizeImageId(String imageId) {
+    String normalized = imageId.trim().toLowerCase();
+    return normalized.startsWith("sha256:") ? normalized.substring("sha256:".length()) : normalized;
   }
 
   private static void runDocker(String... command) throws IOException, InterruptedException {
