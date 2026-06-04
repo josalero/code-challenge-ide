@@ -192,6 +192,10 @@ Path: **`/admin/ops`** (header **Ops** when signed in as **`ADMIN`**).
 | **Re-warm everything** | After `make runners`, image tag changes, or status looks stale |
 | **Warm** (per language) | You only care about one stack (e.g. Java 26 only) |
 
+On Coolify, the API can also enqueue Warm everything on a schedule with
+`RUNNER_INFRA_WARM_SCHEDULED_ENABLED=true` and
+`RUNNER_INFRA_WARM_INTERVAL_MINUTES=30`.
+
 **Reading the page**
 
 - **Banner** — progress and how many languages are fully ready.

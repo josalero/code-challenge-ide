@@ -35,6 +35,7 @@ When `RUNNER_POOL_ENABLED=true` (default):
 4. **Java (pooled):** incremental workspace — same challenge keeps `target/` for faster Maven rebuilds.
 5. Runner containers run with network disabled, CPU/memory/PID limits, dropped Linux capabilities except the narrow file-ownership capability needed for challenge sync, `no-new-privileges`, and isolated IPC.
 6. Idle pool containers are removed after `RUNNER_POOL_IDLE_MINUTES` (default 60).
+7. In Coolify, `RUNNER_INFRA_WARM_SCHEDULED_ENABLED=true` runs Warm everything every `RUNNER_INFRA_WARM_INTERVAL_MINUTES` (default 30). Already-warm runner containers have their idle timer refreshed; missing containers are recreated.
 
 Set `RUNNER_POOL_ENABLED=false` to fall back to one-shot `docker run --rm` per submission.
 

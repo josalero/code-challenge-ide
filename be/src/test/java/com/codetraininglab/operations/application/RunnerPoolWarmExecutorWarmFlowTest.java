@@ -100,14 +100,57 @@ class RunnerPoolWarmExecutorWarmFlowTest {
                     UUID.randomUUID(), languageId, "26", JAVA_IMAGE, true)));
     when(warmStateStore.runnerPoolStampByImage())
         .thenReturn(new LinkedHashMap<>(Map.of(JAVA_IMAGE, STAMP)));
+    when(runnerContainerPool.refreshIdleTimerForImage(JAVA_IMAGE)).thenReturn(true);
 
     var log = new StringBuilder();
     executor(image -> new RunnerPoolWarmExecutor.ImageIdentity(true, STAMP))
         .warm(false, List.of("java"), log::append);
 
     verify(runnerContainerPool, never()).execute(any(), any(), any(), any(), any());
+    verify(runnerContainerPool).refreshIdleTimerForImage(JAVA_IMAGE);
     verify(warmStateStore).recordRunnerPoolWarm(JAVA_IMAGE, STAMP);
     assertThat(log).contains("already warmed");
+  }
+
+  @Test
+  void warmRecreatesPoolWhenImageAlreadyStampedButContainerIsMissing() {
+    UUID languageId = UUID.randomUUID();
+    when(languageRepository.findAll())
+        .thenReturn(List.of(new LanguageEntity(languageId, "java", "Java")));
+    when(runtimeRepository.findAllOrdered())
+        .thenReturn(
+            List.of(
+                new LanguageRuntimeEntity(
+                    UUID.randomUUID(), languageId, "26", JAVA_IMAGE, true)));
+    when(warmStateStore.runnerPoolStampByImage())
+        .thenReturn(new LinkedHashMap<>(Map.of(JAVA_IMAGE, STAMP)));
+    when(runnerContainerPool.execute(
+            eq(JAVA_IMAGE),
+            eq(challengesRoot.resolve("reverse-string")),
+            eq("maven"),
+            any(),
+            any(RunnerJobPayload.RunnerLimits.class)))
+        .thenReturn(
+            new RunnerResult(
+                RunnerStatus.COMPLETED.name(),
+                List.of(new RunnerResult.TestOutcome("smoke", "PASS", null, 1)),
+                new RunnerResult.CoverageOutcome(0, 0),
+                new RunnerResult.CompileOutcome(0, List.of()),
+                null,
+                null));
+
+    var log = new StringBuilder();
+    executor(image -> new RunnerPoolWarmExecutor.ImageIdentity(true, STAMP))
+        .warm(false, List.of("java"), log::append);
+
+    verify(runnerContainerPool)
+        .execute(
+            eq(JAVA_IMAGE),
+            eq(challengesRoot.resolve("reverse-string")),
+            eq("maven"),
+            any(),
+            any(RunnerJobPayload.RunnerLimits.class));
+    assertThat(log).contains("warm stamp exists but pool container is not running");
   }
 
   @Test

@@ -105,6 +105,9 @@ ctl:
   repo-root: ${CTL_REPO_ROOT:}
   ops-data-dir: ${CTL_OPS_DATA_DIR:}
   runner-pool-warm-on-startup: ${RUNNER_POOL_WARM_ON_STARTUP:false}
+  runner-infra-warm-scheduled-enabled: ${RUNNER_INFRA_WARM_SCHEDULED_ENABLED:false}
+  runner-infra-warm-interval-minutes: ${RUNNER_INFRA_WARM_INTERVAL_MINUTES:30}
+  runner-infra-warm-initial-delay-minutes: ${RUNNER_INFRA_WARM_INITIAL_DELAY_MINUTES:5}
 
 springdoc:
   api-docs:

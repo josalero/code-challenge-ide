@@ -87,10 +87,16 @@ public class RunnerPoolWarmExecutor {
         warmStateStore.recordRunnerPoolCold(image);
         continue;
       }
-      if (!force && identity.imageId() != null && identity.imageId().equals(updated.get(image))) {
-        log.accept("Skipping " + label + " — already warmed for " + image + "\n");
+      boolean stampMatches =
+          identity.imageId() != null
+              && RunnerWarmImageIds.matches(updated.get(image), identity.imageId());
+      if (!force && stampMatches && runnerContainerPool.refreshIdleTimerForImage(image)) {
+        log.accept("Keeping " + label + " warm — already warmed for " + image + "\n");
         warmStateStore.recordRunnerPoolWarm(image, identity.imageId());
         continue;
+      }
+      if (!force && stampMatches) {
+        log.accept("Rewarming " + label + " — warm stamp exists but pool container is not running\n");
       }
 
       WarmPlan plan = buildWarmPlan(languageName, label);
