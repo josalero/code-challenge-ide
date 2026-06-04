@@ -102,6 +102,15 @@ def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:
     return text[: limit - 3] + "..."
 
 
+def safe_float(value: object, default: float = 0.0) -> float:
+    try:
+        if value is None or value == "":
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def run_vitest(wall_seconds: int) -> tuple[int, str, str]:
     junit = WORKSPACE / "junit.xml"
     proc = subprocess.run(
@@ -131,7 +140,7 @@ def parse_junit() -> list[dict]:
         name = case.attrib.get("name", "unknown")
         classname = case.attrib.get("classname", "")
         full = f"{classname}.{name}" if classname else name
-        duration_ms = int(float(case.attrib.get("time", "0")) * 1000)
+        duration_ms = int(safe_float(case.attrib.get("time", "0")) * 1000)
         failure = case.find("failure")
         error = case.find("error")
         if failure is not None or error is not None:
@@ -152,7 +161,7 @@ def parse_coverage() -> dict:
     data = json.loads(summary.read_text(encoding="utf-8"))
     total = data.get("total", {})
     lines = total.get("lines", {})
-    return {"line_percent": round(float(lines.get("pct", 0.0)), 1), "branch_percent": 0.0}
+    return {"line_percent": round(safe_float(lines.get("pct", 0.0)), 1), "branch_percent": 0.0}
 
 
 def emit(result: dict) -> None:
