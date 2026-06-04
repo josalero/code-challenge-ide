@@ -30,7 +30,7 @@ function imageTableColumns(kind: "runner" | "lsp") {
       key: "image",
       ellipsis: true,
       render: (image: string) => (
-        <code className="text-xs text-slate-400">{image}</code>
+        <code className="text-xs text-muted-foreground">{image}</code>
       ),
     },
     {
@@ -63,24 +63,24 @@ export default function OpsImageInventory({
 }: Props) {
   return (
     <Collapse
-      className="!border-slate-800/80 !bg-transparent [&_.ant-collapse-item]:!border-slate-800/80"
+      className="!border-border !bg-transparent [&_.ant-collapse-item]:!border-border"
       items={[
         {
           key: "inventory",
           label: (
-            <span className="text-sm font-medium text-slate-300">
+            <span className="text-sm font-medium text-foreground">
               Technical details — images & runtimes
             </span>
           ),
           children: (
             <div className="space-y-4">
-              <div className="flex flex-wrap gap-4 rounded-md border border-slate-800/60 bg-slate-950/40 px-3 py-2 text-xs text-slate-500">
+              <div className="flex flex-wrap gap-4 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 className="size-3.5 text-emerald-400" aria-hidden />
+                  <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden />
                   On disk = <code className="text-[10px]">make runners</code> built the image
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <Box className="size-3.5 text-amber-400" aria-hidden />
+                  <Box className="size-3.5 text-amber-600 dark:text-amber-400" aria-hidden />
                   Preloaded = warm job finished for this image tag
                 </span>
               </div>
@@ -88,7 +88,7 @@ export default function OpsImageInventory({
                 size="small"
                 pagination={false}
                 title={() => (
-                  <span className="text-xs font-medium text-slate-400">
+                  <span className="text-xs font-medium text-muted-foreground">
                     By runtime ({readyLanguageCount}/{totalLanguages} languages fully ready)
                   </span>
                 )}
@@ -103,7 +103,7 @@ export default function OpsImageInventory({
                     key: "language",
                     width: 100,
                     render: (lang: string) => (
-                      <span className="font-medium capitalize text-slate-200">{lang}</span>
+                      <span className="font-medium capitalize text-foreground">{lang}</span>
                     ),
                   },
                   { title: "Runtime", dataIndex: "label", key: "label", width: 120 },
@@ -128,7 +128,7 @@ export default function OpsImageInventory({
                 size="small"
                 pagination={false}
                 title={() => (
-                  <span className="text-xs font-medium text-slate-400">Runner images</span>
+                  <span className="text-xs font-medium text-muted-foreground">Runner images</span>
                 )}
                 rowKey="image"
                 dataSource={status.runnerImages}
@@ -138,16 +138,15 @@ export default function OpsImageInventory({
                 size="small"
                 pagination={false}
                 title={() => (
-                  <span className="text-xs font-medium text-slate-400">Editor (LSP) images</span>
+                  <span className="text-xs font-medium text-muted-foreground">Editor (LSP) images</span>
                 )}
                 rowKey={(row) => `${row.label}-${row.image}`}
                 dataSource={status.lspImages}
                 columns={imageTableColumns("lsp")}
               />
-              <p className="text-[10px] leading-relaxed text-slate-600">
+              <p className="text-[10px] leading-relaxed text-muted-foreground">
                 Warm state is stored in the database and survives API restarts. Legacy stamp files
-                under <code className="text-slate-500">{status.opsDataDir}</code> are imported once on
-                startup.
+                under <code>{status.opsDataDir}</code> are imported once on startup.
               </p>
             </div>
           ),

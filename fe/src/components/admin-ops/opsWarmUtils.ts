@@ -91,3 +91,13 @@ export function languageStateSummary(group: LanguageWarmGroup): string {
   }
   return "First Run tests or IntelliSense for this language will be slower until you warm it.";
 }
+
+export function formatLastWarmUpAt(value: string | null | undefined): string {
+  if (!value) {
+    return "Never recorded";
+  }
+  return new Date(value).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}

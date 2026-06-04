@@ -100,8 +100,8 @@ class DockerRunnerClientIntegrationTest {
             base.ollamaModel(),
             true,
             base.lspEnabled(),
-            false);
-    RunnerContainerPool pool =
+            false,
+                    0);    RunnerContainerPool pool =
         new RunnerContainerPool(properties, JsonMapper.builder().build(), Clock.systemUTC());
     DockerRunnerClient client =
         new DockerRunnerClient(

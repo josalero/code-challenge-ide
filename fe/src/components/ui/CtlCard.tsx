@@ -1,13 +1,14 @@
 import { Card, type CardProps } from "antd";
 import { cn } from "../../lib/utils";
 
-/** Consistent elevated surface for the dark training-lab theme. */
+/** Elevated surface card — follows light/dark semantic tokens. */
 export default function CtlCard({ className = "", ...props }: CardProps) {
   return (
     <Card
       {...props}
       className={cn(
-        "ctl-card overflow-hidden border-slate-800/80 bg-slate-900/90 shadow-sm shadow-black/10",
+        "ctl-card overflow-hidden border-border bg-card text-card-foreground shadow-sm",
+        "dark:border-slate-800/80 dark:bg-slate-900/90 dark:shadow-black/10",
         className,
       )}
     />

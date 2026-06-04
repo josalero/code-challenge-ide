@@ -125,7 +125,7 @@ export default function AdminOpsPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
         <div className="space-y-6">
-          <CtlCard title="Languages" className="!border-slate-800/80">
+          <CtlCard title="Languages">
             {status ? (
               <LanguageWarmList
                 groups={languageGroups}

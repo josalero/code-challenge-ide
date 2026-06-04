@@ -108,7 +108,7 @@ class RunnerContainerPoolTest {
         base.ollamaModel(),
         base.dockerEnabled(),
         base.lspEnabled(),
-        base.runnerPoolWarmOnStartup());
+        base.runnerPoolWarmOnStartup(), base.userMaxStartedChallenges());
   }
 
   private static Field poolsField(RunnerContainerPool pool) throws NoSuchFieldException {

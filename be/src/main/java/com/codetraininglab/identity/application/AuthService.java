@@ -7,6 +7,7 @@ import com.codetraininglab.identity.api.LoginRequest;
 import com.codetraininglab.identity.api.PasswordRequirementsResponse;
 import com.codetraininglab.identity.api.RegisterRequest;
 import com.codetraininglab.identity.api.RegistrationInfoResponse;
+import com.codetraininglab.platform.config.AccessRequestProperties;
 import com.codetraininglab.platform.persistence.UserEntity;
 import com.codetraininglab.platform.persistence.UserRepository;
 import com.codetraininglab.platform.security.JwtService;
@@ -25,22 +26,29 @@ public class AuthService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
+  private final AccessRequestProperties accessRequestProperties;
   private final Clock clock;
 
   public AuthService(
       UserRepository userRepository,
       PasswordEncoder passwordEncoder,
       JwtService jwtService,
+      AccessRequestProperties accessRequestProperties,
       Clock clock) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
+    this.accessRequestProperties = accessRequestProperties;
     this.clock = clock;
   }
 
   public RegistrationInfoResponse registrationInfo() {
     boolean bootstrap = userRepository.countByDeletedAtIsNull() == 0;
-    return new RegistrationInfoResponse(bootstrap, bootstrap);
+    boolean accessRequestsEnabled = !bootstrap && accessRequestProperties.requestsEnabled();
+    boolean accessRequestsConfigured =
+        !bootstrap && accessRequestProperties.isAcceptingRequests();
+    return new RegistrationInfoResponse(
+        bootstrap, bootstrap, accessRequestsEnabled, accessRequestsConfigured);
   }
 
   public PasswordRequirementsResponse passwordRequirements() {

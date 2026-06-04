@@ -27,6 +27,7 @@ export default function LoginPage() {
 
   const from = (location.state as { from?: string } | null)?.from ?? "/challenges";
   const registrationOpen = registrationQuery.data?.registrationOpen ?? false;
+  const accessRequestsEnabled = registrationQuery.data?.accessRequestsEnabled ?? false;
 
   if (token) {
     return <Navigate to={from} replace />;
@@ -86,6 +87,25 @@ export default function LoginPage() {
           </Link>
         </p>
       )}
+      {accessRequestsEnabled && !registrationQuery.data?.bootstrap && (
+        <p className="mb-0 mt-6 text-center text-sm text-muted-foreground">
+          Want to try the app?{" "}
+          <Link
+            to="/request-access"
+            className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+          >
+            Request access
+          </Link>
+        </p>
+      )}
+      {!accessRequestsEnabled &&
+        !registrationOpen &&
+        registrationQuery.isSuccess &&
+        !registrationQuery.data?.bootstrap && (
+          <p className="mb-0 mt-6 text-center text-xs text-muted-foreground">
+            Need an account? Contact the site administrator.
+          </p>
+        )}
     </AuthShell>
   );
 }

@@ -233,7 +233,8 @@ class AiCoachServiceTest {
             "qwen",
             false,
             false,
-            false);
+            false,
+            0);
     AiCoachService ollamaService =
         new AiCoachService(
             feedbackItemRepository,

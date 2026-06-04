@@ -46,6 +46,10 @@ public class UserEntity {
   @Column(nullable = false)
   private UserRole role;
 
+  /** Null = platform default; 0 = unlimited; positive = explicit cap for learners. */
+  @Column(name = "max_started_challenges")
+  private Integer maxStartedChallenges;
+
   protected UserEntity() {}
 
   public UserEntity(
@@ -113,6 +117,14 @@ public class UserEntity {
     return role;
   }
 
+  public Integer getMaxStartedChallenges() {
+    return maxStartedChallenges;
+  }
+
+  public void setMaxStartedChallenges(Integer maxStartedChallenges) {
+    this.maxStartedChallenges = maxStartedChallenges;
+  }
+
   public void setPasswordHash(String passwordHash) {
     assignPasswordHash(passwordHash);
   }
@@ -131,5 +143,9 @@ public class UserEntity {
 
   public void setUpdatedAt(Instant updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public void markDeleted(Instant deletedAt) {
+    this.deletedAt = deletedAt;
   }
 }

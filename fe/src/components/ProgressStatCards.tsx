@@ -4,6 +4,7 @@ import {
   CodeOutlined,
 } from "@ant-design/icons";
 import { Typography } from "antd";
+import { cn } from "@/lib/utils";
 
 type Stats = {
   passed: number;
@@ -21,7 +22,7 @@ const ITEMS = [
     key: "passed",
     label: "Passed",
     icon: <CheckCircleOutlined />,
-    color: "text-emerald-400",
+    color: "text-emerald-600 dark:text-emerald-400",
     ring: "ring-emerald-500/20",
     bg: "bg-emerald-500/10",
   },
@@ -29,7 +30,7 @@ const ITEMS = [
     key: "attempted",
     label: "In progress",
     icon: <ClockCircleOutlined />,
-    color: "text-sky-400",
+    color: "text-sky-600 dark:text-sky-400",
     ring: "ring-sky-500/20",
     bg: "bg-sky-500/10",
   },
@@ -37,7 +38,7 @@ const ITEMS = [
     key: "failed",
     label: "Needs work",
     icon: <CodeOutlined />,
-    color: "text-rose-400",
+    color: "text-rose-600 dark:text-rose-400",
     ring: "ring-rose-500/20",
     bg: "bg-rose-500/10",
   },
@@ -55,18 +56,19 @@ export default function ProgressStatCards({ stats }: Props) {
       {ITEMS.map((item) => (
         <div
           key={item.key}
-          className={`rounded-xl border border-slate-800/80 p-4 ring-1 ${item.ring} ${item.bg}`}
+          className={cn(
+            "rounded-xl border border-border p-4 ring-1",
+            item.ring,
+            item.bg,
+          )}
         >
-          <div className="flex items-center gap-2 text-slate-400 text-xs uppercase tracking-wide">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
             <span className={item.color}>{item.icon}</span>
             {item.label}
           </div>
-          <Typography.Title
-            level={3}
-            className={`!mb-0 !mt-2 ${item.color}`}
-          >
+          <Typography.Title level={3} className={cn("!mb-0 !mt-2", item.color)}>
             {values[item.key]}
-            <span className="text-slate-500 text-base font-normal">
+            <span className="text-base font-normal text-muted-foreground">
               {" "}
               / {stats.total}
             </span>

@@ -3,6 +3,7 @@ package com.codetraininglab.submission.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import com.codetraininglab.catalog.application.ChallengeQuotaService;
 import com.codetraininglab.submission.api.ReportResponse;
 import com.codetraininglab.testsupport.CtlPropertiesTestFixtures;
 import com.codetraininglab.domain.FeedbackCategory;
@@ -42,6 +43,7 @@ class SubmissionServiceAdditionalTest {
   @Mock private UserProgressRepository progressRepository;
   @Mock private RabbitTemplate rabbitTemplate;
   @Mock private SubmissionEventHub eventHub;
+  @Mock private ChallengeQuotaService challengeQuotaService;
 
   private SubmissionService service;
   private final UUID userId = UUID.randomUUID();
@@ -57,6 +59,7 @@ class SubmissionServiceAdditionalTest {
             challengeRepository,
             runtimeResolver,
             progressRepository,
+            challengeQuotaService,
             rabbitTemplate,
             eventHub,
             properties,

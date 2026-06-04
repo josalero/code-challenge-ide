@@ -1,5 +1,6 @@
 package com.codetraininglab.identity.application;
 
+import com.codetraininglab.catalog.application.ChallengeQuotaService;
 import com.codetraininglab.domain.ProgressState;
 import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
@@ -22,14 +23,17 @@ public class MeMetricsService {
   private final ChallengeRepository challengeRepository;
   private final UserProgressRepository progressRepository;
   private final SubmissionRepository submissionRepository;
+  private final ChallengeQuotaService challengeQuotaService;
 
   public MeMetricsService(
       ChallengeRepository challengeRepository,
       UserProgressRepository progressRepository,
-      SubmissionRepository submissionRepository) {
+      SubmissionRepository submissionRepository,
+      ChallengeQuotaService challengeQuotaService) {
     this.challengeRepository = challengeRepository;
     this.progressRepository = progressRepository;
     this.submissionRepository = submissionRepository;
+    this.challengeQuotaService = challengeQuotaService;
   }
 
   @Transactional(readOnly = true)
@@ -65,7 +69,10 @@ public class MeMetricsService {
 
     int catalogTotal = catalog.size();
     int notStarted = Math.max(catalogTotal - passed - attempted - failed, 0);
-    int completionPercent = catalogTotal == 0 ? 0 : Math.round((passed * 100f) / catalogTotal);
+    int challengesStarted = challengeQuotaService.countStartedChallenges(userId);
+    var quota = challengeQuotaService.quotaForUser(userId);
+    int completionPercent =
+        ChallengeProgressCalculator.completionPercent(passed, challengesStarted);
 
     long submissionsTotal = submissionRepository.countByUserId(userId);
     long practiceRuns = submissionRepository.countByUserIdAndKind(userId, SubmissionKind.RUN);
@@ -77,6 +84,9 @@ public class MeMetricsService {
 
     return new MeMetricsResponse(
         catalogTotal,
+        challengesStarted,
+        quota.maxStartedChallenges(),
+        quota.challengesRemaining(),
         notStarted,
         attempted,
         passed,
@@ -114,6 +124,9 @@ public class MeMetricsService {
 
   public record MeMetricsResponse(
       int catalogTotal,
+      int challengesStarted,
+      Integer maxStartedChallenges,
+      Integer challengesRemaining,
       int notStarted,
       int attempted,
       int passed,

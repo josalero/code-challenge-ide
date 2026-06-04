@@ -326,7 +326,7 @@ class RunnerPoolWarmExecutorWarmFlowTest {
         base.ollamaModel(),
         base.dockerEnabled(),
         base.lspEnabled(),
-        base.runnerPoolWarmOnStartup());
+        base.runnerPoolWarmOnStartup(), base.userMaxStartedChallenges());
   }
 
   private static Object invokeStatic(String name, Object arg) throws Exception {

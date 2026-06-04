@@ -34,6 +34,7 @@ public final class CtlPropertiesTestFixtures {
         "ollama",
         false,
         false,
-        false);
+        false,
+        0);
   }
 }

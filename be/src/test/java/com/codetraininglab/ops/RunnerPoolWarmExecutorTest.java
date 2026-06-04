@@ -46,7 +46,7 @@ class RunnerPoolWarmExecutorTest {
             base.ollamaModel(),
             base.dockerEnabled(),
             base.lspEnabled(),
-            base.runnerPoolWarmOnStartup());
+            base.runnerPoolWarmOnStartup(), base.userMaxStartedChallenges());
     RunnerWarmStateStore warmStateStore = mock(RunnerWarmStateStore.class);
     when(warmStateStore.runnerPoolStampByImage()).thenReturn(Map.of());
     var executor =

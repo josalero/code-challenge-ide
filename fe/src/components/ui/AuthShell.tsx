@@ -2,6 +2,8 @@ import { Bot, Code2, ShieldCheck } from "lucide-react";
 import { Typography } from "antd";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import AppLogo from "../AppLogo";
+import PoweredByFooter from "../PoweredByFooter";
 import ThemeToggle from "../ThemeToggle";
 
 type Props = {
@@ -31,24 +33,14 @@ const FEATURES = [
 export default function AuthShell({ title, subtitle, children }: Props) {
   return (
     <div className="ctl-auth-bg flex min-h-dvh flex-col">
-      <header className="border-b border-border bg-background/90 backdrop-blur">
+      <header className="border-b border-border bg-card/95 backdrop-blur">
         <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 py-2 md:px-6">
           <Link
             to="/login"
-            className="inline-flex min-w-0 items-center gap-2.5 text-foreground no-underline"
+            className="inline-flex min-w-0 text-foreground no-underline"
             aria-label="Code Training Lab"
           >
-            <span className="flex size-9 items-center justify-center rounded-md bg-emerald-500/15 ring-1 ring-emerald-500/25">
-              <Code2 className="size-5 text-emerald-600 dark:text-emerald-400" aria-hidden />
-            </span>
-            <span className="min-w-0">
-              <Typography.Text className="!text-foreground block text-sm font-semibold leading-tight">
-                Code Training Lab
-              </Typography.Text>
-              <Typography.Text className="!text-muted-foreground hidden text-xs sm:block">
-                Practice · test · improve
-              </Typography.Text>
-            </span>
+            <AppLogo />
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -109,7 +101,13 @@ export default function AuthShell({ title, subtitle, children }: Props) {
       <footer className="border-t border-border bg-background/90">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between md:px-6">
           <span className="font-medium text-foreground">Code Training Lab</span>
-          <span>Docker sandbox · hidden tests · feedback reports</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>Docker sandbox · hidden tests · feedback reports</span>
+            <span className="hidden text-border sm:inline" aria-hidden>
+              ·
+            </span>
+            <PoweredByFooter />
+          </div>
         </div>
       </footer>
     </div>

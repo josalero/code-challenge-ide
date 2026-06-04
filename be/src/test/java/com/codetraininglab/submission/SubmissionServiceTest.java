@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.codetraininglab.catalog.application.ChallengeQuotaService;
 import com.codetraininglab.submission.application.LanguageRuntimeResolver;
 import com.codetraininglab.submission.api.CreateSubmissionRequest;
 import com.codetraininglab.submission.api.SubmissionResponse;
@@ -49,6 +50,8 @@ class SubmissionServiceTest {
   @Mock private RabbitTemplate rabbitTemplate;
   @Mock private SubmissionEventHub eventHub;
 
+  @Mock private ChallengeQuotaService challengeQuotaService;
+
   private SubmissionService service;
   private final UUID userId = UUID.randomUUID();
   private final UUID challengeId = UUID.randomUUID();
@@ -66,6 +69,7 @@ class SubmissionServiceTest {
             challengeRepository,
             runtimeResolver,
             progressRepository,
+            challengeQuotaService,
             rabbitTemplate,
             eventHub,
             properties,

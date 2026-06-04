@@ -63,7 +63,8 @@ class RunnerOpsServiceTest {
             "qwen",
             false,
             false,
-            false);
+            false,
+            0);
     lenient().when(runtimeRepository.findAllOrdered()).thenReturn(List.of());
     lenient().when(languageRepository.findAll()).thenReturn(List.of());
     lenient().when(warmStateStore.runnerPoolStampByImage()).thenReturn(java.util.Map.of());
@@ -162,8 +163,8 @@ class RunnerOpsServiceTest {
             "qwen",
             true,
             true,
-            false);
-    RunnerPoolWarmExecutor executor = org.mockito.Mockito.mock(RunnerPoolWarmExecutor.class);
+            false,
+                    0);    RunnerPoolWarmExecutor executor = org.mockito.Mockito.mock(RunnerPoolWarmExecutor.class);
     when(runnerPoolWarmExecutor.getIfAvailable()).thenReturn(executor);
     RunnerOpsService dockerEnabledService =
         new RunnerOpsService(
@@ -205,8 +206,8 @@ class RunnerOpsServiceTest {
             "qwen",
             true,
             true,
-            false);
-    when(runnerPoolWarmExecutor.getIfAvailable())
+            false,
+                    0);    when(runnerPoolWarmExecutor.getIfAvailable())
         .thenReturn(org.mockito.Mockito.mock(RunnerPoolWarmExecutor.class));
     RunnerOpsService dockerEnabledService =
         new RunnerOpsService(
@@ -247,8 +248,8 @@ class RunnerOpsServiceTest {
             "qwen",
             true,
             true,
-            false);
-    RunnerOpsService dockerEnabledService =
+            false,
+                    0);    RunnerOpsService dockerEnabledService =
         new RunnerOpsService(
             properties,
             environment,

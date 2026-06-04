@@ -91,7 +91,7 @@ class MeControllerTest {
   void returnsMetrics() {
     when(metricsService.metricsForUser(userId))
         .thenReturn(
-            new MeMetricsResponse(10, 4, 2, 3, 1, 30, 20, 12, 8, 18, 2, List.of(), List.of()));
+            new MeMetricsResponse(10, 2, 5, 3, 4, 2, 3, 1, 30, 20, 12, 8, 18, 2, List.of(), List.of()));
     var metrics =
         controller.metrics(new UsernamePasswordAuthenticationToken(userId, null, List.of()));
     assertThat(metrics.catalogTotal()).isEqualTo(10);

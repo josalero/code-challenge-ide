@@ -64,6 +64,8 @@ public class RunnerOpsService {
           "vue",
           "angular",
           "sql");
+  private static final List<String> WARM_JOB_TYPES =
+      List.of("MAVEN_WARM", "LSP_WARM", "RUNNER_POOL_WARM", "INFRA_WARM");
 
   private final CtlProperties properties;
   private final Environment environment;
@@ -120,7 +122,8 @@ public class RunnerOpsService {
         runnerImages,
         lspImages,
         languages,
-        activeJobId);
+        activeJobId,
+        warmStateStore.lastWarmUpAt().orElse(null));
   }
 
   public RunnerOpsJobResponse startMavenWarm(boolean force) {
@@ -262,6 +265,9 @@ public class RunnerOpsService {
           try {
             action.run();
             job.complete("Completed successfully.");
+            if (WARM_JOB_TYPES.contains(type)) {
+              warmStateStore.recordLastWarmUpAt(Instant.now());
+            }
             log.info(
                 "Runner ops job completed type={} id={} elapsedMs={}",
                 type,

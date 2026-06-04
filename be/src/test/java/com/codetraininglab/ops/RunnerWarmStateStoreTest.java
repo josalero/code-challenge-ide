@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 import com.codetraininglab.operations.api.RunnerImageStatusResponse;
 import com.codetraininglab.platform.persistence.LspWarmStateEntity;
 import com.codetraininglab.platform.persistence.LspWarmStateRepository;
+import com.codetraininglab.platform.persistence.OpsPlatformStateEntity;
+import com.codetraininglab.platform.persistence.OpsPlatformStateRepository;
 import com.codetraininglab.platform.persistence.RunnerPoolWarmStateEntity;
 import com.codetraininglab.platform.persistence.RunnerPoolWarmStateRepository;
 import java.nio.file.Files;
@@ -35,6 +37,7 @@ class RunnerWarmStateStoreTest {
 
   @Mock private RunnerPoolWarmStateRepository runnerPoolRepository;
   @Mock private LspWarmStateRepository lspRepository;
+  @Mock private OpsPlatformStateRepository platformStateRepository;
   @Mock private Environment environment;
 
   private RunnerWarmStateStore store;
@@ -45,6 +48,7 @@ class RunnerWarmStateStoreTest {
         new RunnerWarmStateStore(
             runnerPoolRepository,
             lspRepository,
+            platformStateRepository,
             environment,
             JsonMapper.builder().build(),
             Clock.fixed(FIXED_NOW, ZoneOffset.UTC));
@@ -93,6 +97,45 @@ class RunnerWarmStateStoreTest {
 
     assertThat(store.runnerPoolStampByImage())
         .containsExactly(java.util.Map.entry("warm-image:local", "sha256:warm"));
+  }
+
+  @Test
+  void syncRunnerPoolFromStatusesPreservesWarmTimestampWhenUnchanged() {
+    Instant previousWarmUp = Instant.parse("2026-05-01T08:30:00Z");
+    RunnerPoolWarmStateEntity existing =
+        new RunnerPoolWarmStateEntity("warm-image:local", "sha256:same", true, previousWarmUp);
+    when(runnerPoolRepository.findById("warm-image:local")).thenReturn(Optional.of(existing));
+
+    store.syncRunnerPoolFromStatuses(
+        List.of(
+            new RunnerImageStatusResponse(
+                "java 26", "warm-image:local", true, "sha256:same", true)));
+
+    assertThat(existing.getWarmedAt()).isEqualTo(previousWarmUp);
+  }
+
+  @Test
+  void recordLastWarmUpAtPersistsPlatformTimestamp() {
+    when(platformStateRepository.findById(OpsPlatformStateEntity.DEFAULT_ID))
+        .thenReturn(Optional.empty());
+
+    store.recordLastWarmUpAt(FIXED_NOW);
+
+    ArgumentCaptor<OpsPlatformStateEntity> saved =
+        ArgumentCaptor.forClass(OpsPlatformStateEntity.class);
+    verify(platformStateRepository).save(saved.capture());
+    assertThat(saved.getValue().getLastWarmUpAt()).isEqualTo(FIXED_NOW);
+  }
+
+  @Test
+  void lastWarmUpAtReadsPlatformState() {
+    when(platformStateRepository.findById(OpsPlatformStateEntity.DEFAULT_ID))
+        .thenReturn(
+            Optional.of(
+                new OpsPlatformStateEntity(
+                    OpsPlatformStateEntity.DEFAULT_ID, FIXED_NOW)));
+
+    assertThat(store.lastWarmUpAt()).contains(FIXED_NOW);
   }
 
   @Test

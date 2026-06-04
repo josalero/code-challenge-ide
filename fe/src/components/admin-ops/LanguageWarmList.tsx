@@ -40,8 +40,8 @@ function RuntimeRow({
     : runtimeStatus(row.editorReady, true, "editor");
 
   return (
-    <tr className="border-t border-slate-800/60">
-      <td className="py-2 pl-10 pr-2 text-sm text-slate-300">{row.label}</td>
+    <tr className="border-t border-border">
+      <td className="py-2 pl-10 pr-2 text-sm text-muted-foreground">{row.label}</td>
       <td className="px-2 py-2">
         <Tag color={runTests.color} className="!m-0 !text-[11px]">
           {runTests.label}
@@ -52,7 +52,7 @@ function RuntimeRow({
           {editor.label}
         </Tag>
       </td>
-      <td className="py-2 pr-2 text-xs text-slate-500">
+      <td className="py-2 pr-2 text-xs text-muted-foreground">
         {!row.runnerPresent && row.runnerImage ? (
           <span className="font-mono" title={row.runnerImage}>
             Run <code className="text-[10px]">make runners</code>
@@ -82,12 +82,12 @@ export default function LanguageWarmList({
 }: Props) {
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-slate-800/80 bg-slate-950/30 p-4">
-        <h2 className="text-sm font-semibold text-slate-100">Warm up</h2>
-        <p className="mt-1 text-sm text-slate-400">
+      <div className="rounded-lg border border-border bg-muted/30 p-4">
+        <h2 className="text-sm font-semibold text-foreground">Warm up</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Preloads Docker containers so{" "}
-          <strong className="font-medium text-slate-300">Run tests</strong> and{" "}
-          <strong className="font-medium text-slate-300">IntelliSense</strong>{" "}
+          <strong className="font-medium text-foreground">Run tests</strong> and{" "}
+          <strong className="font-medium text-foreground">IntelliSense</strong>{" "}
           respond quickly. One job runs runner smoke tests, then editor language servers.
           Java also warms the Maven cache when needed.
         </p>
@@ -112,19 +112,19 @@ export default function LanguageWarmList({
             </Button>
           </Tooltip>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
-          <strong className="font-medium text-slate-400">Warm everything</strong> skips
+        <p className="mt-2 text-xs text-muted-foreground">
+          <strong className="font-medium text-foreground">Warm everything</strong> skips
           languages already warm for the current image.{" "}
-          <strong className="font-medium text-slate-400">Re-warm</strong> forces a full pass.
+          <strong className="font-medium text-foreground">Re-warm</strong> forces a full pass.
           A running pool container counts as ready even if the saved image stamp is stale after{" "}
           <code className="text-[10px]">docker build</code>.
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-800/80">
+      <div className="overflow-hidden rounded-lg border border-border">
         <table className="w-full border-collapse text-left text-sm">
           <thead>
-            <tr className="bg-slate-900/80 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            <tr className="bg-muted text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               <th className="px-3 py-2.5 font-medium">Language</th>
               <th className="px-2 py-2.5 font-medium">Run tests</th>
               <th className="px-2 py-2.5 font-medium">IntelliSense</th>
@@ -132,7 +132,7 @@ export default function LanguageWarmList({
                 <span className="inline-flex items-center gap-1">
                   Action
                   <Tooltip title="Warms every active runtime version for that language (runner + editor).">
-                    <HelpCircle className="size-3 text-slate-600" aria-hidden />
+                    <HelpCircle className="size-3 text-muted-foreground" aria-hidden />
                   </Tooltip>
                 </span>
               </th>
@@ -147,13 +147,13 @@ export default function LanguageWarmList({
                     ? "border-l-amber-500/60"
                     : group.state === "missing"
                       ? "border-l-red-500/40"
-                      : "border-l-slate-700";
+                      : "border-l-border";
 
               return (
                 <Fragment key={group.language}>
                   <tr
                     className={cn(
-                      "border-l-2 bg-slate-900/30",
+                      "border-l-2 bg-muted/20",
                       stateBorder,
                     )}
                   >
@@ -162,18 +162,18 @@ export default function LanguageWarmList({
                         <span
                           className={cn(
                             "size-2 shrink-0 rounded-full",
-                            group.state === "ready" && "bg-emerald-400",
-                            group.state === "partial" && "bg-amber-400",
-                            group.state === "cold" && "bg-slate-600",
-                            group.state === "missing" && "bg-red-400/70",
+                            group.state === "ready" && "bg-emerald-500 dark:bg-emerald-400",
+                            group.state === "partial" && "bg-amber-500 dark:bg-amber-400",
+                            group.state === "cold" && "bg-muted-foreground/50",
+                            group.state === "missing" && "bg-red-500/70",
                           )}
                           aria-hidden
                         />
                         <div>
-                          <span className="font-medium capitalize text-slate-100">
+                          <span className="font-medium capitalize text-foreground">
                             {group.language}
                           </span>
-                          <p className="mt-0.5 text-xs text-slate-500">
+                          <p className="mt-0.5 text-xs text-muted-foreground">
                             {languageStateLabel(group.state)}
                             {group.runtimes.length > 0
                               ? ` · ${group.runtimes.length} runtime${group.runtimes.length === 1 ? "" : "s"}`
@@ -182,7 +182,7 @@ export default function LanguageWarmList({
                         </div>
                       </div>
                     </td>
-                    <td colSpan={2} className="px-2 py-3 align-top text-xs text-slate-500">
+                    <td colSpan={2} className="px-2 py-3 align-top text-xs text-muted-foreground">
                       {languageStateSummary(group)}
                     </td>
                     <td className="py-3 pr-3 align-top">

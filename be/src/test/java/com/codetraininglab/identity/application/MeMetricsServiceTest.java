@@ -3,6 +3,8 @@ package com.codetraininglab.identity.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import com.codetraininglab.catalog.application.ChallengeQuotaService;
+import com.codetraininglab.catalog.application.ChallengeQuotaService.ChallengeQuotaSnapshot;
 import com.codetraininglab.domain.ProgressState;
 import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
@@ -26,6 +28,7 @@ class MeMetricsServiceTest {
   @Mock private ChallengeRepository challengeRepository;
   @Mock private UserProgressRepository progressRepository;
   @Mock private SubmissionRepository submissionRepository;
+  @Mock private ChallengeQuotaService challengeQuotaService;
 
   @InjectMocks private MeMetricsService service;
 
@@ -52,10 +55,15 @@ class MeMetricsServiceTest {
         .thenReturn(10L);
     when(submissionRepository.countByUserIdAndStatus(userId, SubmissionStatus.FAILED))
         .thenReturn(2L);
+    when(challengeQuotaService.countStartedChallenges(userId)).thenReturn(2);
+    when(challengeQuotaService.quotaForUser(userId)).thenReturn(new ChallengeQuotaSnapshot(5, 3));
 
     var metrics = service.metricsForUser(userId);
 
     assertThat(metrics.catalogTotal()).isEqualTo(2);
+    assertThat(metrics.challengesStarted()).isEqualTo(2);
+    assertThat(metrics.maxStartedChallenges()).isEqualTo(5);
+    assertThat(metrics.challengesRemaining()).isEqualTo(3);
     assertThat(metrics.passed()).isEqualTo(1);
     assertThat(metrics.attempted()).isEqualTo(1);
     assertThat(metrics.notStarted()).isZero();

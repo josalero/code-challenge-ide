@@ -53,6 +53,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, ApiPaths.AUTH_REGISTRATION_INFO)
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, ApiPaths.AUTH_ACCESS_REQUEST)
+                    .permitAll()
                     .requestMatchers(HttpMethod.GET, ApiPaths.AUTH_PASSWORD_REQUIREMENTS)
                     .permitAll()
                     .requestMatchers(

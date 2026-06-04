@@ -8,6 +8,10 @@ import type { ChallengeSummary, PageResponse, ProgressEntry } from "../api/types
 import { ApiPaths, ProgressState } from "../domain/constants";
 import { useAuth } from "../auth/useAuth";
 import AppLayout from "../components/AppLayout";
+import {
+  challengeQuotaMessage,
+  useChallengeQuota,
+} from "../hooks/useChallengeQuota";
 import ChallengesFilterBar from "../components/challenges/ChallengesFilterBar";
 import ChallengesHero from "../components/challenges/ChallengesHero";
 import ChallengesResultsPanel from "../components/challenges/ChallengesResultsPanel";
@@ -25,7 +29,7 @@ import {
 } from "../utils/challengeProgress";
 
 export default function ChallengesPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const [filter, setFilter] = useState<ProgressFilter>("all");
   const [languageFilter, setLanguageFilter] = useState<LanguageFilter>("all");
   const [search, setSearch] = useState("");
@@ -40,6 +44,13 @@ export default function ChallengesPage() {
     queryKey: ["progress"],
     queryFn: () => apiFetch<ProgressEntry[]>(ApiPaths.ME_PROGRESS),
   });
+
+  const quotaQuery = useChallengeQuota(Boolean(user) && !isAdmin);
+  const quotaMessage =
+    quotaQuery.data?.maxStartedChallenges != null
+    && (quotaQuery.data.challengesRemaining ?? 0) <= 0
+      ? challengeQuotaMessage(quotaQuery.data)
+      : null;
 
   const progressBySlug = useMemo(
     () =>
@@ -130,6 +141,16 @@ export default function ChallengesPage() {
 
         {!error && (
           <>
+            {quotaMessage && (
+              <Alert
+                type="warning"
+                showIcon
+                className="mb-6"
+                message="Exercise limit reached"
+                description={quotaMessage}
+              />
+            )}
+
             <ChallengesHero stats={progressStats} extra={adminAction} />
 
             {(isLoading || challenges.length > 0) && (
@@ -163,9 +184,9 @@ export default function ChallengesPage() {
             )}
 
             {!isLoading && challenges.length === 0 && data && (
-              <div className="mt-8 rounded-2xl border border-dashed border-slate-700/60 bg-slate-900/30 px-6 py-20 text-center">
-                <p className="text-lg font-medium text-slate-200">No challenges yet</p>
-                <p className="mt-2 text-sm text-slate-500">
+              <div className="mt-8 rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-20 text-center dark:border-slate-700/60 dark:bg-slate-900/30">
+                <p className="text-lg font-medium text-foreground">No challenges yet</p>
+                <p className="mt-2 text-sm text-muted-foreground">
                   Check back soon or ask an admin to publish exercises.
                 </p>
                 {isAdmin && (

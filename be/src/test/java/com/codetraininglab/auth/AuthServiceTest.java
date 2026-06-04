@@ -11,6 +11,7 @@ import com.codetraininglab.identity.api.AuthResponse;
 import com.codetraininglab.identity.api.ChangePasswordRequest;
 import com.codetraininglab.identity.api.LoginRequest;
 import com.codetraininglab.identity.api.RegisterRequest;
+import com.codetraininglab.platform.config.AccessRequestProperties;
 import com.codetraininglab.platform.config.CtlProperties;
 import com.codetraininglab.platform.persistence.UserEntity;
 import com.codetraininglab.platform.persistence.UserRepository;
@@ -42,14 +43,18 @@ class AuthServiceTest {
   @BeforeEach
   void setUp() {
     passwordEncoder = new BCryptPasswordEncoder(12);
+    CtlProperties ctlProperties = CtlPropertiesTestFixtures.defaults();
+    AccessRequestProperties accessRequestProperties =
+        new AccessRequestProperties(true, "admin@example.com");
     JwtService jwtService =
         new JwtService(
-            CtlPropertiesTestFixtures.defaults(), Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+            ctlProperties, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
     authService =
         new AuthService(
             userRepository,
             passwordEncoder,
             jwtService,
+            accessRequestProperties,
             Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
   }
 
@@ -84,47 +89,51 @@ class AuthServiceTest {
 
     assertThat(info.registrationOpen()).isTrue();
     assertThat(info.bootstrap()).isTrue();
+    assertThat(info.accessRequestsEnabled()).isFalse();
+    assertThat(info.accessRequestsConfigured()).isFalse();
   }
 
   @Test
-  void registrationInfoClosedWhenUsersExist() {
+  void registrationInfoReportsAccessRequestsWhenEnabledAndUsersExist() {
     when(userRepository.countByDeletedAtIsNull()).thenReturn(2L);
 
     var info = authService.registrationInfo();
 
     assertThat(info.registrationOpen()).isFalse();
     assertThat(info.bootstrap()).isFalse();
+    assertThat(info.accessRequestsEnabled()).isTrue();
+    assertThat(info.accessRequestsConfigured()).isTrue();
   }
 
   @Test
-  void registrationInfoClosedWhenDisabledAndNotBootstrap() {
-    CtlProperties closedRegistration =
-        new CtlProperties(
-            false,
-            CtlPropertiesTestFixtures.defaults().jwtSecret(),
-            24,
-            "http://localhost:5173",
-            "challenges",
-            "runner",
-            "",
-            true,
-            60,
-            CtlPropertiesTestFixtures.TEST_LSP_IMAGES,
-            5,
-            24,
-            "openrouter",
-            "",
-            "model",
-            "http://localhost:11434",
-            "ollama",
-            false,
-            false,
-            false);
+  void registrationInfoShowsAccessRequestsLinkWhenNotifyEmailMissing() {
+    CtlProperties ctlProperties = CtlPropertiesTestFixtures.defaults();
+    AccessRequestProperties missingNotify = new AccessRequestProperties(true, "");
+    AuthService service =
+        new AuthService(
+            userRepository,
+            passwordEncoder,
+            new JwtService(ctlProperties, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)),
+            missingNotify,
+            Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+    when(userRepository.countByDeletedAtIsNull()).thenReturn(2L);
+
+    var info = service.registrationInfo();
+
+    assertThat(info.accessRequestsEnabled()).isTrue();
+    assertThat(info.accessRequestsConfigured()).isFalse();
+  }
+
+  @Test
+  void registrationInfoClosedWhenAccessRequestsDisabled() {
+    CtlProperties ctlProperties = CtlPropertiesTestFixtures.defaults();
+    AccessRequestProperties disabledAccess = new AccessRequestProperties(false, "admin@example.com");
     AuthService closed =
         new AuthService(
             userRepository,
             passwordEncoder,
-            new JwtService(closedRegistration, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)),
+            new JwtService(ctlProperties, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)),
+            disabledAccess,
             Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
     when(userRepository.countByDeletedAtIsNull()).thenReturn(1L);
 
@@ -132,44 +141,10 @@ class AuthServiceTest {
 
     assertThat(info.registrationOpen()).isFalse();
     assertThat(info.bootstrap()).isFalse();
+    assertThat(info.accessRequestsEnabled()).isFalse();
+    assertThat(info.accessRequestsConfigured()).isFalse();
   }
 
-  @Test
-  void registerForbiddenWhenRegistrationDisabled() {
-    CtlProperties closedRegistration =
-        new CtlProperties(
-            false,
-            CtlPropertiesTestFixtures.defaults().jwtSecret(),
-            24,
-            "http://localhost:5173",
-            "challenges",
-            "runner",
-            "",
-            true,
-            60,
-            CtlPropertiesTestFixtures.TEST_LSP_IMAGES,
-            5,
-            24,
-            "openrouter",
-            "",
-            "model",
-            "http://localhost:11434",
-            "ollama",
-            false,
-            false,
-            false);
-    AuthService closed =
-        new AuthService(
-            userRepository,
-            passwordEncoder,
-            new JwtService(closedRegistration, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)),
-            Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
-    when(userRepository.countByDeletedAtIsNull()).thenReturn(1L);
-
-    assertThatThrownBy(() -> closed.register(new RegisterRequest("a@b.com", "Password1")))
-        .isInstanceOf(ResponseStatusException.class)
-        .hasMessageContaining("Registration is disabled");
-  }
 
   @Test
   void registerRejectsDuplicateEmail() {
