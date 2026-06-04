@@ -5,6 +5,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { apiFetch, ApiError } from "../api/client";
 import type { RegistrationInfoResponse } from "../api/types";
 import { useAuth } from "../auth/useAuth";
+import PasswordRequirements from "../components/PasswordRequirements";
 import AuthShell from "../components/ui/AuthShell";
 import { ApiPaths } from "../domain/constants";
 
@@ -40,13 +41,13 @@ export default function RegisterPage() {
   }
 
   const info = registrationQuery.data;
-  if (!info?.registrationOpen) {
+  if (!info?.bootstrap) {
     return (
       <AuthShell
         title="Registration closed"
-        subtitle="New sign-ups are disabled on this instance. Contact an administrator for access."
+        subtitle="Accounts are created by administrators. Contact your admin for access."
       >
-        <Alert type="info" showIcon message="Registration is not available." className="mb-4" />
+        <Alert type="info" showIcon message="Self-service registration is not available." className="mb-4" />
         <Link to="/login">
           <Button type="primary" block>
             Sign in
@@ -71,25 +72,20 @@ export default function RegisterPage() {
 
   return (
     <AuthShell
-      title={info.bootstrap ? "Set up administrator" : "Create your account"}
-      subtitle={
-        info.bootstrap
-          ? "No users exist yet. This account becomes the platform administrator and can publish challenges."
-          : "Password must be at least 8 characters and different from your email."
-      }
+      title="Set up administrator"
+      subtitle="No users exist yet. This account becomes the platform administrator and can publish challenges."
     >
-      {info.bootstrap && (
-        <Alert
-          type="info"
-          showIcon
-          className="mb-4"
-          message="First-time setup"
-          description="You are creating the initial admin account for this deployment."
-        />
-      )}
+      <Alert
+        type="info"
+        showIcon
+        className="mb-4"
+        message="First-time setup"
+        description="You are creating the initial admin account for this deployment."
+      />
       {error && (
         <Alert type="error" message={error} showIcon className="mb-4" role="alert" />
       )}
+      <PasswordRequirements className="mb-4" />
       <Form layout="vertical" onFinish={onFinish} requiredMark={false} size="large">
         <Form.Item
           label={<span className="text-muted-foreground">Email</span>}
@@ -130,7 +126,7 @@ export default function RegisterPage() {
           <Input.Password autoComplete="new-password" placeholder="••••••••" />
         </Form.Item>
         <Button type="primary" htmlType="submit" block loading={submitting}>
-          {info.bootstrap ? "Create admin account" : "Create account"}
+          Create admin account
         </Button>
       </Form>
       <p className="mb-0 mt-6 text-center text-sm text-muted-foreground">

@@ -36,8 +36,8 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(values.email.trim().toLowerCase(), values.password);
-      navigate(from, { replace: true });
+      const mustChange = await login(values.email.trim().toLowerCase(), values.password);
+      navigate(mustChange ? "/change-password" : from, { replace: true });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Sign in failed");
     } finally {
@@ -75,29 +75,15 @@ export default function LoginPage() {
           Sign in
         </Button>
       </Form>
-      {registrationOpen && (
+      {registrationOpen && registrationQuery.data?.bootstrap && (
         <p className="mb-0 mt-6 text-center text-sm text-muted-foreground">
-          {registrationQuery.data?.bootstrap ? (
-            <>
-              First time here?{" "}
-              <Link
-                to="/register"
-                className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
-              >
-                Set up admin account
-              </Link>
-            </>
-          ) : (
-            <>
-              No account?{" "}
-              <Link
-                to="/register"
-                className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
-              >
-                Create one
-              </Link>
-            </>
-          )}
+          First time here?{" "}
+          <Link
+            to="/register"
+            className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+          >
+            Set up admin account
+          </Link>
         </p>
       )}
     </AuthShell>

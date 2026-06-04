@@ -5,12 +5,39 @@ export type AuthResponse = {
   userId: string;
   email: string;
   role: UserRole;
+  mustChangePassword: boolean;
 };
 
 export type MeResponse = {
   id: string;
   email: string;
+  fullName: string | null;
   role: UserRole;
+  mustChangePassword: boolean;
+};
+
+export type PasswordRequirementsResponse = {
+  requirements: string[];
+};
+
+export type CreateUserRequest = {
+  email: string;
+  fullName: string;
+  temporaryPassword: string;
+  role: UserRole;
+};
+
+export type CreateUserResponse = {
+  id: string;
+  email: string;
+  fullName: string;
+  temporaryPassword: string;
+  role: UserRole;
+};
+
+export type ChangePasswordRequest = {
+  currentPassword: string;
+  newPassword: string;
 };
 
 export type RegistrationInfoResponse = {

@@ -12,7 +12,6 @@ spring:
     hikari:
       connection-timeout: 10000
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: validate
     open-in-view: false
@@ -108,6 +107,15 @@ ctl:
   runner-infra-warm-scheduled-enabled: ${RUNNER_INFRA_WARM_SCHEDULED_ENABLED:false}
   runner-infra-warm-interval-minutes: ${RUNNER_INFRA_WARM_INTERVAL_MINUTES:30}
   runner-infra-warm-initial-delay-minutes: ${RUNNER_INFRA_WARM_INITIAL_DELAY_MINUTES:5}
+  mail:
+    enabled: ${CTL_MAIL_ENABLED:false}
+    host: ${CTL_MAIL_HOST:mail.privateemail.com}
+    port: ${CTL_MAIL_PORT:587}
+    username: ${CTL_MAIL_USERNAME:${EMAIL_FROM_USER:}}
+    password: ${CTL_MAIL_PASSWORD:${EMAIL_FROM_PASSWORD:}}
+    from-name: ${CTL_MAIL_FROM_NAME:${EMAIL_FROM_NAME:Code Training Lab}}
+    login-url: ${CTL_MAIL_LOGIN_URL:http://localhost:5173/login}
+    debug: ${CTL_MAIL_DEBUG:false}
 
 springdoc:
   api-docs:
