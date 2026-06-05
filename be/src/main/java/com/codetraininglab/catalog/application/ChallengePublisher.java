@@ -137,7 +137,7 @@ public class ChallengePublisher {
         entity.getSlug(), entity.getTitle(), entity.getDifficulty(), entity.getLanguage());
   }
 
-  private void writeChallengeTree(
+  void writeChallengeTree(
       Path challengeDir,
       CreateChallengeRequest request,
       String slug,

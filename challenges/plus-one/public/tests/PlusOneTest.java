@@ -1,4 +1,4 @@
-package com.challenge.public_;
+package com.challenge.tests;
 
 import com.challenge.Solution;
 import org.junit.jupiter.api.Test;

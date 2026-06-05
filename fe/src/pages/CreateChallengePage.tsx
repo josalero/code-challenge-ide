@@ -1,11 +1,24 @@
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Form, Input, InputNumber, Select, Typography } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { Alert, Button, Form, Input, InputNumber, Modal, Select, Typography } from "antd";
+import { AlertTriangle, CheckCircle2, CircleDashed, Eye, Terminal } from "lucide-react";
+import type { Components } from "react-markdown";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiFetch, ApiError } from "../api/client";
-import type { ChallengeSummary, CreateChallengeRequest, LanguageRuntimeOption } from "../api/types";
+import type {
+  ChallengeSummary,
+  ChallengeValidationResponse,
+  CreateChallengeRequest,
+  LanguageRuntimeOption,
+  ValidateChallengeRequest,
+} from "../api/types";
 import AppLayout from "../components/AppLayout";
+import ChallengeCodeEditor, {
+  type SyntaxSummary,
+} from "../components/create-challenge/ChallengeCodeEditor";
 import CtlCard from "../components/ui/CtlCard";
 import PageHeader from "../components/ui/PageHeader";
 import { ApiPaths } from "../domain/constants";
@@ -43,6 +56,481 @@ type FormValues = {
   hiddenTests: { name: string; source: string }[];
 };
 
+type StatusKind = "ok" | "warn" | "missing";
+
+type ValidationState = {
+  result: ChallengeValidationResponse;
+  fingerprint: string;
+};
+
+type PreviewValues = CreateChallengeRequest;
+
+type StatusLineProps = {
+  label: string;
+  detail: string;
+  state: StatusKind;
+};
+
+const EMPTY_TESTS: FormValues["publicTests"] = [];
+const VALID_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const DESCRIPTION_TEMPLATE = `## Goal
+Describe the task in one or two sentences.
+
+## Function contract
+Explain the expected function, class, component, or query behavior.
+
+## Examples
+- Input: ...
+  Output: ...
+  Why: ...
+
+## Constraints
+- ...
+
+## Edge cases
+- ...
+`;
+
+const previewMarkdownComponents: Components = {
+  h2: ({ children }) => (
+    <h2 className="mb-2 mt-5 border-b border-border pb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground first:mt-0">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="mb-1.5 mt-4 text-sm font-semibold text-foreground first:mt-0">
+      {children}
+    </h3>
+  ),
+  p: ({ children }) => <p className="mb-3 leading-relaxed text-foreground">{children}</p>,
+  ul: ({ children }) => (
+    <ul className="my-3 list-disc space-y-1.5 pl-5 text-foreground marker:text-muted-foreground">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="my-3 list-decimal space-y-1.5 pl-5 text-foreground marker:text-muted-foreground">
+      {children}
+    </ol>
+  ),
+  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+  strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+  em: ({ children }) => <em className="text-muted-foreground">{children}</em>,
+  blockquote: ({ children }) => (
+    <blockquote className="my-3 border-l-2 border-emerald-500/40 bg-muted/40 py-1 pl-3 text-muted-foreground">
+      {children}
+    </blockquote>
+  ),
+  code: ({ className, children }) => {
+    const isBlock = Boolean(className?.includes("language-"));
+    if (isBlock) {
+      return <code className={className}>{children}</code>;
+    }
+    return (
+      <code className="rounded bg-muted px-1 py-0.5 text-[0.9em] text-foreground">
+        {children}
+      </code>
+    );
+  },
+  pre: ({ children }) => (
+    <pre className="my-3 overflow-auto rounded-md border border-border bg-muted p-3 text-xs text-foreground">
+      {children}
+    </pre>
+  ),
+};
+
+function hasWrittenCode(value: unknown): boolean {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function countWrittenTests(tests: { name?: string; source?: string }[] | undefined): number {
+  return (tests ?? []).filter((test) => hasWrittenCode(test.name) && hasWrittenCode(test.source))
+    .length;
+}
+
+function statusForCollection(written: number, total: number): StatusKind {
+  if (total === 0 || written === 0) {
+    return "missing";
+  }
+  return written === total ? "ok" : "warn";
+}
+
+function writtenDetail(written: number, total: number): string {
+  return total === 0 ? "Missing" : `${written}/${total} written`;
+}
+
+function syntaxDetail(summary: SyntaxSummary, editorCount: number): StatusLineProps {
+  if (summary.errors > 0) {
+    return {
+      label: "Syntax",
+      detail: `${summary.errors} error${summary.errors === 1 ? "" : "s"}`,
+      state: "warn",
+    };
+  }
+  if (summary.warnings > 0) {
+    return {
+      label: "Syntax",
+      detail: `${summary.warnings} warning${summary.warnings === 1 ? "" : "s"}`,
+      state: "warn",
+    };
+  }
+  return {
+    label: "Syntax",
+    detail: editorCount > 0 ? "No markers" : "Pending",
+    state: editorCount > 0 ? "ok" : "missing",
+  };
+}
+
+function StatusLine({ label, detail, state }: StatusLineProps) {
+  const Icon =
+    state === "ok" ? CheckCircle2 : state === "warn" ? AlertTriangle : CircleDashed;
+  const tone =
+    state === "ok"
+      ? "text-emerald-600 dark:text-emerald-300"
+      : state === "warn"
+        ? "text-amber-600 dark:text-amber-300"
+        : "text-muted-foreground";
+  return (
+    <div className="flex items-start gap-2">
+      <Icon className={`mt-0.5 size-4 shrink-0 ${tone}`} aria-hidden />
+      <div className="min-w-0">
+        <p className="mb-0 text-sm font-medium text-foreground">{label}</p>
+        <p className="mb-0 text-xs leading-relaxed text-muted-foreground">{detail}</p>
+      </div>
+    </div>
+  );
+}
+
+function toChallengeRequest(values: FormValues): CreateChallengeRequest {
+  const publicTests = values.publicTests ?? [];
+  const hiddenTests = values.hiddenTests ?? [];
+  return {
+    slug: (values.slug ?? "").trim().toLowerCase(),
+    title: (values.title ?? "").trim(),
+    descriptionMd: (values.descriptionMd ?? "").trim(),
+    difficulty: values.difficulty,
+    language: values.language,
+    defaultRuntimeVersion: values.defaultRuntimeVersion,
+    starterCode: values.starterCode ?? "",
+    lineCoveragePercent: values.lineCoveragePercent,
+    sessionDurationMinutes: values.sessionDurationMinutes,
+    publicTests: publicTests.map((test) => ({
+      name: (test.name ?? "").trim(),
+      source: test.source ?? "",
+    })),
+    hiddenTests: hiddenTests.map((test) => ({
+      name: (test.name ?? "").trim(),
+      source: test.source ?? "",
+    })),
+  };
+}
+
+function toValidationRequest(values: FormValues): ValidateChallengeRequest {
+  const publicTests = values.publicTests ?? [];
+  const hiddenTests = values.hiddenTests ?? [];
+  const normalizedSlug = values.slug?.trim().toLowerCase();
+  return {
+    slug: normalizedSlug && VALID_SLUG_PATTERN.test(normalizedSlug) ? normalizedSlug : undefined,
+    language: values.language,
+    defaultRuntimeVersion: values.defaultRuntimeVersion,
+    starterCode: values.starterCode ?? "",
+    publicTests: publicTests.map((test) => ({
+      name: (test.name ?? "").trim(),
+      source: test.source ?? "",
+    })),
+    hiddenTests: hiddenTests.map((test) => ({
+      name: (test.name ?? "").trim(),
+      source: test.source ?? "",
+    })),
+  };
+}
+
+function buildAnalysisFingerprint(values: FormValues): string {
+  return JSON.stringify(toValidationRequest(values));
+}
+
+function testSummary(result: ChallengeValidationResponse): string {
+  if (result.tests.length === 0) {
+    return "No tests reported";
+  }
+  const passed = result.tests.filter((test) => test.status === "PASS").length;
+  return `${passed}/${result.tests.length} passed`;
+}
+
+function compileDetail(result: ChallengeValidationResponse): string {
+  if (!result.compiled) {
+    return "Build failed";
+  }
+  if (result.compile.warnings > 0) {
+    return `Compiled with ${result.compile.warnings} warning${
+      result.compile.warnings === 1 ? "" : "s"
+    }`;
+  }
+  return "Compiled";
+}
+
+function validateMutationStatusLine(
+  validationState: ValidationState | null,
+  isCurrent: boolean,
+): StatusLineProps {
+  if (!validationState) {
+    return {
+      label: "Build analysis",
+      detail: "Not run",
+      state: "missing",
+    };
+  }
+  if (!isCurrent) {
+    return {
+      label: "Build analysis",
+      detail: "Changed since last run",
+      state: "warn",
+    };
+  }
+  return {
+    label: "Build analysis",
+    detail: compileDetail(validationState.result),
+    state: validationState.result.compiled ? "ok" : "warn",
+  };
+}
+
+function BuildAnalysisPanel({
+  result,
+  isCurrent,
+}: {
+  result: ChallengeValidationResponse;
+  isCurrent: boolean;
+}) {
+  const failingTests = result.tests.filter((test) => test.status !== "PASS").slice(0, 3);
+  const logs = [result.logs.stderrTruncated, result.logs.stdoutTruncated]
+    .filter(Boolean)
+    .join("\n\n");
+  return (
+    <div className="rounded-lg border border-border bg-muted/30 px-3 py-3">
+      <div className="mb-3 flex items-center gap-2">
+        <Terminal className="size-4 text-muted-foreground" aria-hidden />
+        <p className="mb-0 text-sm font-medium text-foreground">Build analysis</p>
+      </div>
+      <div className="flex flex-col gap-3">
+        {!isCurrent && (
+          <Alert
+            type="warning"
+            showIcon
+            message="Changed since last analysis"
+            className="!py-2"
+          />
+        )}
+        <StatusLine
+          label="Compile"
+          detail={compileDetail(result)}
+          state={result.compiled ? "ok" : "warn"}
+        />
+        <StatusLine
+          label="Tests"
+          detail={testSummary(result)}
+          state={result.tests.length === 0 ? "missing" : result.passed ? "ok" : "warn"}
+        />
+        {result.message && (
+          <p className="mb-0 rounded-md bg-background px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+            {result.message}
+          </p>
+        )}
+        {result.compile.messages.length > 0 && (
+          <div className="rounded-md bg-background px-3 py-2">
+            <p className="mb-2 text-xs font-medium text-foreground">Compiler messages</p>
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+              {result.compile.messages.slice(0, 4).map((message) => (
+                <li
+                  key={`${message.file}:${message.line}:${message.message}`}
+                  className="text-xs leading-relaxed text-muted-foreground"
+                >
+                  <span className="font-medium text-foreground">
+                    {message.file}:{message.line}
+                  </span>{" "}
+                  {message.message}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {failingTests.length > 0 && (
+          <div className="rounded-md bg-background px-3 py-2">
+            <p className="mb-2 text-xs font-medium text-foreground">Failing tests</p>
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+              {failingTests.map((test) => (
+                <li key={test.name} className="text-xs leading-relaxed text-muted-foreground">
+                  <span className="font-medium text-foreground">{test.name}</span>
+                  {test.message ? ` - ${test.message}` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {logs && (
+          <details className="rounded-md bg-background px-3 py-2">
+            <summary className="cursor-pointer text-xs font-medium text-foreground">
+              Runner logs
+            </summary>
+            <pre className="mt-2 max-h-44 overflow-auto whitespace-pre-wrap break-words text-[11px] leading-relaxed text-muted-foreground">
+              {logs}
+            </pre>
+          </details>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DescriptionGuidelines() {
+  const items = [
+    "Start with the learner goal, not the implementation.",
+    "State the expected input/output contract and match the starter code.",
+    "Include 1-3 examples with input, output, and a short reason.",
+    "Name constraints and edge cases that public tests should cover.",
+    "Avoid revealing hidden-test specifics or the intended solution strategy.",
+  ];
+
+  return (
+    <div className="mt-3 border-l-2 border-emerald-500/40 pl-3">
+      <p className="mb-2 text-sm font-medium text-foreground">Description guidelines</p>
+      <ul className="m-0 flex list-disc flex-col gap-1 pl-4 text-xs leading-relaxed text-muted-foreground">
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function MetadataTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border bg-muted/30 px-3 py-2">
+      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mb-0 text-sm font-medium text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function ChallengePreviewModal({
+  open,
+  values,
+  publishing,
+  onClose,
+  onPublish,
+}: {
+  open: boolean;
+  values: PreviewValues | null;
+  publishing: boolean;
+  onClose: () => void;
+  onPublish: () => void;
+}) {
+  const visiblePublicTests = values?.publicTests.filter((test) => hasWrittenCode(test.name)) ?? [];
+  const hiddenTests = values?.hiddenTests.filter((test) => hasWrittenCode(test.name)) ?? [];
+
+  return (
+    <Modal
+      open={open}
+      title="Preview challenge"
+      width={960}
+      onCancel={onClose}
+      footer={[
+        <Button key="edit" onClick={onClose}>
+          Edit
+        </Button>,
+        <Button
+          key="publish"
+          type="primary"
+          loading={publishing}
+          onClick={onPublish}
+          className="!bg-emerald-600 hover:!bg-emerald-700 dark:hover:!bg-emerald-500"
+        >
+          Publish challenge
+        </Button>,
+      ]}
+    >
+      {values && (
+        <div className="max-h-[72vh] overflow-y-auto pr-1">
+          <div className="mb-4 rounded-lg border border-border bg-background p-4">
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Learner view
+            </p>
+            <h2 className="mb-2 text-xl font-semibold text-foreground">{values.title}</h2>
+            <p className="mb-0 break-all text-sm text-muted-foreground">/{values.slug}</p>
+          </div>
+
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <MetadataTile label="Language" value={formatLanguageLabel(values.language)} />
+            <MetadataTile
+              label="Runtime"
+              value={formatRuntimeLabel(values.language, values.defaultRuntimeVersion)}
+            />
+            <MetadataTile label="Difficulty" value={values.difficulty} />
+            <MetadataTile
+              label="Session"
+              value={`${values.sessionDurationMinutes ?? 30} min`}
+            />
+          </div>
+
+          <div className="mb-4 rounded-lg border border-border bg-background p-4">
+            <p className="mb-3 text-sm font-semibold text-foreground">Problem statement</p>
+            <div className="rounded-md border border-border bg-card px-4 py-3">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={previewMarkdownComponents}>
+                {values.descriptionMd}
+              </ReactMarkdown>
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div className="rounded-lg border border-border bg-background p-4">
+              <p className="mb-3 text-sm font-semibold text-foreground">Starter code</p>
+              <pre className="max-h-72 overflow-auto rounded-md border border-border bg-muted p-3 text-xs leading-relaxed text-foreground">
+                {values.starterCode}
+              </pre>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="rounded-lg border border-border bg-background p-4">
+                <p className="mb-3 text-sm font-semibold text-foreground">Public tests</p>
+                {visiblePublicTests.length > 0 ? (
+                  <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                    {visiblePublicTests.map((test) => (
+                      <li
+                        key={test.name}
+                        className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-foreground"
+                      >
+                        {test.name}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mb-0 text-sm text-muted-foreground">No public tests named.</p>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-border bg-background p-4">
+                <p className="mb-1 text-sm font-semibold text-foreground">Hidden tests</p>
+                <p className="mb-0 text-sm text-muted-foreground">
+                  {hiddenTests.length} hidden test{hiddenTests.length === 1 ? "" : "s"} will run
+                  on submit.
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-border bg-background p-4">
+                <p className="mb-1 text-sm font-semibold text-foreground">Coverage gate</p>
+                <p className="mb-0 text-sm text-muted-foreground">
+                  {values.lineCoveragePercent}% minimum line coverage.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 function isTemplateLanguage(language: string): language is TemplateLanguage {
   return (
     language === "java"
@@ -69,7 +557,7 @@ public class Solution {
 }
 `;
 
-const JAVA_PUBLIC_TEST = `package com.challenge.public_;
+const JAVA_PUBLIC_TEST = `package com.challenge.tests;
 
 import com.challenge.Solution;
 import org.junit.jupiter.api.Test;
@@ -440,9 +928,115 @@ export default function CreateChallengePage() {
   const queryClient = useQueryClient();
   const [form] = Form.useForm<FormValues>();
   const [error, setError] = useState<string | null>(null);
+  const [syntaxByModel, setSyntaxByModel] = useState<Record<string, SyntaxSummary>>({});
+  const [validationState, setValidationState] = useState<ValidationState | null>(null);
+  const [previewValues, setPreviewValues] = useState<PreviewValues | null>(null);
+  const slug = Form.useWatch("slug", form) ?? "";
   const language = Form.useWatch("language", form) ?? "";
   const defaultRuntimeVersion = Form.useWatch("defaultRuntimeVersion", form) ?? "";
   const lineCoveragePercent = Form.useWatch("lineCoveragePercent", form) ?? 80;
+  const starterCode = Form.useWatch("starterCode", form) ?? "";
+  const publicTests = Form.useWatch("publicTests", form) ?? EMPTY_TESTS;
+  const hiddenTests = Form.useWatch("hiddenTests", form) ?? EMPTY_TESTS;
+
+  const handleSyntaxChange = useCallback((modelId: string, summary: SyntaxSummary) => {
+    setSyntaxByModel((current) => {
+      const previous = current[modelId];
+      if (previous?.errors === summary.errors && previous.warnings === summary.warnings) {
+        return current;
+      }
+      return { ...current, [modelId]: summary };
+    });
+  }, []);
+
+  const activeSyntaxModelIds = useMemo(
+    () => [
+      "starterCode",
+      ...publicTests.map((_, index) => `publicTests.${index}.source`),
+      ...hiddenTests.map((_, index) => `hiddenTests.${index}.source`),
+    ],
+    [hiddenTests, publicTests],
+  );
+
+  useEffect(() => {
+    const activeIds = new Set(activeSyntaxModelIds);
+    setSyntaxByModel((current) =>
+      Object.fromEntries(Object.entries(current).filter(([key]) => activeIds.has(key))),
+    );
+  }, [activeSyntaxModelIds]);
+
+  const writtenPublicTests = useMemo(() => countWrittenTests(publicTests), [publicTests]);
+  const writtenHiddenTests = useMemo(() => countWrittenTests(hiddenTests), [hiddenTests]);
+  const syntaxSummary = useMemo(
+    () =>
+      Object.values(syntaxByModel).reduce<SyntaxSummary>(
+        (total, next) => ({
+          errors: total.errors + next.errors,
+          warnings: total.warnings + next.warnings,
+        }),
+        { errors: 0, warnings: 0 },
+      ),
+    [syntaxByModel],
+  );
+  const analysisFingerprint = useMemo(
+    () =>
+      buildAnalysisFingerprint({
+        slug,
+        title: "",
+        descriptionMd: "",
+        difficulty: "easy",
+        language,
+        defaultRuntimeVersion,
+        starterCode,
+        lineCoveragePercent,
+        sessionDurationMinutes: 30,
+        publicTests,
+        hiddenTests,
+      }),
+    [
+      defaultRuntimeVersion,
+      hiddenTests,
+      language,
+      lineCoveragePercent,
+      publicTests,
+      slug,
+      starterCode,
+    ],
+  );
+  const isValidationCurrent = validationState?.fingerprint === analysisFingerprint;
+
+  const readinessItems = useMemo<StatusLineProps[]>(
+    () => [
+      {
+        label: "Starter code",
+        detail: hasWrittenCode(starterCode) ? "Written" : "Missing",
+        state: hasWrittenCode(starterCode) ? "ok" : "missing",
+      },
+      {
+        label: "Public tests",
+        detail: writtenDetail(writtenPublicTests, publicTests.length),
+        state: statusForCollection(writtenPublicTests, publicTests.length),
+      },
+      {
+        label: "Hidden tests",
+        detail: writtenDetail(writtenHiddenTests, hiddenTests.length),
+        state: statusForCollection(writtenHiddenTests, hiddenTests.length),
+      },
+      syntaxDetail(syntaxSummary, Object.keys(syntaxByModel).length),
+      validateMutationStatusLine(validationState, isValidationCurrent),
+    ],
+    [
+      hiddenTests.length,
+      isValidationCurrent,
+      publicTests.length,
+      starterCode,
+      syntaxByModel,
+      syntaxSummary,
+      validationState,
+      writtenHiddenTests,
+      writtenPublicTests,
+    ],
+  );
 
   const languagesQuery = useQuery({
     queryKey: ["languages"],
@@ -500,7 +1094,7 @@ export default function CreateChallengePage() {
     return {
       slug: "",
       title: "",
-      descriptionMd: "",
+      descriptionMd: DESCRIPTION_TEMPLATE,
       difficulty: "easy",
       language: lang,
       defaultRuntimeVersion: "",
@@ -515,37 +1109,69 @@ export default function CreateChallengePage() {
       apiFetch<ChallengeSummary>(ApiPaths.CHALLENGES, {
         method: "POST",
         body: JSON.stringify(body),
-      }),
+    }),
     onSuccess: (created) => {
+      setPreviewValues(null);
       void queryClient.invalidateQueries({ queryKey: ["challenges"] });
       navigate(`/challenges/${created.slug}`, { replace: true });
     },
     onError: (e) => {
+      setPreviewValues(null);
       setError(e instanceof ApiError ? e.message : "Could not create challenge");
     },
   });
 
+  const validateMutation = useMutation({
+    mutationFn: ({
+      body,
+    }: {
+      body: ValidateChallengeRequest;
+      fingerprint: string;
+    }) =>
+      apiFetch<ChallengeValidationResponse>(ApiPaths.CHALLENGES_VALIDATE, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: (result, variables) => {
+      setValidationState({ result, fingerprint: variables.fingerprint });
+    },
+    onError: (e) => {
+      setValidationState(null);
+      setError(e instanceof ApiError ? e.message : "Could not run build analysis");
+    },
+  });
+
+  const handleValidate = async () => {
+    setError(null);
+    try {
+      await form.validateFields([
+        "language",
+        "defaultRuntimeVersion",
+        "starterCode",
+        "publicTests",
+        "hiddenTests",
+      ]);
+      const values = form.getFieldsValue(true) as FormValues;
+      validateMutation.mutate({
+        body: toValidationRequest(values),
+        fingerprint: buildAnalysisFingerprint(values),
+      });
+    } catch {
+      // Ant Design has already marked the invalid fields.
+    }
+  };
+
   const onFinish = (values: FormValues) => {
     setError(null);
-    createMutation.mutate({
-      slug: values.slug.trim().toLowerCase(),
-      title: values.title.trim(),
-      descriptionMd: values.descriptionMd.trim(),
-      difficulty: values.difficulty,
-      language: values.language,
-      defaultRuntimeVersion: values.defaultRuntimeVersion,
-      starterCode: values.starterCode,
-      lineCoveragePercent: values.lineCoveragePercent,
-      sessionDurationMinutes: values.sessionDurationMinutes,
-      publicTests: values.publicTests.map((t) => ({
-        name: t.name.trim(),
-        source: t.source,
-      })),
-      hiddenTests: values.hiddenTests.map((t) => ({
-        name: t.name.trim(),
-        source: t.source,
-      })),
-    });
+    setPreviewValues(toChallengeRequest(values));
+  };
+
+  const handlePublishPreview = () => {
+    if (!previewValues) {
+      return;
+    }
+    setError(null);
+    createMutation.mutate(previewValues);
   };
 
   return (
@@ -556,7 +1182,7 @@ export default function CreateChallengePage() {
         extra={
           <Link
             to="/challenges"
-            className="inline-flex min-h-10 items-center text-sm font-medium text-emerald-400 no-underline hover:text-emerald-300"
+            className="inline-flex min-h-10 items-center text-sm font-medium text-emerald-600 no-underline hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
           >
             Back to list
           </Link>
@@ -571,7 +1197,7 @@ export default function CreateChallengePage() {
             type="info"
             showIcon
             message="Loading available languages…"
-            className="border-slate-700/80"
+            className="border-border"
           />
         )}
         {languagesQuery.error && (
@@ -604,40 +1230,62 @@ export default function CreateChallengePage() {
             }
           }}
         >
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="flex min-w-0 flex-col gap-6">
-              <CtlCard title="Challenge details">
-                <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-6">
+            <CtlCard
+              title="Challenge setup"
+              extra={
+                <Typography.Text className="!text-muted-foreground text-xs">
+                  Basics, runtime, and prompt
+                </Typography.Text>
+              }
+            >
+              <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
+                <div className="min-w-0">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Form.Item
+                      label={<span className="text-foreground">Slug</span>}
+                      name="slug"
+                      rules={[
+                        { required: true, message: "Slug is required" },
+                        {
+                          pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+                          message: "Use lowercase letters, numbers, and hyphens",
+                        },
+                      ]}
+                      extra={
+                        <Typography.Text className="!text-muted-foreground text-xs">
+                          URL-safe id, e.g. two-sum
+                        </Typography.Text>
+                      }
+                    >
+                      <Input placeholder="my-challenge" />
+                    </Form.Item>
+                    <Form.Item
+                      label={<span className="text-foreground">Title</span>}
+                      name="title"
+                      rules={[{ required: true, message: "Title is required" }]}
+                    >
+                      <Input placeholder="Two Sum" />
+                    </Form.Item>
+                  </div>
+
                   <Form.Item
-                    label={<span className="text-slate-300">Slug</span>}
-                    name="slug"
-                    rules={[
-                      { required: true, message: "Slug is required" },
-                      {
-                        pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-                        message: "Use lowercase letters, numbers, and hyphens",
-                      },
-                    ]}
-                    extra={
-                      <Typography.Text className="!text-slate-500 text-xs">
-                        URL-safe id, e.g. two-sum
-                      </Typography.Text>
-                    }
+                    label={<span className="text-foreground">Description (Markdown)</span>}
+                    name="descriptionMd"
+                    rules={[{ required: true, message: "Description is required" }]}
+                    className="!mb-0"
                   >
-                    <Input placeholder="my-challenge" />
+                    <Input.TextArea
+                      rows={12}
+                      placeholder="Explain the task, examples, constraints..."
+                    />
                   </Form.Item>
-                  <Form.Item
-                    label={<span className="text-slate-300">Title</span>}
-                    name="title"
-                    rules={[{ required: true, message: "Title is required" }]}
-                  >
-                    <Input placeholder="Two Sum" />
-                  </Form.Item>
+                  <DescriptionGuidelines />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                   <Form.Item
-                    label={<span className="text-slate-300">Difficulty</span>}
+                    label={<span className="text-foreground">Difficulty</span>}
                     name="difficulty"
                     rules={[{ required: true }]}
                   >
@@ -650,7 +1298,7 @@ export default function CreateChallengePage() {
                     />
                   </Form.Item>
                   <Form.Item
-                    label={<span className="text-slate-300">Language</span>}
+                    label={<span className="text-foreground">Language</span>}
                     name="language"
                     rules={[{ required: true, message: "Select a language" }]}
                   >
@@ -661,11 +1309,11 @@ export default function CreateChallengePage() {
                     />
                   </Form.Item>
                   <Form.Item
-                    label={<span className="text-slate-300">Default runtime</span>}
+                    label={<span className="text-foreground">Default runtime</span>}
                     name="defaultRuntimeVersion"
                     rules={[{ required: true, message: "Select a runtime version" }]}
                     extra={
-                      <Typography.Text className="!text-slate-500 text-xs">
+                      <Typography.Text className="!text-muted-foreground text-xs">
                         {defaultRuntimeVersion
                           ? formatRuntimeLabel(language, defaultRuntimeVersion)
                           : "Select a runtime after choosing language"}
@@ -680,50 +1328,51 @@ export default function CreateChallengePage() {
                     />
                   </Form.Item>
                   <Form.Item
-                    label={<span className="text-slate-300">Line coverage %</span>}
+                    label={<span className="text-foreground">Line coverage %</span>}
                     name="lineCoveragePercent"
                     rules={[{ required: true }]}
                   >
                     <InputNumber min={0} max={100} className="w-full" />
                   </Form.Item>
                   <Form.Item
-                    label={<span className="text-slate-300">Session time (min)</span>}
+                    label={<span className="text-foreground">Session time (min)</span>}
                     name="sessionDurationMinutes"
                     rules={[{ required: true, message: "Session duration is required" }]}
                     extra={
-                      <Typography.Text className="!text-slate-500 text-xs">
-                        Allotted workspace time after the learner starts Run or Submit (5–480 min).
+                      <Typography.Text className="!text-muted-foreground text-xs">
+                        Allotted workspace time after the learner starts Run or Submit (5-480 min).
                       </Typography.Text>
                     }
                   >
                     <InputNumber min={5} max={480} className="w-full" />
                   </Form.Item>
                 </div>
+              </div>
+            </CtlCard>
 
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="flex min-w-0 flex-col gap-6">
+                <CtlCard title="Starter code">
                 <Form.Item
-                  label={<span className="text-slate-300">Description (Markdown)</span>}
-                  name="descriptionMd"
-                  rules={[{ required: true, message: "Description is required" }]}
-                  className="!mb-0"
-                >
-                  <Input.TextArea
-                    rows={7}
-                    placeholder="Explain the task, examples, constraints…"
-                  />
-                </Form.Item>
-              </CtlCard>
-
-              <CtlCard title="Starter code">
-                <Form.Item
-                  label={<span className="text-slate-300">Solution template</span>}
+                  label={<span className="text-foreground">Solution template</span>}
                   name="starterCode"
-                  rules={[{ required: true, message: "Starter code is required" }]}
+                  rules={[
+                    {
+                      validator: async (_, value) => {
+                        if (!hasWrittenCode(value)) {
+                          return Promise.reject(new Error("Starter code is required"));
+                        }
+                      },
+                    },
+                  ]}
                   className="!mb-0"
                 >
-                  <Input.TextArea
-                    rows={12}
-                    className="font-mono text-sm"
-                    placeholder="Starter solution template"
+                  <ChallengeCodeEditor
+                    ariaLabel="Starter code editor"
+                    language={language}
+                    modelId="starterCode"
+                    height={360}
+                    onSyntaxChange={handleSyntaxChange}
                   />
                 </Form.Item>
               </CtlCard>
@@ -731,14 +1380,17 @@ export default function CreateChallengePage() {
               <CtlCard
                 title="Public tests"
                 extra={
-                  <Typography.Text className="!text-slate-500 text-xs">
+                  <Typography.Text className="!text-muted-foreground text-xs">
                     Visible in workspace
                   </Typography.Text>
                 }
               >
-                <Typography.Paragraph className="!mb-4 !text-slate-500 text-sm">
-                  Java public tests use package{" "}
-                  <code className="text-emerald-400">com.challenge.public_</code>.
+                <Typography.Paragraph className="!mb-4 !text-muted-foreground text-sm">
+                  Java public tests can use package{" "}
+                  <code className="text-emerald-700 dark:text-emerald-400">
+                    com.challenge.tests
+                  </code>
+                  .
                 </Typography.Paragraph>
                 <Form.List
                   name="publicTests"
@@ -757,13 +1409,13 @@ export default function CreateChallengePage() {
                       {fields.map(({ key, name, ...rest }) => (
                         <div
                           key={key}
-                          className="rounded-lg border border-slate-700/80 bg-slate-950/30 p-4"
+                          className="rounded-md border border-border bg-muted/30 p-4"
                         >
                           <div className="mb-3 flex items-center justify-between gap-2">
                             <Form.Item
                               {...rest}
                               name={[name, "name"]}
-                              label={<span className="text-slate-300">Test name</span>}
+                              label={<span className="text-foreground">Test name</span>}
                               rules={[{ required: true, message: "Name required" }]}
                               className="!mb-0 flex-1"
                             >
@@ -781,11 +1433,25 @@ export default function CreateChallengePage() {
                           <Form.Item
                             {...rest}
                             name={[name, "source"]}
-                            label={<span className="text-slate-300">Source</span>}
-                            rules={[{ required: true, message: "Source required" }]}
+                            label={<span className="text-foreground">Source</span>}
+                            rules={[
+                              {
+                                validator: async (_, value) => {
+                                  if (!hasWrittenCode(value)) {
+                                    return Promise.reject(new Error("Source required"));
+                                  }
+                                },
+                              },
+                            ]}
                             className="!mb-0"
                           >
-                            <Input.TextArea rows={8} className="font-mono text-sm" />
+                            <ChallengeCodeEditor
+                              ariaLabel="Public test source editor"
+                              language={language}
+                              modelId={`publicTests.${name}.source`}
+                              height={250}
+                              onSyntaxChange={handleSyntaxChange}
+                            />
                           </Form.Item>
                         </div>
                       ))}
@@ -805,14 +1471,17 @@ export default function CreateChallengePage() {
               <CtlCard
                 title="Hidden tests"
                 extra={
-                  <Typography.Text className="!text-slate-500 text-xs">
+                  <Typography.Text className="!text-muted-foreground text-xs">
                     Submit only
                   </Typography.Text>
                 }
               >
-                <Typography.Paragraph className="!mb-4 !text-slate-500 text-sm">
+                <Typography.Paragraph className="!mb-4 !text-muted-foreground text-sm">
                   Java hidden tests use package{" "}
-                  <code className="text-emerald-400">com.challenge.hidden</code>.
+                  <code className="text-emerald-700 dark:text-emerald-400">
+                    com.challenge.hidden
+                  </code>
+                  .
                 </Typography.Paragraph>
                 <Form.List
                   name="hiddenTests"
@@ -831,13 +1500,13 @@ export default function CreateChallengePage() {
                       {fields.map(({ key, name, ...rest }) => (
                         <div
                           key={key}
-                          className="rounded-lg border border-slate-700/80 bg-slate-950/30 p-4"
+                          className="rounded-md border border-border bg-muted/30 p-4"
                         >
                           <div className="mb-3 flex items-center justify-between gap-2">
                             <Form.Item
                               {...rest}
                               name={[name, "name"]}
-                              label={<span className="text-slate-300">Test name</span>}
+                              label={<span className="text-foreground">Test name</span>}
                               rules={[{ required: true, message: "Name required" }]}
                               className="!mb-0 flex-1"
                             >
@@ -855,11 +1524,25 @@ export default function CreateChallengePage() {
                           <Form.Item
                             {...rest}
                             name={[name, "source"]}
-                            label={<span className="text-slate-300">Source</span>}
-                            rules={[{ required: true, message: "Source required" }]}
+                            label={<span className="text-foreground">Source</span>}
+                            rules={[
+                              {
+                                validator: async (_, value) => {
+                                  if (!hasWrittenCode(value)) {
+                                    return Promise.reject(new Error("Source required"));
+                                  }
+                                },
+                              },
+                            ]}
                             className="!mb-0"
                           >
-                            <Input.TextArea rows={8} className="font-mono text-sm" />
+                            <ChallengeCodeEditor
+                              ariaLabel="Hidden test source editor"
+                              language={language}
+                              modelId={`hiddenTests.${name}.source`}
+                              height={250}
+                              onSyntaxChange={handleSyntaxChange}
+                            />
                           </Form.Item>
                         </div>
                       ))}
@@ -900,14 +1583,48 @@ export default function CreateChallengePage() {
                     </p>
                   </div>
 
+                  <div className="rounded-lg border border-border bg-muted/30 px-3 py-3">
+                    <p className="mb-3 text-sm font-medium text-foreground">
+                      Readiness
+                    </p>
+                    <div className="flex flex-col gap-3">
+                      {readinessItems.map((item) => (
+                        <StatusLine
+                          key={item.label}
+                          label={item.label}
+                          detail={item.detail}
+                          state={item.state}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button
+                    htmlType="button"
+                    onClick={handleValidate}
+                    loading={validateMutation.isPending}
+                    icon={<Terminal className="size-4" aria-hidden />}
+                    block
+                  >
+                    Run build analysis
+                  </Button>
+
+                  {validationState && (
+                    <BuildAnalysisPanel
+                      result={validationState.result}
+                      isCurrent={isValidationCurrent}
+                    />
+                  )}
+
                   <Button
                     type="primary"
                     htmlType="submit"
-                    loading={createMutation.isPending}
-                    className="!bg-emerald-600 hover:!bg-emerald-500"
+                    disabled={createMutation.isPending}
+                    icon={<Eye className="size-4" aria-hidden />}
+                    className="!bg-emerald-600 hover:!bg-emerald-700 dark:hover:!bg-emerald-500"
                     block
                   >
-                    Publish challenge
+                    Preview challenge
                   </Button>
                   <Button onClick={() => navigate("/challenges")} block>
                     Cancel
@@ -916,7 +1633,15 @@ export default function CreateChallengePage() {
               </CtlCard>
             </aside>
           </div>
+          </div>
         </Form>
+        <ChallengePreviewModal
+          open={previewValues !== null}
+          values={previewValues}
+          publishing={createMutation.isPending}
+          onClose={() => setPreviewValues(null)}
+          onPublish={handlePublishPreview}
+        />
       </div>
     </AppLayout>
   );

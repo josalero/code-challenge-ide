@@ -313,6 +313,40 @@ export type CreateChallengeRequest = {
   hiddenTests: ChallengeTestPayload[];
 };
 
+export type ValidateChallengeRequest = {
+  slug?: string;
+  language: string;
+  defaultRuntimeVersion: string;
+  starterCode: string;
+  publicTests: ChallengeTestPayload[];
+  hiddenTests: ChallengeTestPayload[];
+};
+
+export type ChallengeValidationResponse = {
+  status: string;
+  compiled: boolean;
+  passed: boolean;
+  message: string | null;
+  compile: {
+    warnings: number;
+    messages: {
+      file: string;
+      line: number;
+      message: string;
+    }[];
+  };
+  tests: {
+    name: string;
+    status: string;
+    message: string | null;
+    durationMs: number;
+  }[];
+  logs: {
+    stdoutTruncated: string;
+    stderrTruncated: string;
+  };
+};
+
 /** Matches Spring Data PagedModel (pageSerializationMode = VIA_DTO). */
 export type PageMetadata = {
   size: number;

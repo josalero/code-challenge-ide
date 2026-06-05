@@ -47,7 +47,7 @@ class ChallengeGitLoaderTest {
         challengeDir.resolve("starter/Solution.java"), "package com.challenge; class Solution {}");
     Files.writeString(
         challengeDir.resolve("public/tests/DemoTest.java"),
-        "package com.challenge.public_; class DemoTest {}");
+        "package com.challenge.tests; class DemoTest {}");
     Files.writeString(
         challengeDir.resolve("hidden/tests/DemoHiddenTest.java"),
         "package com.challenge.hidden; class DemoHiddenTest {}");
@@ -101,7 +101,7 @@ class ChallengeGitLoaderTest {
         challengeDir.resolve("starter/Solution.java"), "package com.challenge; class Solution {}");
     Files.writeString(
         challengeDir.resolve("public/tests/DemoTest.java"),
-        "package com.challenge.public_; class DemoTest {}");
+        "package com.challenge.tests; class DemoTest {}");
     Files.writeString(
         challengeDir.resolve("hidden/tests/DemoHiddenTest.java"),
         "package com.challenge.hidden; class DemoHiddenTest {}");
@@ -236,7 +236,7 @@ class ChallengeGitLoaderTest {
         challengeDir.resolve("starter/Solution.java"), "package com.challenge; class Solution {}");
     Files.writeString(
         challengeDir.resolve("public/tests/DemoTest.java"),
-        "package com.challenge.public_; class DemoTest {}");
+        "package com.challenge.tests; class DemoTest {}");
     Files.writeString(
         challengeDir.resolve("hidden/tests/DemoHiddenTest.java"),
         "package com.challenge.hidden; class DemoHiddenTest {}");
@@ -299,7 +299,7 @@ class ChallengeGitLoaderTest {
         challengeDir.resolve("starter/Solution.java"), "package com.challenge; class Solution {}");
     Files.writeString(
         challengeDir.resolve("public/tests/DemoTest.java"),
-        "package com.challenge.public_; class DemoTest {}");
+        "package com.challenge.tests; class DemoTest {}");
     Files.writeString(
         challengeDir.resolve("hidden/tests/DemoHiddenTest.java"),
         "package com.challenge.hidden; class DemoHiddenTest {}");
