@@ -101,4 +101,10 @@ public class ChallengeController {
   ChallengeSummary create(@Valid @RequestBody CreateChallengeRequest request) {
     return challengeService.create(request);
   }
+
+  @PostMapping("/validate")
+  @PreAuthorize("hasRole('ADMIN')")
+  ChallengeValidationResponse validate(@Valid @RequestBody ValidateChallengeRequest request) {
+    return challengeService.validateDraft(request);
+  }
 }

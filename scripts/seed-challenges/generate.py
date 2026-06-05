@@ -185,7 +185,7 @@ starter_main_class: com.challenge.Solution
     starter_dir.mkdir(exist_ok=True)
     (starter_dir / "Solution.java").write_text(entry["starter"].strip() + "\n", encoding="utf-8")
 
-    for scope, package in [("public", "public_"), ("hidden", "hidden")]:
+    for scope, package in [("public", "tests"), ("hidden", "hidden")]:
         tests_dir = challenge_dir / scope / "tests"
         tests_dir.mkdir(parents=True, exist_ok=True)
         tests_key = "public_tests" if scope == "public" else "hidden_tests"

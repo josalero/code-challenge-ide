@@ -1,6 +1,8 @@
 package com.codetraininglab.catalog.application;
 
 import com.codetraininglab.catalog.api.CreateChallengeRequest;
+import com.codetraininglab.catalog.api.ChallengeValidationResponse;
+import com.codetraininglab.catalog.api.ValidateChallengeRequest;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.ChallengeHiddenTestRepository;
 import com.codetraininglab.platform.persistence.ChallengePublicTestRepository;
@@ -22,22 +24,29 @@ public class ChallengeService {
   private final ChallengeHiddenTestRepository hiddenTestRepository;
   private final LanguageRuntimeRepository runtimeRepository;
   private final ChallengePublisher challengePublisher;
+  private final ChallengeDraftValidationService draftValidationService;
 
   public ChallengeService(
       ChallengeRepository challengeRepository,
       ChallengePublicTestRepository publicTestRepository,
       ChallengeHiddenTestRepository hiddenTestRepository,
       LanguageRuntimeRepository runtimeRepository,
-      ChallengePublisher challengePublisher) {
+      ChallengePublisher challengePublisher,
+      ChallengeDraftValidationService draftValidationService) {
     this.challengeRepository = challengeRepository;
     this.publicTestRepository = publicTestRepository;
     this.hiddenTestRepository = hiddenTestRepository;
     this.runtimeRepository = runtimeRepository;
     this.challengePublisher = challengePublisher;
+    this.draftValidationService = draftValidationService;
   }
 
   public ChallengeSummary create(CreateChallengeRequest request) {
     return challengePublisher.create(request);
+  }
+
+  public ChallengeValidationResponse validateDraft(ValidateChallengeRequest request) {
+    return draftValidationService.validate(request);
   }
 
   public Page<ChallengeSummary> list(Pageable pageable) {

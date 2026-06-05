@@ -21,19 +21,19 @@ COPY entrypoint.sh /entrypoint.sh
 # Warm Maven repository so sandbox runs work with --network none.
 RUN mkdir -p /tmp/m2cache \
     && mkdir -p /opt/runner/warm/src/main/java/com/challenge \
-    && mkdir -p /opt/runner/warm/src/test/java/com/challenge/public_ \
+    && mkdir -p /opt/runner/warm/src/test/java/com/challenge/tests \
     && sed "s/__JAVA_MAJOR__/${JAVA_MAJOR}/g" /opt/runner/pom-template.xml > /opt/runner/warm/pom.xml \
     && printf '%s\n' \
         'package com.challenge;' \
         'public class Solution { public static String reverse(String input) { return input; } }' \
         > /opt/runner/warm/src/main/java/com/challenge/Solution.java \
     && printf '%s\n' \
-        'package com.challenge.public_;' \
+        'package com.challenge.tests;' \
         'import com.challenge.Solution;' \
         'import org.junit.jupiter.api.Test;' \
         'import static org.junit.jupiter.api.Assertions.assertEquals;' \
         'class WarmTest { @Test void warm() { assertEquals("a", Solution.reverse("a")); } }' \
-        > /opt/runner/warm/src/test/java/com/challenge/public_/WarmTest.java \
+        > /opt/runner/warm/src/test/java/com/challenge/tests/WarmTest.java \
     && mvn -q -Dmaven.repo.local=/tmp/m2cache -f /opt/runner/warm/pom.xml test jacoco:report \
     && mkdir -p /opt/m2/repository \
     && cp -a /tmp/m2cache/. /opt/m2/repository/

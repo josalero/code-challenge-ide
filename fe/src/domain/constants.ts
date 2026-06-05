@@ -91,6 +91,7 @@ export const ApiPaths = {
   ADMIN_ACCESS_REQUESTS: "/api/v1/admin/access-requests",
   ME_PASSWORD: "/api/v1/me/password",
   CHALLENGES: "/api/v1/challenges",
+  CHALLENGES_VALIDATE: "/api/v1/challenges/validate",
   LANGUAGES: "/api/v1/languages",
   ME: "/api/v1/me",
   ME_PROGRESS: "/api/v1/me/progress",
