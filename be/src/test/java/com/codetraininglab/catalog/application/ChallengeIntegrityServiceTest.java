@@ -56,6 +56,72 @@ class ChallengeIntegrityServiceTest {
   }
 
   @Test
+  void recordSyncCheckpointsIgnoresEmptyMarks() {
+    service.recordSyncCheckpoints(userId, "two-sum", new ChallengeSessionSyncRequest(1L, List.of()));
+
+    org.mockito.Mockito.verifyNoInteractions(integrityEventRepository);
+  }
+
+  @Test
+  void recordSyncCheckpointsRejectsInvalidKind() {
+    assertThatThrownBy(
+            () ->
+                service.recordSyncCheckpoints(
+                    userId,
+                    "two-sum",
+                    new ChallengeSessionSyncRequest(
+                        1L, List.of(new SessionMarkRequest(99, now, null, null, null)))))
+        .isInstanceOf(ResponseStatusException.class)
+        .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+        .isEqualTo(HttpStatus.BAD_REQUEST);
+  }
+
+  @Test
+  void recordSyncCheckpointsRejectsInvalidSurface() {
+    assertThatThrownBy(
+            () ->
+                service.recordSyncCheckpoints(
+                    userId,
+                    "two-sum",
+                    new ChallengeSessionSyncRequest(
+                        1L, List.of(new SessionMarkRequest(1, now, 9, null, null)))))
+        .isInstanceOf(ResponseStatusException.class)
+        .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+        .isEqualTo(HttpStatus.BAD_REQUEST);
+  }
+
+  @Test
+  void recordEventsRejectsInvalidEditorSurface() {
+    when(integrityMonitoringService.isMonitoringEnabled(userId)).thenReturn(true);
+    ChallengeEntity challenge =
+        new ChallengeEntity(
+            challengeId,
+            "two-sum",
+            "Two Sum",
+            "desc",
+            "code",
+            "{}",
+            "seed",
+            "easy",
+            "java",
+            45,
+            now,
+            now);
+    when(challengeRepository.findBySlug("two-sum")).thenReturn(Optional.of(challenge));
+
+    assertThatThrownBy(
+            () ->
+                service.recordEvents(
+                    userId,
+                    "two-sum",
+                    new RecordIntegrityEventsRequest(
+                        List.of(new IntegrityEventRequest("COPY", "UNKNOWN", null, null, now)))))
+        .isInstanceOf(ResponseStatusException.class)
+        .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+        .isEqualTo(HttpStatus.BAD_REQUEST);
+  }
+
+  @Test
   void recordSyncCheckpointsMapsCompactCodes() {
     when(integrityMonitoringService.isMonitoringEnabled(userId)).thenReturn(true);
     ChallengeEntity challenge =
