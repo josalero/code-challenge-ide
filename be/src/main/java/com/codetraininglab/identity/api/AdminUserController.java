@@ -74,4 +74,15 @@ public class AdminUserController {
       @PathVariable UUID userId, @Valid @RequestBody UpdateUserChallengeQuotaRequest request) {
     return userAdminService.updateChallengeQuota(userId, request);
   }
+
+  @GetMapping("/{userId}/integrity-monitoring")
+  UserIntegrityMonitoringResponse integrityMonitoring(@PathVariable UUID userId) {
+    return userAdminService.integrityMonitoring(userId);
+  }
+
+  @PatchMapping("/{userId}/integrity-monitoring")
+  UserIntegrityMonitoringResponse updateIntegrityMonitoring(
+      @PathVariable UUID userId, @Valid @RequestBody UpdateUserIntegrityMonitoringRequest request) {
+    return userAdminService.updateIntegrityMonitoring(userId, request);
+  }
 }

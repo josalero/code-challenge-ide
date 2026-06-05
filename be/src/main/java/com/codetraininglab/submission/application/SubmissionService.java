@@ -1,6 +1,7 @@
 package com.codetraininglab.submission.application;
 
 import com.codetraininglab.catalog.application.ChallengeQuotaService;
+import com.codetraininglab.catalog.application.ChallengeSessionService;
 import com.codetraininglab.platform.config.CtlProperties;
 import com.codetraininglab.domain.SubmissionStatus;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
@@ -48,6 +49,7 @@ public class SubmissionService {
   private final LanguageRuntimeResolver runtimeResolver;
   private final UserProgressRepository progressRepository;
   private final ChallengeQuotaService challengeQuotaService;
+  private final ChallengeSessionService sessionService;
   private final RabbitTemplate rabbitTemplate;
   private final SubmissionEventHub eventHub;
   private final CtlProperties properties;
@@ -62,6 +64,7 @@ public class SubmissionService {
       LanguageRuntimeResolver runtimeResolver,
       UserProgressRepository progressRepository,
       ChallengeQuotaService challengeQuotaService,
+      ChallengeSessionService sessionService,
       RabbitTemplate rabbitTemplate,
       SubmissionEventHub eventHub,
       CtlProperties properties,
@@ -74,6 +77,7 @@ public class SubmissionService {
     this.runtimeResolver = runtimeResolver;
     this.progressRepository = progressRepository;
     this.challengeQuotaService = challengeQuotaService;
+    this.sessionService = sessionService;
     this.rabbitTemplate = rabbitTemplate;
     this.eventHub = eventHub;
     this.properties = properties;
@@ -98,6 +102,7 @@ public class SubmissionService {
     LanguageRuntimeEntity runtime = runtimeResolver.resolve(challenge, request.runtimeVersion());
     SubmissionKind kind = resolveKind(request.kind());
     challengeQuotaService.ensureMayStartChallenge(userId, challenge.getId());
+    sessionService.ensureMayRunOrSubmit(userId, challenge.getId());
     if (kind == SubmissionKind.SUBMIT) {
       ensureExerciseNotLocked(userId, challenge.getId());
     }
@@ -116,6 +121,9 @@ public class SubmissionService {
             now,
             now);
     submissionRepository.save(entity);
+    if (kind == SubmissionKind.SUBMIT) {
+      sessionService.endOnGradedSubmit(userId, challenge.getId());
+    }
     touchProgress(userId, challenge.getId(), now);
     rabbitTemplate.convertAndSend(
         RabbitMqConfig.SUBMISSION_QUEUE, new SubmissionJobMessage(entity.getId()));

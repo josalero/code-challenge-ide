@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.codetraininglab.catalog.application.ChallengeQuotaService;
+import com.codetraininglab.catalog.application.IntegrityMonitoringService;
 import com.codetraininglab.domain.ProgressState;
 import com.codetraininglab.domain.UserRole;
 import com.codetraininglab.identity.api.CreateUserRequest;
@@ -41,6 +42,7 @@ class UserAdminServiceTest {
   @Mock private SubmissionRepository submissionRepository;
   @Mock private UserProgressRepository progressRepository;
   @Mock private ChallengeQuotaService challengeQuotaService;
+  @Mock private IntegrityMonitoringService integrityMonitoringService;
 
   private UserAdminService userAdminService;
   private PasswordEncoder passwordEncoder;
@@ -58,7 +60,8 @@ class UserAdminServiceTest {
             welcomeEmailSender,
             submissionRepository,
             progressRepository,
-            challengeQuotaService);
+            challengeQuotaService,
+            integrityMonitoringService);
   }
 
   @Test

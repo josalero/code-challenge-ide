@@ -7,10 +7,12 @@ import com.codetraininglab.identity.api.AdminUserChallengeReportResponse;
 import com.codetraininglab.identity.api.AdminUserChallengeReportResponse.ChallengeRow;
 import com.codetraininglab.identity.api.AdminUserChallengeReportResponse.Summary;
 import com.codetraininglab.identity.api.AdminUserChallengeReportResponse.UserHeader;
+import com.codetraininglab.platform.persistence.ChallengeIntegrityEventRepository;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.ChallengeRepository;
 import com.codetraininglab.platform.persistence.SubmissionEntity;
 import com.codetraininglab.platform.persistence.SubmissionRepository;
+import com.codetraininglab.platform.persistence.UserChallengeIntegrityStats;
 import com.codetraininglab.platform.persistence.UserChallengeEnhancementStats;
 import com.codetraininglab.platform.persistence.UserChallengeFeedbackStats;
 import com.codetraininglab.platform.persistence.UserChallengeGradedStats;
@@ -41,6 +43,7 @@ public class AdminUserChallengeReportService {
   private final ChallengeRepository challengeRepository;
   private final UserProgressRepository progressRepository;
   private final SubmissionRepository submissionRepository;
+  private final ChallengeIntegrityEventRepository integrityEventRepository;
   private final Clock clock;
 
   public AdminUserChallengeReportService(
@@ -48,11 +51,13 @@ public class AdminUserChallengeReportService {
       ChallengeRepository challengeRepository,
       UserProgressRepository progressRepository,
       SubmissionRepository submissionRepository,
+      ChallengeIntegrityEventRepository integrityEventRepository,
       Clock clock) {
     this.userRepository = userRepository;
     this.challengeRepository = challengeRepository;
     this.progressRepository = progressRepository;
     this.submissionRepository = submissionRepository;
+    this.integrityEventRepository = integrityEventRepository;
     this.clock = clock;
   }
 
@@ -69,6 +74,7 @@ public class AdminUserChallengeReportService {
     Map<UUID, GradedBucket> gradedByChallenge = loadGradedBuckets(userId);
     Map<UUID, Long> enhancementsByChallenge = loadEnhancementCounts(userId);
     Map<UUID, FeedbackBucket> feedbackByChallenge = loadFeedbackBuckets(userId);
+    Map<UUID, IntegrityBucket> integrityByChallenge = loadIntegrityBuckets(userId);
 
     int passed = 0;
     int attempted = 0;
@@ -99,6 +105,8 @@ public class AdminUserChallengeReportService {
 
       GradedBucket graded = gradedByChallenge.getOrDefault(challenge.getId(), GradedBucket.EMPTY);
       FeedbackBucket feedback = feedbackByChallenge.getOrDefault(challenge.getId(), FeedbackBucket.EMPTY);
+      IntegrityBucket integrity =
+          integrityByChallenge.getOrDefault(challenge.getId(), IntegrityBucket.EMPTY);
       long enhancements = enhancementsByChallenge.getOrDefault(challenge.getId(), 0L);
 
       practiceRunsTotal += submissions.practiceRuns();
@@ -145,7 +153,14 @@ public class AdminUserChallengeReportService {
               feedback.items(),
               feedback.warnings(),
               submissions.cancelled(),
-              likelyAbandonedFlag));
+              likelyAbandonedFlag,
+              integrity.copyAttempts(),
+              integrity.pasteAttempts(),
+              integrity.cutAttempts(),
+              integrity.tabHiddenCount(),
+              integrity.windowBlurCount(),
+              integrity.largeEditCount(),
+              integrity.totalAwayMs()));
     }
 
     rows.sort(
@@ -229,6 +244,23 @@ public class AdminUserChallengeReportService {
     Map<UUID, FeedbackBucket> buckets = new HashMap<>();
     for (UserChallengeFeedbackStats row : submissionRepository.feedbackStatsByUserId(userId)) {
       buckets.put(row.getChallengeId(), new FeedbackBucket(row.getFeedbackItems(), row.getFeedbackWarnings()));
+    }
+    return buckets;
+  }
+
+  private Map<UUID, IntegrityBucket> loadIntegrityBuckets(UUID userId) {
+    Map<UUID, IntegrityBucket> buckets = new HashMap<>();
+    for (UserChallengeIntegrityStats row : integrityEventRepository.statsByUserId(userId)) {
+      buckets.put(
+          row.getChallengeId(),
+          new IntegrityBucket(
+              row.getCopyAttempts(),
+              row.getPasteAttempts(),
+              row.getCutAttempts(),
+              row.getTabHiddenCount(),
+              row.getWindowBlurCount(),
+              row.getLargeEditCount(),
+              row.getTotalAwayMs()));
     }
     return buckets;
   }
@@ -354,5 +386,16 @@ public class AdminUserChallengeReportService {
 
   record FeedbackBucket(long items, long warnings) {
     static final FeedbackBucket EMPTY = new FeedbackBucket(0, 0);
+  }
+
+  record IntegrityBucket(
+      long copyAttempts,
+      long pasteAttempts,
+      long cutAttempts,
+      long tabHiddenCount,
+      long windowBlurCount,
+      long largeEditCount,
+      long totalAwayMs) {
+    static final IntegrityBucket EMPTY = new IntegrityBucket(0, 0, 0, 0, 0, 0, 0);
   }
 }

@@ -53,6 +53,21 @@ export type AdminUserSummary = {
   platformDefaultChallengeLimit: number;
   challengeQuotaOverride: number | null;
   effectiveChallengeLimit: number | null;
+  integrityMonitoringDisabled: boolean;
+};
+
+export type UserIntegrityMonitoringResponse = {
+  userId: string;
+  integrityMonitoringDisabled: boolean;
+  effectiveMonitoringEnabled: boolean;
+};
+
+export type ChallengeSessionResponse = {
+  sessionId: string;
+  startedAt: string;
+  expiresAt: string;
+  remainingSeconds: number;
+  expired: boolean;
 };
 
 export type UserChallengeQuotaResponse = {
@@ -95,6 +110,13 @@ export type AdminUserChallengeReportRow = {
   feedbackWarnings: number;
   cancelledSubmissions: number;
   likelyAbandoned: boolean;
+  clipboardCopyAttempts: number;
+  clipboardPasteAttempts: number;
+  clipboardCutAttempts: number;
+  integrityTabHiddenCount: number;
+  integrityWindowBlurCount: number;
+  integrityLargeEditCount: number;
+  integrityTotalAwayMs: number;
 };
 
 export type AdminUserChallengeReportResponse = {
@@ -146,7 +168,30 @@ export type AdminUserChallengeDetailResponse = {
   user: AdminUserChallengeReportResponse["user"];
   stats: AdminUserChallengeReportRow;
   submissions: AdminUserChallengeDetailSubmission[];
+  integrityEvents: AdminIntegrityEvent[];
 };
+
+export type AdminIntegrityEventType =
+  | "COPY"
+  | "PASTE"
+  | "CUT"
+  | "TAB_HIDDEN"
+  | "TAB_VISIBLE"
+  | "WINDOW_BLUR"
+  | "WINDOW_FOCUS"
+  | "LARGE_EDIT";
+
+export type AdminIntegrityEvent = {
+  id: string;
+  eventType: AdminIntegrityEventType;
+  editorSurface: "SOLUTION" | "CUSTOM_TESTS" | null;
+  charCount: number | null;
+  awayMs: number | null;
+  occurredAt: string;
+};
+
+/** @deprecated use AdminIntegrityEvent */
+export type AdminClipboardEvent = AdminIntegrityEvent;
 
 export type ChangePasswordRequest = {
   currentPassword: string;

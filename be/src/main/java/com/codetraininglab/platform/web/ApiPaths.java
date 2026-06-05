@@ -12,6 +12,12 @@ public final class ApiPaths {
   public static final String LANGUAGES = BASE + "/languages";
   public static final String CHALLENGES = BASE + "/challenges";
   public static final String CHALLENGE_CUSTOM_TESTS = CHALLENGES + "/{slug}/custom-tests";
+  public static final String CHALLENGE_CLIPBOARD_EVENTS = CHALLENGES + "/{slug}/clipboard-events";
+  public static final String CHALLENGE_INTEGRITY_EVENTS = CHALLENGES + "/{slug}/integrity-events";
+  public static final String CHALLENGE_SESSION = CHALLENGES + "/{slug}/session";
+  public static final String CHALLENGE_SESSION_START = CHALLENGES + "/{slug}/session/start";
+  public static final String CHALLENGE_SESSION_ABANDON = CHALLENGES + "/{slug}/session/abandon";
+  public static final String CHALLENGE_SESSION_SYNC = CHALLENGES + "/{slug}/session/sync";
   public static final String ME = BASE + "/me";
   public static final String ME_PROGRESS = ME + "/progress";
   public static final String ME_METRICS = ME + "/metrics";

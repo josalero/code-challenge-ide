@@ -50,6 +50,9 @@ public class UserEntity {
   @Column(name = "max_started_challenges")
   private Integer maxStartedChallenges;
 
+  @Column(name = "integrity_monitoring_disabled", nullable = false)
+  private boolean integrityMonitoringDisabled;
+
   protected UserEntity() {}
 
   public UserEntity(
@@ -123,6 +126,14 @@ public class UserEntity {
 
   public void setMaxStartedChallenges(Integer maxStartedChallenges) {
     this.maxStartedChallenges = maxStartedChallenges;
+  }
+
+  public boolean isIntegrityMonitoringDisabled() {
+    return integrityMonitoringDisabled;
+  }
+
+  public void setIntegrityMonitoringDisabled(boolean integrityMonitoringDisabled) {
+    this.integrityMonitoringDisabled = integrityMonitoringDisabled;
   }
 
   public void setPasswordHash(String passwordHash) {

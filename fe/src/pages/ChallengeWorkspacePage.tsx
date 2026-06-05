@@ -38,7 +38,13 @@ import {
 import { formatSessionCountdown } from "../utils/challengeSession";
 import { useAutosaveDraft } from "../hooks/useAutosaveDraft";
 import { useChallengeSessionTimer } from "../hooks/useChallengeSessionTimer";
+import {
+  useChallengeIntegrity,
+  useTabVisibilityIntegrity,
+} from "../hooks/useChallengeIntegrity";
+import { useServerChallengeSession } from "../hooks/useServerChallengeSession";
 import { useRunTestsShortcut } from "../hooks/useRunTestsShortcut";
+import type { IntegrityEventPayload } from "../utils/monacoClipboardGuard";
 import { useSubmissionEvents } from "../hooks/useSubmissionEvents";
 import {
   applyTestResult,
@@ -95,18 +101,30 @@ export default function ChallengeWorkspacePage() {
   });
 
   const {
-    active: sessionActive,
-    expired: sessionExpired,
-    formattedRemaining: sessionCountdown,
-    limitSeconds: sessionLimitSeconds,
-    startSession,
-    abandonSession,
+    active: clientSessionActive,
+    expired: clientSessionExpired,
+    formattedRemaining: clientSessionCountdown,
+    limitSeconds: clientSessionLimitSeconds,
+    startSession: startClientSession,
+    abandonSession: abandonClientSession,
   } = useChallengeSessionTimer(
+    isAdmin ? slug : "",
+    challengeQuery.data?.sessionDurationMinutes ?? 0,
+    challengeQuery.data?.difficulty ?? "",
+    isAdmin ? (user?.email ?? "anonymous") : "",
+  );
+
+  const serverSession = useServerChallengeSession(
     slug,
     challengeQuery.data?.sessionDurationMinutes ?? 0,
     challengeQuery.data?.difficulty ?? "",
-    user?.email ?? "anonymous",
+    Boolean(user) && !isAdmin,
   );
+
+  const sessionActive = isAdmin ? clientSessionActive : serverSession.active;
+  const sessionExpired = isAdmin ? clientSessionExpired : serverSession.expired;
+  const sessionCountdown = isAdmin ? clientSessionCountdown : serverSession.formattedRemaining;
+  const sessionLimitSeconds = isAdmin ? clientSessionLimitSeconds : serverSession.limitSeconds;
 
   const progressQuery = useQuery({
     queryKey: ["me", "progress"],
@@ -193,11 +211,21 @@ export default function ChallengeWorkspacePage() {
       message.error(e instanceof ApiError ? e.message : "Could not save custom tests"),
   });
 
-  const handleStartTest = useCallback(() => {
+  const handleStartTest = useCallback(async () => {
     if (sessionActive || exerciseLocked) {
       return;
     }
-    startSession();
+    try {
+      if (isAdmin) {
+        startClientSession();
+      } else {
+        await serverSession.startSession();
+      }
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : "Could not start timed session";
+      message.error(msg);
+      return;
+    }
     const limitLabel = formatSessionCountdown(sessionLimitSeconds);
     const mins = challengeQuery.data?.sessionDurationMinutes ?? 0;
     appendActivity(`Timed attempt started — ${limitLabel} on the clock`, "success");
@@ -209,7 +237,9 @@ export default function ChallengeWorkspacePage() {
   }, [
     sessionActive,
     exerciseLocked,
-    startSession,
+    isAdmin,
+    startClientSession,
+    serverSession,
     sessionLimitSeconds,
     challengeQuery.data?.sessionDurationMinutes,
     appendActivity,
@@ -285,21 +315,38 @@ export default function ChallengeWorkspacePage() {
     },
   });
 
-  const handleAbandonAttempt = useCallback(() => {
-    abandonSession();
+  const handleAbandonAttempt = useCallback(async () => {
+    try {
+      if (isAdmin) {
+        abandonClientSession();
+      } else {
+        await serverSession.abandonSession();
+      }
+    } catch (e) {
+      message.error(e instanceof ApiError ? e.message : "Could not abandon attempt");
+      return;
+    }
     setBottomTab("guide");
     appendActivity(
       "Attempt abandoned — timer reset. Press Start test when you are ready for a new attempt.",
       "info",
     );
     message.info("Attempt abandoned — press Start test when you are ready to try again");
-  }, [abandonSession, appendActivity, message]);
+  }, [isAdmin, abandonClientSession, serverSession, appendActivity, message]);
 
   const redoMutation = useMutation({
     mutationFn: () =>
       apiFetch<void>(ApiPaths.challengeRedo(slug), { method: "POST" }),
-    onSuccess: () => {
-      abandonSession();
+    onSuccess: async () => {
+      if (isAdmin) {
+        abandonClientSession();
+      } else {
+        try {
+          await serverSession.abandonSession();
+        } catch {
+          // redo still succeeded; session may already be ended
+        }
+      }
       void queryClient.invalidateQueries({ queryKey: ["me", "progress"] });
       setReport(null);
       setSubmitError(null);
@@ -567,6 +614,18 @@ export default function ChallengeWorkspacePage() {
 
   const showStartGate = Boolean(challenge) && !sessionActive && !exerciseLocked;
 
+  const monitorIntegrity =
+    !isAdmin && sessionActive && !sessionExpired && !exerciseLocked;
+  const { recordEvent } = useChallengeIntegrity(slug, monitorIntegrity);
+  useTabVisibilityIntegrity(monitorIntegrity, recordEvent);
+
+  const handleIntegrityEvent = useCallback(
+    (payload: IntegrityEventPayload) => {
+      recordEvent(payload);
+    },
+    [recordEvent],
+  );
+
   useEffect(() => {
     if (showStartGate && workspaceTab === "custom") {
       setWorkspaceTab("solution");
@@ -678,6 +737,8 @@ export default function ChallengeWorkspacePage() {
             sessionCountdown={sessionActive ? sessionCountdown : null}
             sessionExpired={sessionExpired}
             sessionDurationMinutes={challenge.sessionDurationMinutes}
+            monitorIntegrity={monitorIntegrity}
+            onIntegrityEvent={handleIntegrityEvent}
           />
         </div>
       )}
