@@ -2,12 +2,14 @@ package com.codetraininglab.identity.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.codetraininglab.domain.ProgressState;
 import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
 import com.codetraininglab.domain.UserRole;
+import com.codetraininglab.platform.persistence.ChallengeIntegrityEventRepository;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.ChallengeRepository;
 import com.codetraininglab.platform.persistence.SubmissionEntity;
@@ -41,6 +43,7 @@ class AdminUserChallengeReportServiceTest {
   @Mock private ChallengeRepository challengeRepository;
   @Mock private UserProgressRepository progressRepository;
   @Mock private SubmissionRepository submissionRepository;
+  @Mock private ChallengeIntegrityEventRepository integrityEventRepository;
 
   private AdminUserChallengeReportService service;
   private UUID userId;
@@ -59,9 +62,13 @@ class AdminUserChallengeReportServiceTest {
             challengeRepository,
             progressRepository,
             submissionRepository,
+            integrityEventRepository,
             clock);
     userId = UUID.randomUUID();
     challengeId = UUID.randomUUID();
+    lenient()
+        .when(integrityEventRepository.statsByUserId(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(List.of());
   }
 
   @Test

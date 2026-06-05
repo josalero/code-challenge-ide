@@ -73,6 +73,46 @@ function matchesChallengeSearch(row: AdminUserChallengeReportRow, query: string)
   );
 }
 
+function integritySignalTotal(row: AdminUserChallengeReportRow): number {
+  return (
+    row.clipboardCopyAttempts
+    + row.clipboardPasteAttempts
+    + row.clipboardCutAttempts
+    + row.integrityTabHiddenCount
+    + row.integrityWindowBlurCount
+    + row.integrityLargeEditCount
+  );
+}
+
+function integritySummary(row: AdminUserChallengeReportRow): string {
+  if (integritySignalTotal(row) === 0) {
+    return "None";
+  }
+  const parts: string[] = [];
+  if (row.clipboardPasteAttempts > 0) {
+    parts.push(`${row.clipboardPasteAttempts} paste`);
+  }
+  if (row.clipboardCopyAttempts > 0) {
+    parts.push(`${row.clipboardCopyAttempts} copy`);
+  }
+  if (row.clipboardCutAttempts > 0) {
+    parts.push(`${row.clipboardCutAttempts} cut`);
+  }
+  if (row.integrityTabHiddenCount > 0) {
+    parts.push(`${row.integrityTabHiddenCount} tab hide`);
+  }
+  if (row.integrityWindowBlurCount > 0) {
+    parts.push(`${row.integrityWindowBlurCount} blur`);
+  }
+  if (row.integrityLargeEditCount > 0) {
+    parts.push(`${row.integrityLargeEditCount} large edit`);
+  }
+  if (row.integrityTotalAwayMs > 0) {
+    parts.push(`${formatDurationMs(row.integrityTotalAwayMs)} away`);
+  }
+  return parts.join(" · ");
+}
+
 export default function AdminUserChallengeReportPage() {
   const { userId = "" } = useParams();
   const navigate = useNavigate();
@@ -150,6 +190,34 @@ export default function AdminUserChallengeReportPage() {
         </CenteredTableCell>
       ),
       sorter: (a, b) => (a.passRatePercent ?? -1) - (b.passRatePercent ?? -1),
+    },
+    {
+      title: "Integrity",
+      key: "integrity",
+      width: 148,
+      align: "center",
+      render: (_, row) => {
+        const total = integritySignalTotal(row);
+        return (
+          <div className="text-center text-sm">
+            <p
+              className={
+                total > 0
+                  ? "mb-0 font-medium tabular-nums text-amber-700 dark:text-amber-400"
+                  : "mb-0 tabular-nums text-muted-foreground"
+              }
+            >
+              {total > 0 ? total : "—"}
+            </p>
+            {total > 0 && (
+              <p className="mb-0 mt-0.5 text-[10px] leading-snug text-muted-foreground">
+                {integritySummary(row)}
+              </p>
+            )}
+          </div>
+        );
+      },
+      sorter: (a, b) => integritySignalTotal(a) - integritySignalTotal(b),
     },
     {
       title: "Runs",

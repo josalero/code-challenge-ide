@@ -19,4 +19,5 @@ public record AdminUserSummary(
     int completionPercent,
     int platformDefaultChallengeLimit,
     Integer challengeQuotaOverride,
-    Integer effectiveChallengeLimit) {}
+    Integer effectiveChallengeLimit,
+    boolean integrityMonitoringDisabled) {}

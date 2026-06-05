@@ -3,6 +3,7 @@ import Editor from "@monaco-editor/react";
 import { useEffect, useRef, useState } from "react";
 import { getAccessToken } from "../auth/authStorage";
 import { monaco } from "../monacoSetup";
+import { attachMonacoClipboardGuard, attachMonacoLargeEditGuard, type IntegrityEventPayload } from "../utils/monacoClipboardGuard";
 import { attachMonacoLanguageClient } from "../lsp/createMonacoLanguageClient";
 import { encodeSolutionForLsp } from "../lsp/encodeSolution";
 import { monacoEditorAfterMount, monacoEditorBeforeMount, refreshEditorLanguageModel } from "../monacoEditorServices";
@@ -26,6 +27,8 @@ type Props = {
   onChange: (value: string) => void;
   lspEnabled: boolean;
   readOnly?: boolean;
+  monitorIntegrity?: boolean;
+  onIntegrityEvent?: (payload: IntegrityEventPayload) => void;
 };
 
 const EDITOR_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
@@ -58,6 +61,8 @@ export default function LspMonacoEditor({
   onChange,
   lspEnabled,
   readOnly = false,
+  monitorIntegrity = false,
+  onIntegrityEvent,
 }: Props) {
   const lspConfig = lspConfigFor(language);
   const modelUri = solutionModelUri(language);
@@ -70,6 +75,8 @@ export default function LspMonacoEditor({
   const initialCodeRef = useRef(value);
   const connectGenRef = useRef(0);
   const lspReadyRef = useRef(false);
+  const clipboardGuardRef = useRef<{ dispose: () => void } | null>(null);
+  const largeEditGuardRef = useRef<{ dispose: () => void } | null>(null);
   const [editorMounted, setEditorMounted] = useState(false);
   const [lspStatus, setLspStatus] = useState<LspStatus>("off");
   const [lspMessage, setLspMessage] = useState<string | null>(null);
@@ -91,8 +98,45 @@ export default function LspMonacoEditor({
     }
     editor.updateOptions({ readOnly });
     monacoEditorAfterMount(editor, editorMonaco);
+    clipboardGuardRef.current?.dispose();
+    largeEditGuardRef.current?.dispose();
+    if (onIntegrityEvent) {
+      clipboardGuardRef.current = attachMonacoClipboardGuard(editor, {
+        enabled: monitorIntegrity,
+        editorSurface: "SOLUTION",
+        onViolation: onIntegrityEvent,
+      });
+      largeEditGuardRef.current = attachMonacoLargeEditGuard(editor, {
+        enabled: monitorIntegrity,
+        editorSurface: "SOLUTION",
+        onLargeEdit: onIntegrityEvent,
+      });
+    }
     setEditorMounted(true);
   };
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || !onIntegrityEvent) {
+      return;
+    }
+    clipboardGuardRef.current?.dispose();
+    largeEditGuardRef.current?.dispose();
+    clipboardGuardRef.current = attachMonacoClipboardGuard(editor, {
+      enabled: monitorIntegrity,
+      editorSurface: "SOLUTION",
+      onViolation: onIntegrityEvent,
+    });
+    largeEditGuardRef.current = attachMonacoLargeEditGuard(editor, {
+      enabled: monitorIntegrity,
+      editorSurface: "SOLUTION",
+      onLargeEdit: onIntegrityEvent,
+    });
+    return () => {
+      clipboardGuardRef.current?.dispose();
+      largeEditGuardRef.current?.dispose();
+    };
+  }, [monitorIntegrity, onIntegrityEvent]);
 
   useEffect(() => {
     editorRef.current?.updateOptions({ readOnly });
@@ -288,6 +332,7 @@ export default function LspMonacoEditor({
           options={{
             ...EDITOR_OPTIONS,
             readOnly,
+            contextmenu: true,
             ariaLabel: "Solution editor",
           }}
         />

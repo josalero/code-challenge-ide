@@ -10,7 +10,16 @@ import java.util.UUID;
 public record AdminUserChallengeDetailResponse(
     AdminUserChallengeReportResponse.UserHeader user,
     AdminUserChallengeReportResponse.ChallengeRow stats,
-    List<SubmissionDetail> submissions) {
+    List<SubmissionDetail> submissions,
+    List<IntegrityEventDetail> integrityEvents) {
+
+  public record IntegrityEventDetail(
+      UUID id,
+      String eventType,
+      String editorSurface,
+      Integer charCount,
+      Long awayMs,
+      Instant occurredAt) {}
 
   public record SubmissionDetail(
       UUID id,

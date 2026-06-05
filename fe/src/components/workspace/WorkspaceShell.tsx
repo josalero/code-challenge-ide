@@ -76,6 +76,9 @@ type Props = {
   onStartTest?: () => void;
   showStartTest?: boolean;
   showStartGate?: boolean;
+  /** Silent admin-only integrity signals — never surfaced in learner UI */
+  monitorIntegrity?: boolean;
+  onIntegrityEvent?: (payload: import("@/utils/monacoClipboardGuard").IntegrityEventPayload) => void;
 };
 
 type MobilePane = "instructions" | "editor" | "output";
@@ -159,6 +162,8 @@ export default function WorkspaceShell({
   onStartTest,
   showStartTest = false,
   showStartGate = false,
+  monitorIntegrity = false,
+  onIntegrityEvent,
 }: Props) {
   const [mobilePane, setMobilePane] = useState<MobilePane>("editor");
   const [instructionsOpen, setInstructionsOpen] = useState(false);
@@ -217,6 +222,8 @@ export default function WorkspaceShell({
       onWorkspaceTabChange={onWorkspaceTabChange}
       readOnly={!editorEditable}
       previewStarter={previewStarter}
+      monitorIntegrity={monitorIntegrity}
+      onIntegrityEvent={onIntegrityEvent}
     />
   );
 

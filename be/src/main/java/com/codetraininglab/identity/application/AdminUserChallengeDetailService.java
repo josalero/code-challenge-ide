@@ -5,11 +5,14 @@ import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
 import com.codetraininglab.feedback.api.FeedbackActionResponse;
 import com.codetraininglab.identity.api.AdminUserChallengeDetailResponse;
+import com.codetraininglab.identity.api.AdminUserChallengeDetailResponse.IntegrityEventDetail;
 import com.codetraininglab.identity.api.AdminUserChallengeDetailResponse.ReportDetail;
 import com.codetraininglab.identity.api.AdminUserChallengeDetailResponse.SubmissionDetail;
 import com.codetraininglab.identity.api.AdminUserChallengeReportResponse;
 import com.codetraininglab.identity.api.AdminUserChallengeReportResponse.ChallengeRow;
 import com.codetraininglab.identity.api.AdminUserChallengeReportResponse.UserHeader;
+import com.codetraininglab.platform.persistence.ChallengeIntegrityEventEntity;
+import com.codetraininglab.platform.persistence.ChallengeIntegrityEventRepository;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.ChallengeRepository;
 import com.codetraininglab.platform.persistence.FeedbackItemEntity;
@@ -52,6 +55,7 @@ public class AdminUserChallengeDetailService {
   private final FeedbackItemRepository feedbackItemRepository;
   private final SubmissionFeedbackActionRepository feedbackActionRepository;
   private final LanguageRuntimeRepository languageRuntimeRepository;
+  private final ChallengeIntegrityEventRepository integrityEventRepository;
   private final JsonMapper jsonMapper;
   private final Clock clock;
 
@@ -64,6 +68,7 @@ public class AdminUserChallengeDetailService {
       FeedbackItemRepository feedbackItemRepository,
       SubmissionFeedbackActionRepository feedbackActionRepository,
       LanguageRuntimeRepository languageRuntimeRepository,
+      ChallengeIntegrityEventRepository integrityEventRepository,
       JsonMapper jsonMapper,
       Clock clock) {
     this.userRepository = userRepository;
@@ -74,6 +79,7 @@ public class AdminUserChallengeDetailService {
     this.feedbackItemRepository = feedbackItemRepository;
     this.feedbackActionRepository = feedbackActionRepository;
     this.languageRuntimeRepository = languageRuntimeRepository;
+    this.integrityEventRepository = integrityEventRepository;
     this.jsonMapper = jsonMapper;
     this.clock = clock;
   }
@@ -169,6 +175,22 @@ public class AdminUserChallengeDetailService {
             ? durationMs(bucket.firstActivityAt(), progress.getSubmittedAt())
             : null;
 
+    AdminUserChallengeReportService.IntegrityBucket integrity =
+        integrityEventRepository.statsByUserId(userId).stream()
+            .filter(row -> row.getChallengeId().equals(challenge.getId()))
+            .findFirst()
+            .map(
+                row ->
+                    new AdminUserChallengeReportService.IntegrityBucket(
+                        row.getCopyAttempts(),
+                        row.getPasteAttempts(),
+                        row.getCutAttempts(),
+                        row.getTabHiddenCount(),
+                        row.getWindowBlurCount(),
+                        row.getLargeEditCount(),
+                        row.getTotalAwayMs()))
+            .orElse(AdminUserChallengeReportService.IntegrityBucket.EMPTY);
+
     ChallengeRow stats =
         new ChallengeRow(
             challenge.getSlug(),
@@ -193,7 +215,21 @@ public class AdminUserChallengeDetailService {
             feedbackItems,
             feedbackWarnings,
             bucket.cancelled(),
-            likelyAbandonedFlag);
+            likelyAbandonedFlag,
+            integrity.copyAttempts(),
+            integrity.pasteAttempts(),
+            integrity.cutAttempts(),
+            integrity.tabHiddenCount(),
+            integrity.windowBlurCount(),
+            integrity.largeEditCount(),
+            integrity.totalAwayMs());
+
+    List<IntegrityEventDetail> integrityEvents =
+        integrityEventRepository
+            .findByUserIdAndChallengeIdOrderByOccurredAtDesc(userId, challenge.getId())
+            .stream()
+            .map(AdminUserChallengeDetailService::toIntegrityEventDetail)
+            .toList();
 
     UserHeader header =
         new UserHeader(
@@ -203,7 +239,17 @@ public class AdminUserChallengeDetailService {
             user.getRole().name(),
             user.getDeletedAt() == null);
 
-    return new AdminUserChallengeDetailResponse(header, stats, submissionDetails);
+    return new AdminUserChallengeDetailResponse(header, stats, submissionDetails, integrityEvents);
+  }
+
+  private static IntegrityEventDetail toIntegrityEventDetail(ChallengeIntegrityEventEntity event) {
+    return new IntegrityEventDetail(
+        event.getId(),
+        event.getEventType().name(),
+        event.getEditorSurface() == null ? null : event.getEditorSurface().name(),
+        event.getCharCount(),
+        event.getAwayMs(),
+        event.getOccurredAt());
   }
 
   private ReportDetail buildReportDetail(SubmissionEntity submission) {

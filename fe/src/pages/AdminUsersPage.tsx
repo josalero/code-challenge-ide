@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { Activity, BarChart3, CalendarDays, Gauge, Plus, Search, UserMinus, Users, UserX, X } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, Gauge, Plus, Search, Shield, UserMinus, Users, UserX, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiFetch, ApiError } from "../api/client";
@@ -24,6 +24,7 @@ import { AdminFilterGroup, AdminFilterPanel } from "../components/admin/AdminSta
 import UserIdentityCell, { CatalogProgressCell, CenteredTableCell } from "../components/admin/AdminTableCells";
 import AdminCreateUserModal from "../components/admin-users/AdminCreateUserModal";
 import AdminChallengeQuotaModal from "../components/admin-users/AdminChallengeQuotaModal";
+import AdminIntegrityMonitoringModal from "../components/admin-users/AdminIntegrityMonitoringModal";
 import AppLayout from "../components/AppLayout";
 import CtlCard from "../components/ui/CtlCard";
 import { Button } from "@/components/ui/button";
@@ -130,6 +131,7 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deactivateTarget, setDeactivateTarget] = useState<AdminUserSummary | null>(null);
   const [quotaTarget, setQuotaTarget] = useState<AdminUserSummary | null>(null);
+  const [integrityTarget, setIntegrityTarget] = useState<AdminUserSummary | null>(null);
 
   const usersQuery = useQuery({
     queryKey: ["admin", "users", includeInactive],
@@ -365,15 +367,34 @@ export default function AdminUsersPage() {
             {row.active ? (
               <>
                 {row.role === "USER" && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1 px-2 text-xs"
-                    onClick={() => setQuotaTarget(row)}
-                  >
-                    <Gauge className="size-3.5" aria-hidden />
-                    Limit
-                  </Button>
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 px-2 text-xs"
+                      onClick={() => setQuotaTarget(row)}
+                    >
+                      <Gauge className="size-3.5" aria-hidden />
+                      Limit
+                    </Button>
+                    <Tooltip
+                      title={
+                        row.integrityMonitoringDisabled
+                          ? "Integrity monitoring disabled for this learner"
+                          : "Configure integrity monitoring"
+                      }
+                    >
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 px-2 text-xs"
+                        onClick={() => setIntegrityTarget(row)}
+                      >
+                        <Shield className="size-3.5" aria-hidden />
+                        Integrity
+                      </Button>
+                    </Tooltip>
+                  </>
                 )}
                 <Tooltip
                   title={
@@ -647,6 +668,13 @@ export default function AdminUsersPage() {
         user={quotaTarget}
         open={quotaTarget !== null}
         onClose={() => setQuotaTarget(null)}
+        onUpdated={() => void queryClient.invalidateQueries({ queryKey: ["admin", "users"] })}
+      />
+
+      <AdminIntegrityMonitoringModal
+        user={integrityTarget}
+        open={integrityTarget !== null}
+        onClose={() => setIntegrityTarget(null)}
         onUpdated={() => void queryClient.invalidateQueries({ queryKey: ["admin", "users"] })}
       />
 

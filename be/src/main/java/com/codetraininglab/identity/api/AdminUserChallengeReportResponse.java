@@ -47,5 +47,12 @@ public record AdminUserChallengeReportResponse(
       long feedbackItems,
       long feedbackWarnings,
       long cancelledSubmissions,
-      boolean likelyAbandoned) {}
+      boolean likelyAbandoned,
+      long clipboardCopyAttempts,
+      long clipboardPasteAttempts,
+      long clipboardCutAttempts,
+      long integrityTabHiddenCount,
+      long integrityWindowBlurCount,
+      long integrityLargeEditCount,
+      long integrityTotalAwayMs) {}
 }

@@ -1,13 +1,16 @@
 package com.codetraininglab.identity.application;
 
 import com.codetraininglab.catalog.application.ChallengeQuotaService;
+import com.codetraininglab.catalog.application.IntegrityMonitoringService;
 import com.codetraininglab.domain.ProgressState;
 import com.codetraininglab.domain.UserRole;
 import com.codetraininglab.identity.api.AdminUserSummary;
 import com.codetraininglab.identity.api.CreateUserRequest;
 import com.codetraininglab.identity.api.CreateUserResponse;
 import com.codetraininglab.identity.api.UpdateUserChallengeQuotaRequest;
+import com.codetraininglab.identity.api.UpdateUserIntegrityMonitoringRequest;
 import com.codetraininglab.identity.api.UserChallengeQuotaResponse;
+import com.codetraininglab.identity.api.UserIntegrityMonitoringResponse;
 import com.codetraininglab.platform.persistence.SubmissionRepository;
 import com.codetraininglab.platform.persistence.UserEntity;
 import com.codetraininglab.platform.persistence.UserPassedCountAggregate;
@@ -38,6 +41,7 @@ public class UserAdminService {
   private final SubmissionRepository submissionRepository;
   private final UserProgressRepository progressRepository;
   private final ChallengeQuotaService challengeQuotaService;
+  private final IntegrityMonitoringService integrityMonitoringService;
 
   public UserAdminService(
       UserRepository userRepository,
@@ -46,7 +50,8 @@ public class UserAdminService {
       UserWelcomeEmailSender welcomeEmailSender,
       SubmissionRepository submissionRepository,
       UserProgressRepository progressRepository,
-      ChallengeQuotaService challengeQuotaService) {
+      ChallengeQuotaService challengeQuotaService,
+      IntegrityMonitoringService integrityMonitoringService) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.clock = clock;
@@ -54,6 +59,7 @@ public class UserAdminService {
     this.submissionRepository = submissionRepository;
     this.progressRepository = progressRepository;
     this.challengeQuotaService = challengeQuotaService;
+    this.integrityMonitoringService = integrityMonitoringService;
   }
 
   @Transactional(readOnly = true)
@@ -101,7 +107,8 @@ public class UserAdminService {
                   completionPercent,
                   challengeQuotaService.platformDefaultMax(),
                   user.getMaxStartedChallenges(),
-                  challengeQuotaService.effectiveChallengeLimit(user));
+                  challengeQuotaService.effectiveChallengeLimit(user),
+                  user.isIntegrityMonitoringDisabled());
             })
         .sorted(
             Comparator.comparing(
@@ -135,6 +142,39 @@ public class UserAdminService {
             .findById(userId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     return quotaResponse(user);
+  }
+
+  @Transactional
+  public UserIntegrityMonitoringResponse updateIntegrityMonitoring(
+      UUID userId, UpdateUserIntegrityMonitoringRequest request) {
+    UserEntity user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    if (user.getRole() != UserRole.USER) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Integrity monitoring applies to learner accounts only");
+    }
+    user.setIntegrityMonitoringDisabled(request.integrityMonitoringDisabled());
+    user.setUpdatedAt(clock.instant());
+    userRepository.save(user);
+    return integrityMonitoringResponse(user);
+  }
+
+  @Transactional(readOnly = true)
+  public UserIntegrityMonitoringResponse integrityMonitoring(UUID userId) {
+    UserEntity user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    return integrityMonitoringResponse(user);
+  }
+
+  private UserIntegrityMonitoringResponse integrityMonitoringResponse(UserEntity user) {
+    return new UserIntegrityMonitoringResponse(
+        user.getId(),
+        user.isIntegrityMonitoringDisabled(),
+        integrityMonitoringService.isMonitoringEnabled(user));
   }
 
   private UserChallengeQuotaResponse quotaResponse(UserEntity user) {

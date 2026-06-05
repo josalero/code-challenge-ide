@@ -14,6 +14,13 @@ import {
   customTestsTabLabel,
   usesLsp,
 } from "@/utils/monacoLanguage";
+import {
+  attachMonacoClipboardGuard,
+  attachMonacoLargeEditGuard,
+  type IntegrityEventPayload,
+} from "@/utils/monacoClipboardGuard";
+import { useCallback, useEffect, useRef, type MutableRefObject } from "react";
+import type { editor as MonacoEditor } from "monaco-editor";
 
 type Props = {
   slug: string;
@@ -27,6 +34,8 @@ type Props = {
   readOnly?: boolean;
   /** Read-only preview of starter skeleton before Start test */
   previewStarter?: boolean;
+  monitorIntegrity?: boolean;
+  onIntegrityEvent?: (payload: IntegrityEventPayload) => void;
 };
 
 export default function CodeEditorPanel({
@@ -40,7 +49,59 @@ export default function CodeEditorPanel({
   onWorkspaceTabChange,
   readOnly = false,
   previewStarter = false,
+  monitorIntegrity = false,
+  onIntegrityEvent,
 }: Props) {
+  const plainEditorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
+  const customEditorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
+  const solutionGuardRef = useRef<{ dispose: () => void } | null>(null);
+  const customGuardRef = useRef<{ dispose: () => void } | null>(null);
+  const solutionLargeEditRef = useRef<{ dispose: () => void } | null>(null);
+  const customLargeEditRef = useRef<{ dispose: () => void } | null>(null);
+
+  const syncGuards = useCallback(
+    (
+      editor: MonacoEditor.IStandaloneCodeEditor | null,
+      clipboardRef: MutableRefObject<{ dispose: () => void } | null>,
+      largeEditRef: MutableRefObject<{ dispose: () => void } | null>,
+      editorSurface: "SOLUTION" | "CUSTOM_TESTS",
+    ) => {
+      clipboardRef.current?.dispose();
+      clipboardRef.current = null;
+      largeEditRef.current?.dispose();
+      largeEditRef.current = null;
+      if (!editor || !onIntegrityEvent) {
+        return;
+      }
+      clipboardRef.current = attachMonacoClipboardGuard(editor, {
+        enabled: monitorIntegrity,
+        editorSurface,
+        onViolation: onIntegrityEvent,
+      });
+      largeEditRef.current = attachMonacoLargeEditGuard(editor, {
+        enabled: monitorIntegrity,
+        editorSurface,
+        onLargeEdit: onIntegrityEvent,
+      });
+    },
+    [onIntegrityEvent, monitorIntegrity],
+  );
+
+  useEffect(() => {
+    syncGuards(plainEditorRef.current, solutionGuardRef, solutionLargeEditRef, "SOLUTION");
+    syncGuards(customEditorRef.current, customGuardRef, customLargeEditRef, "CUSTOM_TESTS");
+    const solutionClipboard = solutionGuardRef;
+    const customClipboard = customGuardRef;
+    const solutionLarge = solutionLargeEditRef;
+    const customLarge = customLargeEditRef;
+    return () => {
+      solutionClipboard.current?.dispose();
+      customClipboard.current?.dispose();
+      solutionLarge.current?.dispose();
+      customLarge.current?.dispose();
+    };
+  }, [monitorIntegrity, onIntegrityEvent, syncGuards]);
+
   const editorLanguage = editorLanguageFor(language);
   const lspEnabled = usesLsp(language) && !previewStarter;
   const solutionPath = solutionModelUri(language);
@@ -56,6 +117,7 @@ export default function CodeEditorPanel({
     readOnly,
     scrollBeyondLastLine: false,
     renderLineHighlight: "line" as const,
+    contextmenu: true,
   };
 
   return (
@@ -107,6 +169,8 @@ export default function CodeEditorPanel({
                   onChange={onSolutionChange}
                   lspEnabled={lspEnabled}
                   readOnly={readOnly}
+                  monitorIntegrity={monitorIntegrity}
+                  onIntegrityEvent={onIntegrityEvent}
                 />
               ) : (
                 <Editor
@@ -116,7 +180,11 @@ export default function CodeEditorPanel({
                   language={editorLanguage}
                   theme={EDITOR_THEME}
                   beforeMount={monacoEditorBeforeMount}
-                  onMount={(editor, m) => monacoEditorAfterMount(editor, m)}
+                  onMount={(editor, m) => {
+                    plainEditorRef.current = editor;
+                    monacoEditorAfterMount(editor, m);
+                    syncGuards(editor, solutionGuardRef, solutionLargeEditRef, "SOLUTION");
+                  }}
                   value={solutionCode}
                   onChange={(v) => onSolutionChange(v ?? "")}
                   options={{
@@ -141,7 +209,11 @@ export default function CodeEditorPanel({
                 language={editorLanguage}
                 theme={EDITOR_THEME}
                 beforeMount={monacoEditorBeforeMount}
-                onMount={(editor, m) => monacoEditorAfterMount(editor, m)}
+                onMount={(editor, m) => {
+                  customEditorRef.current = editor;
+                  monacoEditorAfterMount(editor, m);
+                  syncGuards(editor, customGuardRef, customLargeEditRef, "CUSTOM_TESTS");
+                }}
                 value={customTestsCode}
                 onChange={(v) => onCustomTestsChange(v ?? "")}
                 options={{

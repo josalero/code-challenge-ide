@@ -2,6 +2,7 @@ package com.codetraininglab.identity.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.codetraininglab.domain.FeedbackActionStatus;
@@ -12,6 +13,7 @@ import com.codetraininglab.domain.ProgressState;
 import com.codetraininglab.domain.SubmissionKind;
 import com.codetraininglab.domain.SubmissionStatus;
 import com.codetraininglab.domain.UserRole;
+import com.codetraininglab.platform.persistence.ChallengeIntegrityEventRepository;
 import com.codetraininglab.platform.persistence.ChallengeEntity;
 import com.codetraininglab.platform.persistence.ChallengeRepository;
 import com.codetraininglab.platform.persistence.FeedbackItemEntity;
@@ -55,6 +57,7 @@ class AdminUserChallengeDetailServiceTest {
   @Mock private FeedbackItemRepository feedbackItemRepository;
   @Mock private SubmissionFeedbackActionRepository feedbackActionRepository;
   @Mock private LanguageRuntimeRepository languageRuntimeRepository;
+  @Mock private ChallengeIntegrityEventRepository integrityEventRepository;
 
   private AdminUserChallengeDetailService service;
   private UUID userId;
@@ -80,6 +83,7 @@ class AdminUserChallengeDetailServiceTest {
             feedbackItemRepository,
             feedbackActionRepository,
             languageRuntimeRepository,
+            integrityEventRepository,
             JsonMapper.builder().build(),
             clock);
     userId = UUID.randomUUID();
@@ -87,6 +91,14 @@ class AdminUserChallengeDetailServiceTest {
     runtimeId = UUID.randomUUID();
     submissionId = UUID.randomUUID();
     reportId = UUID.randomUUID();
+    lenient()
+        .when(integrityEventRepository.statsByUserId(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(List.of());
+    lenient()
+        .when(
+            integrityEventRepository.findByUserIdAndChallengeIdOrderByOccurredAtDesc(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(List.of());
   }
 
   @Test

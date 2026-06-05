@@ -3,7 +3,7 @@ import { Alert, Collapse, Spin, Tag } from "antd";
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../api/client";
-import type { AdminUserChallengeDetailResponse, AdminUserChallengeDetailSubmission } from "../api/types";
+import type { AdminUserChallengeDetailResponse, AdminUserChallengeDetailSubmission, AdminIntegrityEvent } from "../api/types";
 import EngagementBadge, { DifficultyChip, LanguageChip } from "../components/admin/AdminBadges";
 import AdminPageHero, { AdminReportUserLine } from "../components/admin/AdminPageHero";
 import UserIdentityCell, { PassRateCell } from "../components/admin/AdminTableCells";
@@ -173,6 +173,100 @@ function SubmissionDetailPanel({ submission }: { submission: AdminUserChallengeD
   );
 }
 
+function integrityEventLabel(event: AdminIntegrityEvent): string {
+  if (event.eventType === "TAB_VISIBLE" || event.eventType === "WINDOW_FOCUS") {
+    const away =
+      event.awayMs != null && event.awayMs > 0 ? ` (${formatDurationMs(event.awayMs)} away)` : "";
+    return `${event.eventType}${away}`;
+  }
+  if (event.eventType === "LARGE_EDIT") {
+    const surface = event.editorSurface === "CUSTOM_TESTS" ? "Custom tests" : "Solution";
+    return `LARGE_EDIT · ${surface}${event.charCount != null ? ` (${event.charCount} chars)` : ""}`;
+  }
+  if (event.eventType === "COPY" || event.eventType === "PASTE" || event.eventType === "CUT") {
+    const surface = event.editorSurface === "CUSTOM_TESTS" ? "Custom tests" : "Solution";
+    const chars =
+      event.charCount != null && event.eventType === "PASTE" ? ` (${event.charCount} chars)` : "";
+    return `${event.eventType}${chars} · ${surface}`;
+  }
+  return event.eventType;
+}
+
+function IntegritySignalsPanel({
+  stats,
+  events,
+}: {
+  stats: AdminUserChallengeDetailResponse["stats"];
+  events: AdminIntegrityEvent[];
+}) {
+  const clipboardTotal =
+    stats.clipboardCopyAttempts + stats.clipboardPasteAttempts + stats.clipboardCutAttempts;
+  const total =
+    clipboardTotal
+    + stats.integrityTabHiddenCount
+    + stats.integrityWindowBlurCount
+    + stats.integrityLargeEditCount;
+
+  return (
+    <CtlCard title={`Integrity signals (${total})`} className="mb-4">
+      {total === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No integrity signals were recorded for this challenge.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          <dl className="grid gap-3 text-sm sm:grid-cols-3 lg:grid-cols-6">
+            <div className="rounded-lg border border-border/80 bg-card/50 p-3 text-center">
+              <dt className="text-[10px] uppercase text-muted-foreground">Paste</dt>
+              <dd className="mt-1 text-lg font-semibold tabular-nums text-amber-700 dark:text-amber-400">
+                {stats.clipboardPasteAttempts}
+              </dd>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-card/50 p-3 text-center">
+              <dt className="text-[10px] uppercase text-muted-foreground">Copy</dt>
+              <dd className="mt-1 text-lg font-semibold tabular-nums">{stats.clipboardCopyAttempts}</dd>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-card/50 p-3 text-center">
+              <dt className="text-[10px] uppercase text-muted-foreground">Cut</dt>
+              <dd className="mt-1 text-lg font-semibold tabular-nums">{stats.clipboardCutAttempts}</dd>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-card/50 p-3 text-center">
+              <dt className="text-[10px] uppercase text-muted-foreground">Tab hidden</dt>
+              <dd className="mt-1 text-lg font-semibold tabular-nums">{stats.integrityTabHiddenCount}</dd>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-card/50 p-3 text-center">
+              <dt className="text-[10px] uppercase text-muted-foreground">Window blur</dt>
+              <dd className="mt-1 text-lg font-semibold tabular-nums">{stats.integrityWindowBlurCount}</dd>
+            </div>
+            <div className="rounded-lg border border-border/80 bg-card/50 p-3 text-center">
+              <dt className="text-[10px] uppercase text-muted-foreground">Large edits</dt>
+              <dd className="mt-1 text-lg font-semibold tabular-nums">{stats.integrityLargeEditCount}</dd>
+            </div>
+          </dl>
+          {stats.integrityTotalAwayMs > 0 && (
+            <p className="text-sm text-muted-foreground">
+              Total time away from the workspace:{" "}
+              <strong className="text-foreground">{formatDurationMs(stats.integrityTotalAwayMs)}</strong>
+            </p>
+          )}
+          {events.length > 0 && (
+            <ul className="max-h-56 space-y-2 overflow-auto rounded-lg border border-border/80 bg-muted/20 p-3 text-sm">
+              {events.map((event) => (
+                <li key={event.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium">{integrityEventLabel(event)}</span>
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {formatWhen(event.occurredAt)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </CtlCard>
+  );
+}
+
 const toneValueClass: Partial<Record<AdminStatTone, string>> = {
   success: "text-emerald-600 dark:text-emerald-400",
   active: "text-sky-600 dark:text-sky-400",
@@ -194,6 +288,25 @@ function ChallengeDetailStats({
     { label: "Enhancements", value: stats.enhancementRequests },
     { label: "Feedback items", value: stats.feedbackItems },
     { label: "Warnings", value: stats.feedbackWarnings, tone: stats.feedbackWarnings > 0 ? "warning" : undefined },
+    {
+      label: "Integrity",
+      value:
+        stats.clipboardCopyAttempts
+        + stats.clipboardPasteAttempts
+        + stats.clipboardCutAttempts
+        + stats.integrityTabHiddenCount
+        + stats.integrityWindowBlurCount
+        + stats.integrityLargeEditCount,
+      tone:
+        stats.clipboardPasteAttempts
+          + stats.clipboardCopyAttempts
+          + stats.clipboardCutAttempts
+          + stats.integrityTabHiddenCount
+          + stats.integrityLargeEditCount
+          > 0
+          ? "warning"
+          : undefined,
+    },
     { label: "Avg run", value: formatDurationMs(stats.avgProcessingMs) },
   ];
 
@@ -316,6 +429,8 @@ export default function AdminUserChallengeDetailPage() {
       </section>
 
       <ChallengeDetailStats stats={stats} />
+
+      <IntegritySignalsPanel stats={stats} events={detail.integrityEvents} />
 
       <CtlCard title={`Submissions (${detail.submissions.length})`}>
         {detail.submissions.length === 0 ? (
