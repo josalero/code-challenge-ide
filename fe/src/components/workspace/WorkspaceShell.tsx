@@ -93,10 +93,10 @@ function WorkspaceSkeleton() {
   return (
     <div className="flex h-full w-full flex-col" role="status" aria-label="Loading workspace">
       <Skeleton className="h-14 shrink-0 rounded-none bg-slate-800/80" />
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(220px,1fr)_minmax(0,2fr)_minmax(200px,1fr)] gap-px bg-slate-800/40">
-        <Skeleton className="h-full rounded-none bg-slate-800/50" />
-        <Skeleton className="h-full rounded-none bg-slate-800/50" />
-        <Skeleton className="h-full rounded-none bg-slate-800/50" />
+      <div className="flex min-h-0 flex-1 flex-col gap-px bg-slate-800/40 lg:grid lg:grid-cols-[minmax(220px,1fr)_minmax(0,2fr)_minmax(200px,1fr)]">
+        <Skeleton className="min-h-0 flex-1 rounded-none bg-slate-800/50 lg:h-full" />
+        <Skeleton className="hidden min-h-0 rounded-none bg-slate-800/50 lg:block lg:h-full" />
+        <Skeleton className="hidden min-h-0 rounded-none bg-slate-800/50 lg:block lg:h-full" />
       </div>
     </div>
   );
@@ -105,7 +105,7 @@ function WorkspaceSkeleton() {
 function paneClass(pane: MobilePane, active: MobilePane): string {
   return cn(
     "flex min-h-0 min-w-0 flex-col overflow-hidden",
-    pane !== active && "max-md:hidden",
+    pane !== active && "max-lg:hidden",
   );
 }
 
@@ -167,7 +167,7 @@ export default function WorkspaceShell({
 }: Props) {
   const [mobilePane, setMobilePane] = useState<MobilePane>("editor");
   const [instructionsOpen, setInstructionsOpen] = useState(false);
-  const isDesktopWorkspace = useMediaQuery("(min-width: 768px)");
+  const isDesktopWorkspace = useMediaQuery("(min-width: 1024px)");
 
   useEffect(() => {
     if (showLiveRun) {
@@ -301,7 +301,7 @@ export default function WorkspaceShell({
       )}
 
       <div
-        className="flex shrink-0 items-center gap-2 border-b border-slate-800/80 px-3 py-2 md:hidden"
+        className="flex shrink-0 items-center gap-2 border-b border-slate-800/80 px-3 py-2 lg:hidden"
         role="tablist"
         aria-label="Workspace panels"
       >
@@ -312,7 +312,7 @@ export default function WorkspaceShell({
             variant={mobilePane === id ? "secondary" : "outline"}
             size="sm"
             className={cn(
-              "h-8 gap-1.5 text-xs",
+              "min-h-10 min-w-[4.5rem] flex-1 gap-1.5 text-xs sm:min-w-0 sm:flex-none",
               mobilePane === id
                 ? "border-slate-600/60 bg-slate-800 text-slate-100"
                 : "border-slate-700/60 bg-transparent text-slate-400",
@@ -331,7 +331,7 @@ export default function WorkspaceShell({
               <Button
                 variant="outline"
                 size="sm"
-                className="ml-auto h-8 border-slate-600/60 bg-slate-800/40 text-xs"
+                className="ml-auto min-h-10 border-slate-600/60 bg-slate-800/40 text-xs"
               />
             }
           >

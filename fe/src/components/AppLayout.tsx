@@ -69,7 +69,7 @@ export default function AppLayout({
   return (
     <Layout
       className={cn(
-        "ctl-app-bg flex flex-col overflow-hidden",
+        "ctl-app-bg flex flex-col overflow-x-hidden",
         isWorkspace ? "ctl-workspace-layout h-dvh max-h-dvh" : "min-h-dvh",
       )}
     >
@@ -102,9 +102,9 @@ export default function AppLayout({
           )}
 
           {!hideChrome && (
-          <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
+          <div className="ml-auto flex min-w-0 max-w-full items-center gap-1 sm:gap-2">
             <nav
-              className="flex min-w-0 shrink items-center gap-0.5 overflow-x-auto sm:gap-1"
+              className="hidden min-w-0 shrink items-center gap-0.5 overflow-x-auto sm:flex sm:gap-1 md:gap-1"
               aria-label="Primary navigation"
             >
               {primaryNavItems.map(({ key, to, label, icon: Icon }) => (
@@ -118,16 +118,18 @@ export default function AppLayout({
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                   aria-current={selectedKey === key ? "page" : undefined}
+                  aria-label={label}
+                  title={label}
                 >
                   <Icon className="size-4" aria-hidden />
-                  {label}
+                  <span className="hidden md:inline">{label}</span>
                 </Link>
               ))}
 
               {isAdmin && (
                 <>
                   <span
-                    className="mx-0.5 hidden h-6 w-px shrink-0 bg-border sm:mx-1 md:inline-block"
+                    className="mx-0.5 hidden h-6 w-px shrink-0 bg-border sm:mx-1 lg:inline-block"
                     aria-hidden
                   />
                   <AdminNavMenu selectedKey={selectedKey} />

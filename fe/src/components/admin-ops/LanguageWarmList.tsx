@@ -121,8 +121,8 @@ export default function LanguageWarmList({
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border">
-        <table className="w-full border-collapse text-left text-sm">
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
           <thead>
             <tr className="bg-muted text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               <th className="px-3 py-2.5 font-medium">Language</th>

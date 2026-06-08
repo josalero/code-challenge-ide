@@ -333,7 +333,7 @@ html.dark .challenge-brief-collapse .ant-collapse-header {
   width: 100%;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .ctl-workspace-ide-grid {
     grid-template-columns: minmax(220px, 1fr) minmax(0, 2fr) minmax(220px, 1fr);
     grid-template-rows: minmax(0, 1fr);

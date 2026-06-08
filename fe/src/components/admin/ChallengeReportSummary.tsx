@@ -22,7 +22,7 @@ const toneValueClass: Partial<Record<AdminStatTone, string>> = {
 
 function CompactMetric({ label, value, hint, tone }: MetricItem) {
   return (
-    <div className="min-w-[5.25rem] flex-1 px-3 py-2.5 text-center">
+    <div className="border-b border-border px-3 py-2.5 text-center last:border-b-0 sm:border-b-0 lg:min-w-[5.25rem] lg:flex-1">
       <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
@@ -81,7 +81,7 @@ export default function ChallengeReportSummary({ summary }: Props) {
       className="mb-4 overflow-hidden rounded-xl border border-border/80 bg-card/50 shadow-sm"
       aria-label="Challenge report summary"
     >
-      <div className="flex flex-wrap divide-x divide-border">
+      <div className="grid grid-cols-2 divide-y divide-border sm:grid-cols-3 sm:divide-y-0 lg:flex lg:flex-wrap lg:divide-x lg:divide-y-0">
         {metrics.map((metric) => (
           <CompactMetric key={metric.label} {...metric} />
         ))}
