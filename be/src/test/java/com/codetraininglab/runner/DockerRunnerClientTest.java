@@ -66,23 +66,23 @@ class DockerRunnerClientTest {
   @Test
   void mountsSharedMavenCacheVolumeWhenConfigured() {
     var command =
-        client(properties("ctl-runner-m2-cache"))
+        client(properties("code-challenge-ide-pro-runner-m2-cache"))
             .buildDockerRunCommand(
             Path.of("/challenges/reverse-string"),
-            "code-challenge-ide-runner-java-26:local",
+            "code-challenge-ide-pro-runner-java-26:local",
             RunnerJobPayload.RunnerLimits.defaults(),
             WorkspaceLayout.MAVEN.id());
 
-    assertThat(command).contains("-v", "ctl-runner-m2-cache:/tmp/home/.m2:rw");
+    assertThat(command).contains("-v", "code-challenge-ide-pro-runner-m2-cache:/tmp/home/.m2:rw");
   }
 
   @Test
   void skipsMavenCacheMountForPythonRunner() {
     var command =
-        client(properties("ctl-runner-m2-cache"))
+        client(properties("code-challenge-ide-pro-runner-m2-cache"))
             .buildDockerRunCommand(
             Path.of("/challenges/fizzbuzz-python"),
-            "code-challenge-ide-runner-python-312:local",
+            "code-challenge-ide-pro-runner-python-312:local",
             RunnerJobPayload.RunnerLimits.defaults(),
             WorkspaceLayout.PYTEST.id());
 
@@ -95,7 +95,7 @@ class DockerRunnerClientTest {
         client(properties(""))
             .buildDockerRunCommand(
             Path.of("/challenges/reverse-string"),
-            "code-challenge-ide-runner-java-26:local",
+            "code-challenge-ide-pro-runner-java-26:local",
             RunnerJobPayload.RunnerLimits.defaults(),
             WorkspaceLayout.MAVEN.id());
 

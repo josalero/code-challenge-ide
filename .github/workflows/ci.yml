@@ -109,7 +109,7 @@ jobs:
           docker build \
             -f runners/java/Dockerfile \
             --build-arg JAVA_MAJOR=26 \
-            -t code-challenge-ide-runner-java-26:local \
+            -t code-challenge-ide-pro-runner-java-26:local \
             runners/java
 
       - name: Run Docker submission flow test

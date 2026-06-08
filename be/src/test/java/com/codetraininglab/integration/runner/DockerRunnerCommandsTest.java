@@ -13,8 +13,8 @@ class DockerRunnerCommandsTest {
 
   @Test
   void poolContainerNameSanitizesImageReference() {
-    assertThat(DockerRunnerCommands.poolContainerName("code-challenge-ide-runner-java-26:local"))
-        .isEqualTo("ctl-runner-pool-code-challenge-ide-runner-java-26-local");
+    assertThat(DockerRunnerCommands.poolContainerName("code-challenge-ide-pro-runner-java-26:local"))
+        .isEqualTo("ctl-runner-pool-code-challenge-ide-pro-runner-java-26-local");
   }
 
   @Test
@@ -23,7 +23,7 @@ class DockerRunnerCommandsTest {
     var command =
         DockerRunnerCommands.buildPoolCreateCommand(
             "ctl-runner-pool-java",
-            "code-challenge-ide-runner-java-26:local",
+            "code-challenge-ide-pro-runner-java-26:local",
             RunnerLimits.defaults(),
             WorkspaceLayout.MAVEN.id(),
             properties);
@@ -47,7 +47,7 @@ class DockerRunnerCommandsTest {
     var command =
         DockerRunnerCommands.buildEphemeralRunCommand(
             Path.of("/tmp/challenges/reverse-string"),
-            "code-challenge-ide-runner-java-26:local",
+            "code-challenge-ide-pro-runner-java-26:local",
             RunnerLimits.defaults(),
             WorkspaceLayout.MAVEN.id(),
             properties);
@@ -67,7 +67,7 @@ class DockerRunnerCommandsTest {
     var command =
         DockerRunnerCommands.buildEphemeralRunCommand(
             Path.of("/tmp/challenges/sql-count-engineering"),
-            "code-challenge-ide-runner-postgres-17:local",
+            "code-challenge-ide-pro-runner-postgres-17:local",
             RunnerLimits.defaults(),
             WorkspaceLayout.POSTGRES_SQL.id(),
             properties);

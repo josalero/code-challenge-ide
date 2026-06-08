@@ -1,9 +1,9 @@
 #!/bin/sh
 set -eu
 
-# Named volume at /data/ctl-ops is often root-owned on first mount; warm stamps need app (uid 10001).
-if [ -d /data/ctl-ops ]; then
-  chown -R app:app /data/ctl-ops
+# Named volume at /data/code-challenge-ide-pro-ops is often root-owned on first mount; warm stamps need app (uid 10001).
+if [ -d /data/code-challenge-ide-pro-ops ]; then
+  chown -R app:app /data/code-challenge-ide-pro-ops
 fi
 
 # group_add in compose applies to the entrypoint user (root). Grant app access to the host docker socket GID.

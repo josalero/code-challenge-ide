@@ -1,5 +1,5 @@
 {
-  "name": "code-training-lab",
+  "name": "code-challenge-ide-pro",
   "version": "0.0.1-SNAPSHOT",
   "private": true,
   "description": "Root tooling (git hooks). App code lives in be/ and fe/.",

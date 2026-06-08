@@ -59,7 +59,7 @@ class ChallengePublisherTest {
             "http://localhost:5173",
             tempDir.toString(),
             "runner:latest",
-            "ctl-runner-m2-cache",
+            "code-challenge-ide-pro-runner-m2-cache",
             true,
             60,
             java.util.Map.of("java", "lsp:latest"),

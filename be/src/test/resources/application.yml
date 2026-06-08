@@ -15,7 +15,7 @@ ctl:
   jwt-expiration-hours: 24
   cors-allowed-origins: http://localhost:5173
   challenges-path: ${CTL_CHALLENGES_PATH:challenges}
-  runner-java-26-image: code-challenge-ide-runner-java-26:test
+  runner-java-26-image: code-challenge-ide-pro-runner-java-26:test
   docker-enabled: false
   lsp-enabled: false
   ai-provider: openrouter

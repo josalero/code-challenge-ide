@@ -14,8 +14,8 @@
 services:
   api:
     build: !reset null
-    image: ${CTL_IMAGE_REGISTRY:-ghcr.io}/${CTL_IMAGE_OWNER}/code-challenge-ide-be:${CTL_IMAGE_TAG:-latest}
+    image: ${CTL_IMAGE_REGISTRY:-ghcr.io}/${CTL_IMAGE_OWNER}/code-challenge-ide-pro-be:${CTL_IMAGE_TAG:-latest}
 
   fe:
     build: !reset null
-    image: ${CTL_IMAGE_REGISTRY:-ghcr.io}/${CTL_IMAGE_OWNER}/code-challenge-ide-fe:${CTL_IMAGE_TAG:-latest}
+    image: ${CTL_IMAGE_REGISTRY:-ghcr.io}/${CTL_IMAGE_OWNER}/code-challenge-ide-pro-fe:${CTL_IMAGE_TAG:-latest}

@@ -10,13 +10,13 @@ build_one() {
   echo "Built LSP image: ${image}"
 }
 
-build_one java "${LSP_JAVA_IMAGE:-code-challenge-ide-lsp-java:local}"
-build_one python "${LSP_PYTHON_IMAGE:-code-challenge-ide-lsp-python:local}"
-build_one go "${LSP_GO_IMAGE:-code-challenge-ide-lsp-go:local}"
-build_one typescript "${LSP_TYPESCRIPT_IMAGE:-code-challenge-ide-lsp-typescript:local}"
-build_one dotnet "${LSP_DOTNET_IMAGE:-code-challenge-ide-lsp-dotnet:local}"
-build_one rust "${LSP_RUST_IMAGE:-code-challenge-ide-lsp-rust:local}"
-build_one cpp "${LSP_CPP_IMAGE:-code-challenge-ide-lsp-cpp:local}"
+build_one java "${LSP_JAVA_IMAGE:-code-challenge-ide-pro-lsp-java:local}"
+build_one python "${LSP_PYTHON_IMAGE:-code-challenge-ide-pro-lsp-python:local}"
+build_one go "${LSP_GO_IMAGE:-code-challenge-ide-pro-lsp-go:local}"
+build_one typescript "${LSP_TYPESCRIPT_IMAGE:-code-challenge-ide-pro-lsp-typescript:local}"
+build_one dotnet "${LSP_DOTNET_IMAGE:-code-challenge-ide-pro-lsp-dotnet:local}"
+build_one rust "${LSP_RUST_IMAGE:-code-challenge-ide-pro-lsp-rust:local}"
+build_one cpp "${LSP_CPP_IMAGE:-code-challenge-ide-pro-lsp-cpp:local}"
 
 echo "All LSP images built."
 "${ROOT}/scripts/warm-lsp-images.sh" "$@"

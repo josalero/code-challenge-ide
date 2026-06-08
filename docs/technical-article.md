@@ -1,4 +1,4 @@
-![Building Code Training Lab](./assets/code-training-lab-banner.png)
+![Building Code Training Lab](./assets/code-challenge-ide-pro-banner.png)
 
 # Building Code Training Lab: a self-hosted multi-language coding platform
 
@@ -59,7 +59,7 @@ Code execution is the most security-sensitive part. The approach is **Docker-out
 ```
 Host
 ├── docker.sock
-├── ctl-api  (Spring Boot, mounts docker.sock)
+├── code-challenge-ide-pro-api  (Spring Boot, mounts docker.sock)
 │   └── $ docker exec -i ctl-runner-pool-java-26-local …
 └── ctl-runner-pool-java-26-local  ← sibling, not child
     ├── --network none             ← no outbound network
@@ -190,7 +190,7 @@ Language toolchains are slow to cold-start. JDT LS needs several seconds to init
 | Concept | What it does | Artifact |
 | --- | --- | --- |
 | **Runner warm** | Starts pool container + runs a smoke submission | `.ctl-runner-pool-warm-stamp` |
-| **Maven cache warm** | Copies baked `/opt/m2` from the runner image into a shared Docker volume | `ctl-runner-m2-cache` volume |
+| **Maven cache warm** | Copies baked `/opt/m2` from the runner image into a shared Docker volume | `code-challenge-ide-pro-runner-m2-cache` volume |
 | **LSP warm** | Sends an LSP `initialize` handshake to each unique image | `.ctl-lsp-warm-stamp` |
 
 The Ops page reads these stamps, compares stored image IDs against `docker image inspect` output, and marks a language **cold** when the stamp image ID does not match (i.e., `make runners` rebuilt the image). Clicking **Warm everything** or **Re-warm everything** triggers `RunnerOpsService`, which orchestrates all three in the right order and streams progress back to the admin UI via SSE.

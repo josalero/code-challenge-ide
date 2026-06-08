@@ -39,7 +39,7 @@
 
 	@api path /api /api/*
 	handle @api {
-		reverse_proxy code-lab-api:8080 {
+		reverse_proxy code-challenge-ide-pro-api:8080 {
 			flush_interval -1
 			stream_close_delay 5m
 			transport http {

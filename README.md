@@ -125,7 +125,7 @@ cd fe && npm run dev           # http://localhost:5173 (proxies /api → 8080)
 
 `docker-compose.local.yml` runs **postgres** and **rabbitmq** only — not `api`, `fe`, or runners.
 
-**Run** (practice) and **Submit** (final, locks editing) both execute in **pooled runner containers** — see [docs/runner-ops.md](docs/runner-ops.md). Configure with `RUNNER_POOL_ENABLED` (default `true`) and `RUNNER_MAVEN_CACHE_VOLUME=ctl-runner-m2-cache` in `.env`. Rebuild after runner changes: `make runners`.
+**Run** (practice) and **Submit** (final, locks editing) both execute in **pooled runner containers** — see [docs/runner-ops.md](docs/runner-ops.md). Configure with `RUNNER_POOL_ENABLED` (default `true`) and `RUNNER_MAVEN_CACHE_VOLUME=code-challenge-ide-pro-runner-m2-cache` in `.env`. Rebuild after runner changes: `make runners`.
 
 **IntelliSense** (Monaco + LSP for all 11 languages) uses the same Docker host: `make runners` builds LSP images; run `make lsp-warm` (or Admin Ops) to warm them. Details: [docs/frontend.md](docs/frontend.md#intellisense-lsp).
 
@@ -264,7 +264,7 @@ Optional local Docker E2E (requires Docker, runner image from `make runners`):
 
 ```bash
 docker build -f runners/java/Dockerfile --build-arg JAVA_MAJOR=26 \
-  -t code-challenge-ide-runner-java-26:local runners/java
+  -t code-challenge-ide-pro-runner-java-26:local runners/java
 CTL_INTEGRATION_DOCKER=true ./gradlew :be:test \
   --tests com.codetraininglab.submission.application.SubmissionFlowDockerIntegrationTest
 ```

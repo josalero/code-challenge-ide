@@ -14,7 +14,7 @@ RUN chmod +x gradlew \
 
 FROM eclipse-temurin:26-jre-jammy
 
-LABEL org.opencontainers.image.title="code-challenge-ide-be"
+LABEL org.opencontainers.image.title="code-challenge-ide-pro-be"
 LABEL org.opencontainers.image.description="Code Training Lab API"
 
 ARG PORT=8080
@@ -37,11 +37,11 @@ COPY challenges /challenges
 COPY scripts /app/scripts
 COPY be/docker-entrypoint.sh /docker-entrypoint.sh
 ENV CTL_REPO_ROOT=/app
-RUN mkdir -p /data/ctl-ops \
-    && chown -R app:app /app /challenges /data/ctl-ops \
+RUN mkdir -p /data/code-challenge-ide-pro-ops \
+    && chown -R app:app /app /challenges /data/code-challenge-ide-pro-ops \
     && chmod +x /docker-entrypoint.sh
 
-# Entrypoint runs as root briefly to chown /data/ctl-ops and align app with DOCKER_GID, then gosu app.
+# Entrypoint runs as root briefly to chown /data/code-challenge-ide-pro-ops and align app with DOCKER_GID, then gosu app.
 EXPOSE ${PORT}
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

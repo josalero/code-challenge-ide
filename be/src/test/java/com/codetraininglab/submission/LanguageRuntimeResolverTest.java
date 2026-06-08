@@ -39,7 +39,7 @@ class LanguageRuntimeResolverTest {
         .thenReturn(
             Optional.of(
                 new LanguageRuntimeEntity(
-                    runtimeId, langId, "3.12", "code-challenge-ide-runner-python-312:local", true)));
+                    runtimeId, langId, "3.12", "code-challenge-ide-pro-runner-python-312:local", true)));
 
     LanguageRuntimeEntity runtime = resolver.resolve(challenge, null);
 

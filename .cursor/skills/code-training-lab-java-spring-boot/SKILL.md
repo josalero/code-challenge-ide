@@ -1,5 +1,5 @@
 ---
-name: code-training-lab-java-spring-boot
+name: code-challenge-ide-pro-java-spring-boot
 description: >-
   Java 26 / Spring Boot 4 backend for Code Training Lab. Use for be/ work;
   follow 12-java-26-style.mdc, 20-spring-boot-4.mdc, and be/ARCHITECTURE.md.

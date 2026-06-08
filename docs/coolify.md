@@ -13,12 +13,12 @@ Compose `include`, runner profiles, or extra deploy commands.
 
 Default Coolify path:
 
-- Coolify builds `code-lab-api`, `code-lab-fe`, every `runner-*` image, every
+- Coolify builds `code-challenge-ide-pro-api`, `code-challenge-ide-pro-fe`, every `runner-*` image, every
   `runner-lsp-*` image, and the Maven cache warm service from the same Compose
   file.
 - Runner and LSP services are one-shot build services. They run `/bin/true` and
   exit with status 0 after the image exists. That is expected.
-- `code-lab-api` waits for Postgres, RabbitMQ, runner images, LSP images, and
+- `code-challenge-ide-pro-api` waits for Postgres, RabbitMQ, runner images, LSP images, and
   `runner-m2-warm` before starting.
 - No extra Coolify deploy command is required.
 - The Coolify compose does not define custom Docker networks. Coolify should
@@ -30,10 +30,10 @@ Long-running services after deploy:
 
 | Service | Purpose | Expected state |
 | --- | --- | --- |
-| `code-lab-postgres` | Database | Up / healthy |
-| `code-lab-rabbitmq` | Submission queue | Up / healthy |
-| `code-lab-api` | Backend and runner orchestrator | Up / healthy |
-| `code-lab-fe` | Public Caddy frontend | Up / healthy |
+| `code-challenge-ide-pro-postgres` | Database | Up / healthy |
+| `code-challenge-ide-pro-rabbitmq` | Submission queue | Up / healthy |
+| `code-challenge-ide-pro-api` | Backend and runner orchestrator | Up / healthy |
+| `code-challenge-ide-pro-fe` | Public Caddy frontend | Up / healthy |
 | `runner-*`, `runner-lsp-*`, `runner-m2-warm` | Build-only images/cache | Exited 0 |
 
 ## Prerequisites
@@ -64,13 +64,13 @@ Expose only the frontend service:
 
 | Field | Value |
 | --- | --- |
-| Service | `code-lab-fe` |
+| Service | `code-challenge-ide-pro-fe` |
 | Container port | `80` |
 | HTTPS | Enable in Coolify |
 | Direct host port | `FE_PORT=3010` publishes `http://<vps-ip>:3010` if the VPS firewall allows it |
 
 Do not expose the API separately. The frontend Caddy config proxies `/api/` to
-`code-lab-api:8080` on Coolify's managed Compose network.
+`code-challenge-ide-pro-api:8080` on Coolify's managed Compose network.
 
 Make sure Coolify's proxy supports long-lived HTTP connections and WebSocket
 upgrade for `/api/`, because submissions and LSP features use streaming and
@@ -111,9 +111,9 @@ Recommended production values:
 The Coolify env file includes local image names for every runner and LSP image,
 including Rust and SQL:
 
-- `RUNNER_RUST_184_IMAGE=code-challenge-ide-runner-rust-184:local`
-- `RUNNER_POSTGRES_17_IMAGE=code-challenge-ide-runner-postgres-17:local`
-- `LSP_RUST_IMAGE=code-challenge-ide-lsp-rust:local`
+- `RUNNER_RUST_184_IMAGE=code-challenge-ide-pro-runner-rust-184:local`
+- `RUNNER_POSTGRES_17_IMAGE=code-challenge-ide-pro-runner-postgres-17:local`
+- `LSP_RUST_IMAGE=code-challenge-ide-pro-lsp-rust:local`
 
 These names match the image inventory used by the backend.
 
@@ -142,7 +142,7 @@ group_add:
 Verify from the API container:
 
 ```bash
-docker ps --filter name=code-lab-api --format '{{.Names}}'
+docker ps --filter name=code-challenge-ide-pro-api --format '{{.Names}}'
 docker exec -it <api-container-name> docker info
 ```
 
@@ -180,14 +180,14 @@ No extra deploy command is needed.
 | --- | --- |
 | Build fails at `docker/dockerfile:1` | Use current runner Java Dockerfile without the BuildKit syntax directive |
 | 504 during deploy | First deploy may still be building all runner/LSP images; check Coolify build logs |
-| 504 after deploy | Coolify must expose `code-lab-fe` on container port `80`; direct host access is `http://<vps-ip>:${FE_PORT:-3010}` |
+| 504 after deploy | Coolify must expose `code-challenge-ide-pro-fe` on container port `80`; direct host access is `http://<vps-ip>:${FE_PORT:-3010}` |
 | Intermittent 504 / HTTPS hangs while direct `:3010` works | Do not add custom `networks:` to the Coolify compose. Let Coolify manage the stack network and proxy attachment |
 | 504 when clicking Warm everything | Redeploy the API; warm endpoints enqueue quickly and Docker checks run inside the background job. If it still happens, Docker on the VPS is overloaded or unreachable |
 | API unhealthy | Check Postgres/RabbitMQ credentials, `JWT_SECRET`, and readiness logs |
 | `Docker is not reachable` | Check socket mount and `DOCKER_GID` |
 | Ops shows Rust or SQL image missing | Confirm `runner-rust-184` and `runner-postgres-17` completed with exit 0 and `docker images` shows the `:local` tags |
 | Run tests fails immediately | Check Docker socket access and runner image inventory |
-| SQL challenges fail | Confirm `RUNNER_POSTGRES_17_IMAGE` points to `code-challenge-ide-runner-postgres-17:local` |
+| SQL challenges fail | Confirm `RUNNER_POSTGRES_17_IMAGE` points to `code-challenge-ide-pro-runner-postgres-17:local` |
 | IntelliSense dead | Confirm LSP images were built and `CTL_LSP_ENABLED=true` |
 | CORS errors | `CORS_ALLOWED_ORIGINS` must match the exact public URL |
 
@@ -195,9 +195,9 @@ Useful VPS checks:
 
 ```bash
 docker compose -f docker-compose.coolify.yml ps
-docker compose -f docker-compose.coolify.yml logs --tail=100 code-lab-api
-docker compose -f docker-compose.coolify.yml logs --tail=100 code-lab-fe
-docker images | grep code-challenge-ide
+docker compose -f docker-compose.coolify.yml logs --tail=100 code-challenge-ide-pro-api
+docker compose -f docker-compose.coolify.yml logs --tail=100 code-challenge-ide-pro-fe
+docker images | grep code-challenge-ide-pro
 ```
 
 ## Optional Prebuilt Images

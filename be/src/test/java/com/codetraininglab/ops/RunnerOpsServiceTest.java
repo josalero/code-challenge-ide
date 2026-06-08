@@ -49,8 +49,8 @@ class RunnerOpsServiceTest {
             24,
             "http://localhost:5173",
             "challenges",
-            "code-challenge-ide-runner-java-26:test",
-            "ctl-runner-m2-cache",
+            "code-challenge-ide-pro-runner-java-26:test",
+            "code-challenge-ide-pro-runner-m2-cache",
             true,
             60,
             CtlPropertiesTestFixtures.TEST_LSP_IMAGES,
@@ -94,10 +94,10 @@ class RunnerOpsServiceTest {
     LanguageEntity java = new LanguageEntity(javaId, "java", "Java");
     LanguageRuntimeEntity java25 =
         new LanguageRuntimeEntity(
-            UUID.randomUUID(), javaId, "25", "code-challenge-ide-runner-java-25:local", true);
+            UUID.randomUUID(), javaId, "25", "code-challenge-ide-pro-runner-java-25:local", true);
     LanguageRuntimeEntity java26 =
         new LanguageRuntimeEntity(
-            UUID.randomUUID(), javaId, "26", "code-challenge-ide-runner-java-26:local", true);
+            UUID.randomUUID(), javaId, "26", "code-challenge-ide-pro-runner-java-26:local", true);
     when(languageRepository.findAll()).thenReturn(List.of(java));
     when(runtimeRepository.findAllOrdered()).thenReturn(List.of(java25, java26));
 
@@ -149,8 +149,8 @@ class RunnerOpsServiceTest {
             24,
             "http://localhost:5173",
             "challenges",
-            "code-challenge-ide-runner-java-26:test",
-            "ctl-runner-m2-cache",
+            "code-challenge-ide-pro-runner-java-26:test",
+            "code-challenge-ide-pro-runner-m2-cache",
             true,
             60,
             CtlPropertiesTestFixtures.TEST_LSP_IMAGES,
@@ -192,8 +192,8 @@ class RunnerOpsServiceTest {
             24,
             "http://localhost:5173",
             "challenges",
-            "code-challenge-ide-runner-java-26:test",
-            "ctl-runner-m2-cache",
+            "code-challenge-ide-pro-runner-java-26:test",
+            "code-challenge-ide-pro-runner-m2-cache",
             true,
             60,
             CtlPropertiesTestFixtures.TEST_LSP_IMAGES,
@@ -234,8 +234,8 @@ class RunnerOpsServiceTest {
             24,
             "http://localhost:5173",
             "challenges",
-            "code-challenge-ide-runner-java-26:test",
-            "ctl-runner-m2-cache",
+            "code-challenge-ide-pro-runner-java-26:test",
+            "code-challenge-ide-pro-runner-m2-cache",
             true,
             60,
             CtlPropertiesTestFixtures.TEST_LSP_IMAGES,

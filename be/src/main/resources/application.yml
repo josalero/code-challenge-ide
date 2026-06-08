@@ -1,6 +1,6 @@
 spring:
   application:
-    name: code-training-lab
+    name: code-challenge-ide-pro
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   config:
@@ -76,22 +76,22 @@ ctl:
   # Include common Vite ports; patterns cover other localhost ports after backend restart.
   cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://localhost:*,http://127.0.0.1:*}
   challenges-path: ${CTL_CHALLENGES_PATH:challenges}
-  runner-java-26-image: ${RUNNER_JAVA_26_IMAGE:code-challenge-ide-runner-java-26:latest}
-  runner-maven-cache-volume: ${RUNNER_MAVEN_CACHE_VOLUME:ctl-runner-m2-cache}
+  runner-java-26-image: ${RUNNER_JAVA_26_IMAGE:code-challenge-ide-pro-runner-java-26:latest}
+  runner-maven-cache-volume: ${RUNNER_MAVEN_CACHE_VOLUME:code-challenge-ide-pro-runner-m2-cache}
   runner-pool-enabled: ${RUNNER_POOL_ENABLED:true}
   runner-pool-idle-minutes: ${RUNNER_POOL_IDLE_MINUTES:60}
   lsp-images:
-    java: ${LSP_JAVA_IMAGE:code-challenge-ide-lsp-java:local}
-    python: ${LSP_PYTHON_IMAGE:code-challenge-ide-lsp-python:local}
-    go: ${LSP_GO_IMAGE:code-challenge-ide-lsp-go:local}
-    node: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-lsp-typescript:local}
-    typescript: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-lsp-typescript:local}
-    react: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-lsp-typescript:local}
-    vue: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-lsp-typescript:local}
-    angular: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-lsp-typescript:local}
-    csharp: ${LSP_DOTNET_IMAGE:code-challenge-ide-lsp-dotnet:local}
-    rust: ${LSP_RUST_IMAGE:code-challenge-ide-lsp-rust:local}
-    cpp: ${LSP_CPP_IMAGE:code-challenge-ide-lsp-cpp:local}
+    java: ${LSP_JAVA_IMAGE:code-challenge-ide-pro-lsp-java:local}
+    python: ${LSP_PYTHON_IMAGE:code-challenge-ide-pro-lsp-python:local}
+    go: ${LSP_GO_IMAGE:code-challenge-ide-pro-lsp-go:local}
+    node: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-pro-lsp-typescript:local}
+    typescript: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-pro-lsp-typescript:local}
+    react: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-pro-lsp-typescript:local}
+    vue: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-pro-lsp-typescript:local}
+    angular: ${LSP_TYPESCRIPT_IMAGE:code-challenge-ide-pro-lsp-typescript:local}
+    csharp: ${LSP_DOTNET_IMAGE:code-challenge-ide-pro-lsp-dotnet:local}
+    rust: ${LSP_RUST_IMAGE:code-challenge-ide-pro-lsp-rust:local}
+    cpp: ${LSP_CPP_IMAGE:code-challenge-ide-pro-lsp-cpp:local}
   lsp-idle-minutes: 5
   idempotency-ttl-hours: 24
   ai-provider: ${AI_PROVIDER:openrouter}

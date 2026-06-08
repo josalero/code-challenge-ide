@@ -9,7 +9,7 @@ VALUES (
     '00000000-0000-0000-0000-000000012170',
     '00000000-0000-0000-0000-000000000012',
     '17',
-    'code-challenge-ide-runner-postgres-17:local',
+    'code-challenge-ide-pro-runner-postgres-17:local',
     TRUE
 )
 ON CONFLICT (language_id, version) DO UPDATE

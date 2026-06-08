@@ -69,7 +69,7 @@ export function ensureMonacoEditorServices(): Promise<void> {
       const configuration = buildEditorUserConfiguration();
       await initUserConfiguration(configuration);
       await initServices({
-        caller: "code-training-lab-editor",
+        caller: "code-challenge-ide-pro-editor",
         serviceConfig: {
           debugLogging: import.meta.env.DEV,
           userServices: {

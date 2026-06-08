@@ -19,7 +19,7 @@ When this doc disagrees with code, trust **`DockerRunnerClient`**, **`RunnerCont
 
 **Warm (runners)** = pool container started and a **smoke submission** completed for the current image (`.ctl-runner-pool-warm-stamp`). Test failures in the smoke challenge are OK — the goal is hot compile/tooling caches.
 
-**Warm (Maven)** = dependency JARs copied to `ctl-runner-m2-cache` (Java only; runner warm triggers this automatically when needed).
+**Warm (Maven)** = dependency JARs copied to `code-challenge-ide-pro-runner-m2-cache` (Java only; runner warm triggers this automatically when needed).
 
 **Warm (LSP)** = language-server initialize stamp (`.ctl-lsp-warm-stamp`).
 
@@ -69,7 +69,7 @@ make runners
 
 ## Maven cache volume
 
-Shared volume `ctl-runner-m2-cache` (see `RUNNER_MAVEN_CACHE_VOLUME`) is mounted into Java pool containers and one-shot runs. Populated by:
+Shared volume `code-challenge-ide-pro-runner-m2-cache` (see `RUNNER_MAVEN_CACHE_VOLUME`) is mounted into Java pool containers and one-shot runs. Populated by:
 
 - Admin Ops → **Warm Maven cache**, or
 - Full stack `make up` (compose `runner-m2-warm` runs before API), or
@@ -99,7 +99,7 @@ Backend: `RunnerOpsService`, `OpsController`.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `RUNNER_MAVEN_CACHE_VOLUME` | `ctl-runner-m2-cache` | Java `.m2` mount |
+| `RUNNER_MAVEN_CACHE_VOLUME` | `code-challenge-ide-pro-runner-m2-cache` | Java `.m2` mount |
 | `RUNNER_POOL_ENABLED` | `true` | Pooled vs one-shot runners |
 | `RUNNER_POOL_IDLE_MINUTES` | `60` | Evict idle pool containers |
 | `RUNNER_POOL_WARM_ON_STARTUP` | `false` (local), `true` (compose) | Smoke-warm all active runner images after API boot |

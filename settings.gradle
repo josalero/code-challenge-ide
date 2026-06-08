@@ -1,3 +1,3 @@
-rootProject.name = 'code-training-lab'
+rootProject.name = 'code-challenge-ide-pro'
 
 include 'be', 'fe'
