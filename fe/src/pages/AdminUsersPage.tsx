@@ -349,7 +349,7 @@ export default function AdminUsersPage() {
           >
             {hasReport ? (
               <Link to={`/admin/users/${row.id}/challenge-report`} className="no-underline">
-                <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs">
+                <Button variant="ghost" size="sm" className="min-h-10 gap-1 px-2 text-xs md:min-h-7">
                   <BarChart3 className="size-3.5" aria-hidden />
                   Report
                 </Button>
@@ -357,7 +357,7 @@ export default function AdminUsersPage() {
             ) : (
               <Tooltip title="No challenge activity yet — report unlocks after first run or submit">
                 <span>
-                  <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" disabled>
+                  <Button variant="ghost" size="sm" className="min-h-10 gap-1 px-2 text-xs md:min-h-7" disabled>
                     <BarChart3 className="size-3.5" aria-hidden />
                     Report
                   </Button>
@@ -371,7 +371,7 @@ export default function AdminUsersPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 gap-1 px-2 text-xs"
+                      className="min-h-10 gap-1 px-2 text-xs md:min-h-7"
                       onClick={() => setQuotaTarget(row)}
                     >
                       <Gauge className="size-3.5" aria-hidden />
@@ -387,7 +387,7 @@ export default function AdminUsersPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 gap-1 px-2 text-xs"
+                        className="min-h-10 gap-1 px-2 text-xs md:min-h-7"
                         onClick={() => setIntegrityTarget(row)}
                       >
                         <Shield className="size-3.5" aria-hidden />
@@ -409,7 +409,7 @@ export default function AdminUsersPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                      className="min-h-10 px-2 text-xs text-destructive hover:text-destructive md:min-h-7"
                       disabled={
                         row.id === currentUser?.id || row.id === soleActiveAdminId
                       }
@@ -508,7 +508,7 @@ export default function AdminUsersPage() {
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-xs"
+              className="min-h-10 text-xs md:min-h-7"
               onClick={() => {
                 setProgressFilter("NO_ACTIVITY");
                 setActivityFilter("ALL");
@@ -521,7 +521,7 @@ export default function AdminUsersPage() {
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-xs"
+              className="min-h-10 text-xs md:min-h-7"
               onClick={() => setProgressFilter("LOW_PROGRESS")}
             >
               Below 25% ({insights.lowProgress})
@@ -531,7 +531,7 @@ export default function AdminUsersPage() {
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-xs"
+              className="min-h-10 text-xs md:min-h-7"
               onClick={() => setActivityFilter("IDLE_30D")}
             >
               Idle 30+ days ({insights.idle30d})

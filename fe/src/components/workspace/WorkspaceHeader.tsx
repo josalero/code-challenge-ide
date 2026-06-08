@@ -1,7 +1,9 @@
-import { Popconfirm } from "antd";
+import { Dropdown, Modal, Popconfirm } from "antd";
+import type { MenuProps } from "antd";
 import {
   ArrowLeft,
   Clock,
+  Ellipsis,
   FlaskConical,
   Loader2,
   Play,
@@ -39,6 +41,10 @@ import {
 } from "@/utils/languageRuntimes";
 import { difficultyColorClass } from "./difficultyBadgeStyles";
 import { languageBadgeClass } from "./languageBadgeStyles";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+
+const TOOLBAR_BUTTON_CLASS =
+  "min-h-10 border-slate-600/60 bg-slate-800/40 lg:min-h-8";
 
 type Props = {
   challenge: ChallengeDetail;
@@ -116,6 +122,61 @@ export default function WorkspaceHeader({
   const limitMinutes =
     sessionDurationMinutes > 0 ? sessionDurationMinutes : 60;
   const showTimer = limitMinutes > 0 && !exerciseLocked;
+  const compactToolbar = useMediaQuery("(max-width: 1023px)");
+
+  const overflowMenuItems: MenuProps["items"] = [
+    activeTab === "custom" && onSaveCustomTests
+      ? {
+          key: "save-tests",
+          label: "Save custom tests",
+          disabled: isRunning,
+          onClick: onSaveCustomTests,
+        }
+      : null,
+    {
+      key: "reset",
+      label: "Reset starter code",
+      disabled: isRunning,
+      onClick: onResetStarter,
+    },
+    exerciseLocked && onRedo
+      ? {
+          key: "redo",
+          label: "Redo exercise",
+          disabled: redoLoading || isRunning,
+          onClick: onRedo,
+        }
+      : null,
+    showCancel && onCancel
+      ? {
+          key: "cancel",
+          label: "Cancel run",
+          disabled: cancelLoading,
+          onClick: onCancel,
+        }
+      : null,
+    showAbandonAttempt && onAbandonAttempt
+      ? {
+          key: "abandon",
+          label: "Abandon timed attempt",
+          disabled: isRunning,
+          danger: true,
+          onClick: () => {
+            Modal.confirm({
+              title: "Abandon this timed attempt?",
+              content:
+                "Stops and resets the countdown; your code draft stays saved. Not the same as Cancel run, which only stops the current test.",
+              okText: "Abandon",
+              cancelText: "Keep going",
+              okButtonProps: { danger: true },
+              onOk: onAbandonAttempt,
+            });
+          },
+        }
+      : null,
+  ].filter(Boolean) as MenuProps["items"];
+
+  const showOverflowMenu = compactToolbar && (overflowMenuItems?.length ?? 0) > 0;
 
   return (
     <header
@@ -137,25 +198,27 @@ export default function WorkspaceHeader({
           </>
         )}
 
-        <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
           <h1 className="truncate text-base font-semibold text-slate-50 lg:text-lg">
             {challenge.title}
           </h1>
-          <Badge
-            variant="outline"
-            className={`hidden shrink-0 sm:inline-flex ${difficultyColorClass(challenge.difficulty)}`}
-          >
-            {challenge.difficulty}
-          </Badge>
-          <Badge
-            variant="outline"
-            className={`hidden shrink-0 md:inline-flex ${languageBadgeClass(challenge.language)}`}
-          >
-            {formatLanguageLabel(challenge.language)}
-          </Badge>
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+            <Badge
+              variant="outline"
+              className={`inline-flex shrink-0 text-[10px] sm:text-xs ${difficultyColorClass(challenge.difficulty)}`}
+            >
+              {challenge.difficulty}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={`inline-flex shrink-0 text-[10px] sm:text-xs ${languageBadgeClass(challenge.language)}`}
+            >
+              {formatLanguageLabel(challenge.language)}
+            </Badge>
+          </div>
         </div>
 
-        <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
+        <div className="flex w-full flex-wrap items-center gap-2 lg:ml-auto lg:w-auto">
           <Select
             value={runtimeVersion}
             onValueChange={(v) => {
@@ -166,7 +229,7 @@ export default function WorkspaceHeader({
             disabled={actionsDisabled}
           >
             <SelectTrigger
-              className="h-8 w-auto min-w-[120px] border-slate-600/60 bg-slate-800/60 text-xs"
+              className="h-10 w-full min-w-0 border-slate-600/60 bg-slate-800/60 text-xs sm:h-8 sm:w-auto sm:min-w-[120px] lg:min-h-8"
               size="sm"
               aria-label={`${formatLanguageLabel(challenge.language)} runtime version`}
             >
@@ -232,7 +295,7 @@ export default function WorkspaceHeader({
             <Button
               size="sm"
               onClick={onStartTest}
-              className="h-8 gap-1.5 bg-emerald-600 font-semibold text-white hover:bg-emerald-500"
+              className="min-h-10 gap-1.5 bg-emerald-600 font-semibold text-white hover:bg-emerald-500 lg:min-h-8"
             >
               <Play className="size-3.5" aria-hidden />
               Start test
@@ -256,7 +319,7 @@ export default function WorkspaceHeader({
 
           {autosaveText && (
             <span
-              className="hidden items-center gap-1 text-xs text-slate-500 lg:flex"
+              className="hidden items-center gap-1 text-xs text-slate-500 md:flex"
               role="status"
               aria-live="polite"
             >
@@ -267,13 +330,13 @@ export default function WorkspaceHeader({
             </span>
           )}
 
-          {activeTab === "custom" && onSaveCustomTests && (
+          {!compactToolbar && activeTab === "custom" && onSaveCustomTests && (
             <Button
               variant="outline"
               size="sm"
               disabled={isRunning}
               onClick={onSaveCustomTests}
-              className="h-8 border-slate-600/60 bg-slate-800/40"
+              className={TOOLBAR_BUTTON_CLASS}
             >
               {saveCustomTestsLoading ? (
                 <Loader2 className="animate-spin" aria-hidden />
@@ -284,6 +347,7 @@ export default function WorkspaceHeader({
             </Button>
           )}
 
+          {!compactToolbar && (
           <Tooltip>
             <TooltipTrigger
               render={
@@ -292,7 +356,7 @@ export default function WorkspaceHeader({
                   size="sm"
                   disabled={isRunning}
                   onClick={onResetStarter}
-                  className="h-8 border-slate-600/60 bg-slate-800/40"
+                  className={TOOLBAR_BUTTON_CLASS}
                 />
               }
             >
@@ -301,6 +365,7 @@ export default function WorkspaceHeader({
             </TooltipTrigger>
             <TooltipContent>Reset solution to starter code</TooltipContent>
           </Tooltip>
+          )}
 
           <Tooltip>
             <TooltipTrigger
@@ -310,7 +375,7 @@ export default function WorkspaceHeader({
                   size="sm"
                   disabled={actionsDisabled}
                   onClick={onRunTests}
-                  className="h-8 border border-slate-600/50 bg-slate-800/80 text-slate-100"
+                  className={`min-h-10 border border-slate-600/50 bg-slate-800/80 text-slate-100 lg:min-h-8 ${compactToolbar ? "flex-1 sm:flex-none" : ""}`}
                 />
               }
             >
@@ -336,7 +401,7 @@ export default function WorkspaceHeader({
             size="sm"
             disabled={actionsDisabled}
             onClick={onSubmit}
-            className="h-8 bg-emerald-600 font-medium text-white hover:bg-emerald-500"
+            className={`min-h-10 bg-emerald-600 font-medium text-white hover:bg-emerald-500 lg:min-h-8 ${compactToolbar ? "flex-1 sm:flex-none" : ""}`}
           >
             {isRunning ? (
               <Loader2 className="animate-spin" aria-hidden />
@@ -346,13 +411,13 @@ export default function WorkspaceHeader({
             Submit
           </Button>
 
-          {exerciseLocked && onRedo && (
+          {!compactToolbar && exerciseLocked && onRedo && (
             <Button
               variant="outline"
               size="sm"
               disabled={redoLoading || isRunning}
               onClick={onRedo}
-              className="h-8 border-amber-500/40 text-amber-200"
+              className="min-h-10 border-amber-500/40 text-amber-200 lg:min-h-8"
             >
               {redoLoading ? (
                 <Loader2 className="animate-spin" aria-hidden />
@@ -363,13 +428,13 @@ export default function WorkspaceHeader({
             </Button>
           )}
 
-          {showCancel && onCancel && (
+          {!compactToolbar && showCancel && onCancel && (
             <Button
               variant="destructive"
               size="sm"
               disabled={cancelLoading}
               onClick={onCancel}
-              className="h-8"
+              className="min-h-10 lg:min-h-8"
             >
               {cancelLoading ? (
                 <Loader2 className="animate-spin" aria-hidden />
@@ -380,7 +445,7 @@ export default function WorkspaceHeader({
             </Button>
           )}
 
-          {showAbandonAttempt && onAbandonAttempt && (
+          {!compactToolbar && showAbandonAttempt && onAbandonAttempt && (
             <Popconfirm
               title="Abandon this timed attempt?"
               description="Stops and resets the countdown; your code draft stays saved. Not the same as Cancel run, which only stops the current test."
@@ -394,12 +459,25 @@ export default function WorkspaceHeader({
                 variant="outline"
                 size="sm"
                 disabled={isRunning}
-                className="h-8 border-slate-600/60 text-slate-300 hover:border-red-500/40 hover:text-red-200"
+                className="min-h-10 border-slate-600/60 text-slate-300 hover:border-red-500/40 hover:text-red-200 lg:min-h-8"
               >
                 <XCircle aria-hidden />
                 <span className="hidden sm:inline">Abandon</span>
               </Button>
             </Popconfirm>
+          )}
+
+          {showOverflowMenu && (
+            <Dropdown menu={{ items: overflowMenuItems }} trigger={["click"]} placement="bottomRight">
+              <Button
+                variant="outline"
+                size="sm"
+                className={`${TOOLBAR_BUTTON_CLASS} px-2.5`}
+                aria-label="More workspace actions"
+              >
+                <Ellipsis className="size-4" aria-hidden />
+              </Button>
+            </Dropdown>
           )}
         </div>
       </div>

@@ -26,8 +26,14 @@ export default function WorkspaceStartGate({ visible, limitMinutes, onStartTest 
             Review the starter skeleton above (read-only)
           </p>
           <p className="mt-0.5 text-xs leading-relaxed text-slate-400">
-            Open the <strong className="text-slate-300">Guide</strong> tab on the right for the full
-            timed-attempt steps, then start the {limitMinutes}-minute timer when you are ready.
+            Open the{" "}
+            <strong className="text-slate-300">
+              <span className="lg:hidden">Output → Guide</span>
+              <span className="hidden lg:inline">Guide</span>
+            </strong>{" "}
+            tab
+            <span className="hidden lg:inline"> on the right</span> for the full timed-attempt
+            steps, then start the {limitMinutes}-minute timer when you are ready.
           </p>
         </div>
       </div>

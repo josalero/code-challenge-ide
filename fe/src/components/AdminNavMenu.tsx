@@ -44,9 +44,11 @@ export default function AdminNavMenu({ selectedKey }: Props) {
         aria-haspopup="menu"
         aria-expanded={undefined}
         aria-current={adminActive ? "true" : undefined}
+        aria-label="Admin navigation"
+        title="Admin"
       >
         <ShieldCheck className="size-4" aria-hidden />
-        <span>Admin</span>
+        <span className="hidden md:inline">Admin</span>
         <ChevronDown className="size-3.5 opacity-70" aria-hidden />
       </button>
     </Dropdown>

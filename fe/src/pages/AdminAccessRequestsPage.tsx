@@ -280,6 +280,7 @@ export default function AdminAccessRequestsPage() {
           loading={listQuery.isLoading}
           columns={columns}
           dataSource={listQuery.data ?? []}
+          scroll={{ x: 960 }}
           pagination={{ pageSize: 10, showSizeChanger: false }}
           locale={{
             emptyText:

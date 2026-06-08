@@ -39,7 +39,10 @@ export default function PanelCollapseButton({
       type="button"
       variant="ghost"
       size="icon"
-      className={cn("size-7 shrink-0 text-slate-400 hover:text-slate-100", className)}
+      className={cn(
+        "size-9 shrink-0 text-slate-400 hover:text-slate-100 [@media(pointer:coarse)]:size-10",
+        className,
+      )}
       aria-label={action}
       title={action}
       onClick={() => {

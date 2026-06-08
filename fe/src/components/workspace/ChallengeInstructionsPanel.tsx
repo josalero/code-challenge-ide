@@ -126,8 +126,8 @@ export default function ChallengeInstructionsPanel({
                 <Table2 className="size-3.5 text-sky-400/90" aria-hidden />
                 {referenceLayout ? "Public checks (reference)" : "Examples"}
               </h2>
-              <div className="overflow-hidden rounded-lg border border-slate-700/60">
-                <table className="w-full border-collapse text-left text-sm">
+              <div className="overflow-x-auto rounded-lg border border-slate-700/60">
+                <table className="w-full min-w-[20rem] border-collapse text-left text-sm">
                   <thead>
                     <tr className="border-b border-slate-700/60 bg-slate-800/50 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                       <th className="px-3 py-2 font-medium">
@@ -144,7 +144,7 @@ export default function ChallengeInstructionsPanel({
                         key={`${row.input}-${row.output}-${row.label ?? ""}`}
                         className="border-b border-slate-800/80 last:border-0"
                       >
-                        <td className="px-3 py-2 font-mono text-xs text-slate-200">
+                        <td className="break-all px-3 py-2 font-mono text-xs text-slate-200">
                           {row.label ? (
                             <span>
                               <span className="font-sans text-slate-400">{row.label}: </span>
@@ -154,7 +154,7 @@ export default function ChallengeInstructionsPanel({
                             row.input
                           )}
                         </td>
-                        <td className="px-3 py-2 font-mono text-xs text-emerald-300/90">
+                        <td className="break-all px-3 py-2 font-mono text-xs text-emerald-300/90">
                           {row.output}
                         </td>
                       </tr>
