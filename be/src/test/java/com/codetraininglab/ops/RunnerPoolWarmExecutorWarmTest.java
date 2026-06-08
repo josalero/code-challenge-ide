@@ -67,8 +67,8 @@ class RunnerPoolWarmExecutorWarmTest {
             24,
             "http://localhost:5173",
             challengesRoot.toString(),
-            "code-challenge-ide-pro-runner-java-26:local",
-            "code-challenge-ide-pro-runner-m2-cache",
+            "code-challenge-ide-runner-java-26:local",
+            "ctl-runner-m2-cache",
             true,
             60,
             CtlPropertiesTestFixtures.TEST_LSP_IMAGES,
@@ -95,7 +95,7 @@ class RunnerPoolWarmExecutorWarmTest {
 
   @Test
   @Disabled(
-      "Requires local Docker image code-challenge-ide-pro-runner-java-26:local; covered by"
+      "Requires local Docker image code-challenge-ide-runner-java-26:local; covered by"
           + " RunnerPoolWarmExecutorLanguageTest without Docker")
   void warmRunsSmokeSubmissionForActiveJavaRuntime() throws Exception {
     UUID languageId = UUID.randomUUID();
@@ -105,12 +105,12 @@ class RunnerPoolWarmExecutorWarmTest {
             UUID.randomUUID(),
             languageId,
             "26",
-            "code-challenge-ide-pro-runner-java-26:local",
+            "code-challenge-ide-runner-java-26:local",
             true);
     when(languageRepository.findAll()).thenReturn(List.of(language));
     when(runtimeRepository.findAllOrdered()).thenReturn(List.of(runtime));
     when(runnerContainerPool.execute(
-            eq("code-challenge-ide-pro-runner-java-26:local"),
+            eq("code-challenge-ide-runner-java-26:local"),
             any(),
             eq("maven"),
             any(),
@@ -127,12 +127,12 @@ class RunnerPoolWarmExecutorWarmTest {
     var log = new StringBuilder();
     executor.warm(true, List.of("java"), log::append);
 
-    verify(warmStateStore).recordRunnerPoolWarm(eq("code-challenge-ide-pro-runner-java-26:local"), any());
+    verify(warmStateStore).recordRunnerPoolWarm(eq("code-challenge-ide-runner-java-26:local"), any());
 
     ArgumentCaptor<String> jobCaptor = ArgumentCaptor.forClass(String.class);
     verify(runnerContainerPool)
         .execute(
-            eq("code-challenge-ide-pro-runner-java-26:local"),
+            eq("code-challenge-ide-runner-java-26:local"),
             eq(challengesRoot.resolve("reverse-string")),
             eq("maven"),
             jobCaptor.capture(),
@@ -153,7 +153,7 @@ class RunnerPoolWarmExecutorWarmTest {
             UUID.randomUUID(),
             languageId,
             "3.12",
-            "code-challenge-ide-pro-runner-missing-image:local",
+            "code-challenge-ide-runner-missing-image:local",
             true);
     when(languageRepository.findAll()).thenReturn(List.of(language));
     when(runtimeRepository.findAllOrdered()).thenReturn(List.of(runtime));
@@ -161,7 +161,7 @@ class RunnerPoolWarmExecutorWarmTest {
     var log = new StringBuilder();
     executor.warm(false, List.of("python"), log::append);
 
-    verify(warmStateStore).recordRunnerPoolCold("code-challenge-ide-pro-runner-missing-image:local");
+    verify(warmStateStore).recordRunnerPoolCold("code-challenge-ide-runner-missing-image:local");
     assertThat(log.toString()).contains("image missing");
   }
 }

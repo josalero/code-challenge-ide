@@ -6,7 +6,6 @@
 | [user-guide.md](./user-guide.md) | **How to use the app** — setup flow, Run/Submit, admin Ops, troubleshooting |
 | [runner-ops.md](./runner-ops.md) | **Run tests** pooling, Maven/LSP warm, Admin Ops, env vars |
 | [code_training_lab_mvp_specification.md](./code_training_lab_mvp_specification.md) | Product scope, roadmap, architecture |
-| [multi-tenant-assessment-plan.md](./multi-tenant-assessment-plan.md) | Future orgs, assessments, candidate invites, reports, and multi-tenant checklist |
 | [contracts.md](./contracts.md) | Runner, submission, SSE, challenge on-disk contract |
 | [adding-challenges.md](./adding-challenges.md) | **How to add challenges** (seed, admin, manual, future) |
 | [challenge-catalog-backlog.md](./challenge-catalog-backlog.md) | Catalog counts, recent additions, backlog |

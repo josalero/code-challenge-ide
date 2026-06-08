@@ -9,7 +9,7 @@ VALUES (
     '00000000-0000-0000-0000-000000008200',
     '00000000-0000-0000-0000-000000000008',
     '20',
-    'code-challenge-ide-pro-runner-cpp-20:local',
+    'code-challenge-ide-runner-cpp-20:local',
     TRUE
 )
 ON CONFLICT (language_id, version) DO UPDATE

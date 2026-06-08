@@ -9,7 +9,7 @@ VALUES (
     '00000000-0000-0000-0000-000000003112',
     '00000000-0000-0000-0000-000000000002',
     '3.12',
-    'code-challenge-ide-pro-runner-python-312:local',
+    'code-challenge-ide-runner-python-312:local',
     TRUE
 )
 ON CONFLICT (language_id, version) DO UPDATE
@@ -22,7 +22,7 @@ VALUES (
     '00000000-0000-0000-0000-000000004122',
     '00000000-0000-0000-0000-000000000003',
     '22',
-    'code-challenge-ide-pro-runner-node-22:local',
+    'code-challenge-ide-runner-node-22:local',
     FALSE
 )
 ON CONFLICT (language_id, version) DO NOTHING;
@@ -32,7 +32,7 @@ VALUES (
     '00000000-0000-0000-0000-000000005123',
     '00000000-0000-0000-0000-000000000005',
     '1.23',
-    'code-challenge-ide-pro-runner-go-123:local',
+    'code-challenge-ide-runner-go-123:local',
     FALSE
 )
 ON CONFLICT (language_id, version) DO NOTHING;

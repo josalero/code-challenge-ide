@@ -1,7 +1,7 @@
 ARG JAVA_MAJOR=26
 FROM eclipse-temurin:${JAVA_MAJOR}-jdk-jammy
 
-LABEL org.opencontainers.image.title="code-challenge-ide-pro-runner-java-${JAVA_MAJOR}"
+LABEL org.opencontainers.image.title="code-challenge-ide-runner-java-${JAVA_MAJOR}"
 LABEL org.opencontainers.image.description="Java ${JAVA_MAJOR} Maven/JUnit/JaCoCo/Checkstyle runner for Code Training Lab"
 
 RUN apt-get update \

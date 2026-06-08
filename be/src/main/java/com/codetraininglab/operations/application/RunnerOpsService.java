@@ -876,7 +876,7 @@ public class RunnerOpsService {
 
   private String mavenCacheVolume() {
     String volume = properties.runnerMavenCacheVolume();
-    return volume == null || volume.isBlank() ? "code-challenge-ide-pro-runner-m2-cache" : volume.trim();
+    return volume == null || volume.isBlank() ? "ctl-runner-m2-cache" : volume.trim();
   }
 
   private Path resolveRepoRoot() {

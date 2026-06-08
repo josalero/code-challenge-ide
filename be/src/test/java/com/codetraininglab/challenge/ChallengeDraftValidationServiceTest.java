@@ -57,7 +57,7 @@ class ChallengeDraftValidationServiceTest {
             "http://localhost:5173",
             tempDir.toString(),
             "runner:latest",
-            "code-challenge-ide-pro-runner-m2-cache",
+            "ctl-runner-m2-cache",
             true,
             60,
             java.util.Map.of("java", "lsp:latest"),

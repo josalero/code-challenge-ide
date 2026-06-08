@@ -13,11 +13,11 @@
 #
 # Full stack in Docker (no host JDK/Node): use docker-compose.yml + compose-up.sh
 
-name: code-challenge-ide-pro-local
+name: code-training-lab-local
 
 services:
   postgres:
-    container_name: code-challenge-ide-pro-postgres-local
+    container_name: ctl-postgres-local
     image: postgres:17
     restart: unless-stopped
     ports:
@@ -27,7 +27,7 @@ services:
       POSTGRES_PASSWORD: ${PG_PASSWORD:?Set PG_PASSWORD in .env}
       POSTGRES_DB: ${PG_DB:-code_training_lab}
     volumes:
-      - code-challenge-ide-pro-postgres-data-local:/var/lib/postgresql/data
+      - ctl-postgres-data-local:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DB:-code_training_lab}"]
       interval: 5s
@@ -35,7 +35,7 @@ services:
       retries: 10
 
   rabbitmq:
-    container_name: code-challenge-ide-pro-rabbitmq-local
+    container_name: ctl-rabbitmq-local
     image: rabbitmq:3-management-alpine
     restart: unless-stopped
     ports:
@@ -51,4 +51,4 @@ services:
       retries: 10
 
 volumes:
-  code-challenge-ide-pro-postgres-data-local:
+  ctl-postgres-data-local:

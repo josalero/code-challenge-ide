@@ -821,16 +821,16 @@ Workflow: `.github/workflows/build.yml`
 
 | Matrix image | Dockerfile | Context |
 | --- | --- | --- |
-| `code-challenge-ide-pro-be` | `be/Dockerfile` | Repository root (Gradle `:be:bootJar`) |
-| `code-challenge-ide-pro-fe` | `fe/Dockerfile` | `fe/` (npm build → Caddy) |
-| `code-challenge-ide-pro-runner-java-26` | `runners/java/Dockerfile` | `runners/java/` |
+| `code-challenge-ide-be` | `be/Dockerfile` | Repository root (Gradle `:be:bootJar`) |
+| `code-challenge-ide-fe` | `fe/Dockerfile` | `fe/` (npm build → Caddy) |
+| `code-challenge-ide-runner-java-26` | `runners/java/Dockerfile` | `runners/java/` |
 
 Published as:
 
 ```text
-ghcr.io/<github-owner>/code-challenge-ide-pro-be:<tag>
-ghcr.io/<github-owner>/code-challenge-ide-pro-fe:<tag>
-ghcr.io/<github-owner>/code-challenge-ide-pro-runner-java-26:<tag>
+ghcr.io/<github-owner>/code-challenge-ide-be:<tag>
+ghcr.io/<github-owner>/code-challenge-ide-fe:<tag>
+ghcr.io/<github-owner>/code-challenge-ide-runner-java-26:<tag>
 ```
 
 Images are signed with **cosign** on push (non-PR builds).
@@ -848,9 +848,9 @@ docker compose up -d
 flowchart TB
     GH["GitHub Actions build.yml"]
     GH --> GHCR["GHCR images"]
-    GHCR --> FE_IMG["code-challenge-ide-pro-fe"]
-    GHCR --> API_IMG["code-challenge-ide-pro-be"]
-    GHCR --> RUN_IMG["code-challenge-ide-pro-runner-java-26"]
+    GHCR --> FE_IMG["code-challenge-ide-fe"]
+    GHCR --> API_IMG["code-challenge-ide-be"]
+    GHCR --> RUN_IMG["code-challenge-ide-runner-java-26"]
 
     subgraph Host["Operator VPS Coolify or Compose"]
         FE["fe container Caddy"]
@@ -871,8 +871,8 @@ flowchart TB
 
 | Service | Image source |
 | --- | --- |
-| `api` | `${CTL_IMAGE_REGISTRY}/${CTL_IMAGE_OWNER}/code-challenge-ide-pro-be:${CTL_IMAGE_TAG}` |
-| `fe` | `${CTL_IMAGE_REGISTRY}/${CTL_IMAGE_OWNER}/code-challenge-ide-pro-fe:${CTL_IMAGE_TAG}` |
+| `api` | `${CTL_IMAGE_REGISTRY}/${CTL_IMAGE_OWNER}/code-challenge-ide-be:${CTL_IMAGE_TAG}` |
+| `fe` | `${CTL_IMAGE_REGISTRY}/${CTL_IMAGE_OWNER}/code-challenge-ide-fe:${CTL_IMAGE_TAG}` |
 | `postgres` | `postgres:17` (upstream) |
 | `rabbitmq` | `rabbitmq:3-management-alpine` (upstream) |
 
@@ -884,7 +884,7 @@ flowchart TB
 | Backups | Operator-owned: nightly `pg_dump` cron suggested in docs |
 | Scaling | Single host. Multi-node, gVisor, K8s are deliberately out of scope |
 | Observability | Structured logs + Spring Actuator endpoints |
-| LSP host | Not in compose yet — add as `code-challenge-ide-pro-lsp` image in a follow-up |
+| LSP host | Not in compose yet — add as `code-challenge-ide-lsp` image in a follow-up |
 
 ---
 

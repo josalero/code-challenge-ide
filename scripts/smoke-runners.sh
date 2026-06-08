@@ -12,7 +12,7 @@ if [[ -f .env ]]; then
 fi
 
 CHALLENGES="${ROOT}/challenges"
-MAVEN_CACHE="${RUNNER_MAVEN_CACHE_VOLUME:-code-challenge-ide-pro-runner-m2-cache}"
+MAVEN_CACHE="${RUNNER_MAVEN_CACHE_VOLUME:-ctl-runner-m2-cache}"
 FAIL=0
 PASS=0
 
@@ -269,18 +269,18 @@ WHERE department_id = 2;
 EOF
 
 echo "Smoke-testing runners (12 languages)..."
-run_smoke "Java" "${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-pro-runner-java-26:local}" reverse-string maven "${TMP}/reverse.java"
-run_smoke "Python" "${RUNNER_PYTHON_312_IMAGE:-code-challenge-ide-pro-runner-python-312:local}" fizzbuzz-python pytest "${TMP}/fizzbuzz.py"
-run_smoke "Go" "${RUNNER_GO_123_IMAGE:-code-challenge-ide-pro-runner-go-123:local}" gcd-go go-test "${TMP}/gcd.go"
-run_smoke "Node.js" "${RUNNER_NODE_22_IMAGE:-code-challenge-ide-pro-runner-node-22:local}" gcd-node node-test "${TMP}/gcd.js"
-run_smoke "C#" "${RUNNER_DOTNET_8_IMAGE:-code-challenge-ide-pro-runner-dotnet-8:local}" gcd-csharp dotnet "${TMP}/gcd.cs"
-run_smoke "TypeScript" "${RUNNER_TYPESCRIPT_57_IMAGE:-code-challenge-ide-pro-runner-typescript-57:local}" gcd-typescript typescript-test "${TMP}/gcd.ts"
-run_smoke "Rust" "${RUNNER_RUST_184_IMAGE:-code-challenge-ide-pro-runner-rust-184:local}" gcd-rust cargo-test "${TMP}/lib.rs"
-run_smoke "C++" "${RUNNER_CPP_20_IMAGE:-code-challenge-ide-pro-runner-cpp-20:local}" gcd-cpp cmake-test "${TMP}/gcd.cpp"
-run_smoke "React" "${RUNNER_REACT_19_IMAGE:-code-challenge-ide-pro-runner-react-19:local}" greeting-react vitest-react "${TMP}/greeting.tsx"
-run_smoke "Vue" "${RUNNER_VUE_35_IMAGE:-code-challenge-ide-pro-runner-vue-35:local}" counter-vue vitest-vue "${TMP}/counter.vue"
-run_smoke "Angular" "${RUNNER_ANGULAR_19_IMAGE:-code-challenge-ide-pro-runner-angular-19:local}" reverse-pipe-angular vitest-angular "${TMP}/reverse-pipe.ts"
-run_smoke "SQL" "${RUNNER_POSTGRES_17_IMAGE:-code-challenge-ide-pro-runner-postgres-17:local}" sql-count-engineering postgres-sql "${TMP}/sql-count.sql"
+run_smoke "Java" "${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}" reverse-string maven "${TMP}/reverse.java"
+run_smoke "Python" "${RUNNER_PYTHON_312_IMAGE:-code-challenge-ide-runner-python-312:local}" fizzbuzz-python pytest "${TMP}/fizzbuzz.py"
+run_smoke "Go" "${RUNNER_GO_123_IMAGE:-code-challenge-ide-runner-go-123:local}" gcd-go go-test "${TMP}/gcd.go"
+run_smoke "Node.js" "${RUNNER_NODE_22_IMAGE:-code-challenge-ide-runner-node-22:local}" gcd-node node-test "${TMP}/gcd.js"
+run_smoke "C#" "${RUNNER_DOTNET_8_IMAGE:-code-challenge-ide-runner-dotnet-8:local}" gcd-csharp dotnet "${TMP}/gcd.cs"
+run_smoke "TypeScript" "${RUNNER_TYPESCRIPT_57_IMAGE:-code-challenge-ide-runner-typescript-57:local}" gcd-typescript typescript-test "${TMP}/gcd.ts"
+run_smoke "Rust" "${RUNNER_RUST_184_IMAGE:-code-challenge-ide-runner-rust-184:local}" gcd-rust cargo-test "${TMP}/lib.rs"
+run_smoke "C++" "${RUNNER_CPP_20_IMAGE:-code-challenge-ide-runner-cpp-20:local}" gcd-cpp cmake-test "${TMP}/gcd.cpp"
+run_smoke "React" "${RUNNER_REACT_19_IMAGE:-code-challenge-ide-runner-react-19:local}" greeting-react vitest-react "${TMP}/greeting.tsx"
+run_smoke "Vue" "${RUNNER_VUE_35_IMAGE:-code-challenge-ide-runner-vue-35:local}" counter-vue vitest-vue "${TMP}/counter.vue"
+run_smoke "Angular" "${RUNNER_ANGULAR_19_IMAGE:-code-challenge-ide-runner-angular-19:local}" reverse-pipe-angular vitest-angular "${TMP}/reverse-pipe.ts"
+run_smoke "SQL" "${RUNNER_POSTGRES_17_IMAGE:-code-challenge-ide-runner-postgres-17:local}" sql-count-engineering postgres-sql "${TMP}/sql-count.sql"
 
 echo "Done: ${PASS} passed, ${FAIL} failed"
 if [[ "${FAIL}" -gt 0 ]]; then

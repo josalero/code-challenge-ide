@@ -28,7 +28,7 @@ import tools.jackson.databind.json.JsonMapper;
 @TestPropertySource(
     properties = {
       "ctl.docker-enabled=true",
-      "ctl.runner-java-26-image=code-challenge-ide-pro-runner-java-26:local"
+      "ctl.runner-java-26-image=code-challenge-ide-runner-java-26:local"
     })
 @EnabledIfEnvironmentVariable(named = "CTL_INTEGRATION_DOCKER", matches = "true")
 @Disabled("Integration tests temporarily disabled — Testcontainers/CI wiring investigation pending.")

@@ -13,14 +13,14 @@
 # the mounted Docker socket (Docker-out-of-Docker). Set DOCKER_GID in .env if the socket
 # is not accessible (see .env.example).
 
-name: code-challenge-ide-pro
+name: code-training-lab
 
 include:
   - path: docker-compose.runners.yml
 
 services:
   postgres:
-    container_name: code-challenge-ide-pro-postgres
+    container_name: ctl-postgres
     image: postgres:17
     restart: unless-stopped
     ports:
@@ -30,7 +30,7 @@ services:
       POSTGRES_PASSWORD: ${PG_PASSWORD:?Set PG_PASSWORD in .env}
       POSTGRES_DB: ${PG_DB:-code_training_lab}
     volumes:
-      - code-challenge-ide-pro-postgres-data:/var/lib/postgresql/data
+      - ctl-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-postgres} -d ${PG_DB:-code_training_lab}"]
       interval: 5s
@@ -38,7 +38,7 @@ services:
       retries: 10
 
   rabbitmq:
-    container_name: code-challenge-ide-pro-rabbitmq
+    container_name: ctl-rabbitmq
     image: rabbitmq:3-management-alpine
     restart: unless-stopped
     ports:
@@ -54,11 +54,11 @@ services:
       retries: 10
 
   api:
-    container_name: code-challenge-ide-pro-api
+    container_name: ctl-api
     build:
       context: .
       dockerfile: be/Dockerfile
-    image: ${CTL_API_IMAGE:-code-challenge-ide-pro-be:local}
+    image: ${CTL_API_IMAGE:-code-challenge-ide-be:local}
     restart: unless-stopped
     ports:
       - "${API_PORT:-8080}:8080"
@@ -76,24 +76,24 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       CTL_CHALLENGES_PATH: /challenges
       CTL_DOCKER_ENABLED: "true"
-      RUNNER_JAVA_25_IMAGE: ${RUNNER_JAVA_25_IMAGE:-code-challenge-ide-pro-runner-java-25:local}
-      RUNNER_JAVA_26_IMAGE: ${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-pro-runner-java-26:local}
-      RUNNER_PYTHON_312_IMAGE: ${RUNNER_PYTHON_312_IMAGE:-code-challenge-ide-pro-runner-python-312:local}
-      RUNNER_GO_123_IMAGE: ${RUNNER_GO_123_IMAGE:-code-challenge-ide-pro-runner-go-123:local}
-      RUNNER_NODE_22_IMAGE: ${RUNNER_NODE_22_IMAGE:-code-challenge-ide-pro-runner-node-22:local}
-      RUNNER_DOTNET_8_IMAGE: ${RUNNER_DOTNET_8_IMAGE:-code-challenge-ide-pro-runner-dotnet-8:local}
-      RUNNER_TYPESCRIPT_57_IMAGE: ${RUNNER_TYPESCRIPT_57_IMAGE:-code-challenge-ide-pro-runner-typescript-57:local}
-      RUNNER_RUST_184_IMAGE: ${RUNNER_RUST_184_IMAGE:-code-challenge-ide-pro-runner-rust-184:local}
-      RUNNER_CPP_20_IMAGE: ${RUNNER_CPP_20_IMAGE:-code-challenge-ide-pro-runner-cpp-20:local}
-      RUNNER_REACT_19_IMAGE: ${RUNNER_REACT_19_IMAGE:-code-challenge-ide-pro-runner-react-19:local}
-      RUNNER_VUE_35_IMAGE: ${RUNNER_VUE_35_IMAGE:-code-challenge-ide-pro-runner-vue-35:local}
-      RUNNER_ANGULAR_19_IMAGE: ${RUNNER_ANGULAR_19_IMAGE:-code-challenge-ide-pro-runner-angular-19:local}
-      RUNNER_POSTGRES_17_IMAGE: ${RUNNER_POSTGRES_17_IMAGE:-code-challenge-ide-pro-runner-postgres-17:local}
-      RUNNER_MAVEN_CACHE_VOLUME: ${RUNNER_MAVEN_CACHE_VOLUME:-code-challenge-ide-pro-runner-m2-cache}
+      RUNNER_JAVA_25_IMAGE: ${RUNNER_JAVA_25_IMAGE:-code-challenge-ide-runner-java-25:local}
+      RUNNER_JAVA_26_IMAGE: ${RUNNER_JAVA_26_IMAGE:-code-challenge-ide-runner-java-26:local}
+      RUNNER_PYTHON_312_IMAGE: ${RUNNER_PYTHON_312_IMAGE:-code-challenge-ide-runner-python-312:local}
+      RUNNER_GO_123_IMAGE: ${RUNNER_GO_123_IMAGE:-code-challenge-ide-runner-go-123:local}
+      RUNNER_NODE_22_IMAGE: ${RUNNER_NODE_22_IMAGE:-code-challenge-ide-runner-node-22:local}
+      RUNNER_DOTNET_8_IMAGE: ${RUNNER_DOTNET_8_IMAGE:-code-challenge-ide-runner-dotnet-8:local}
+      RUNNER_TYPESCRIPT_57_IMAGE: ${RUNNER_TYPESCRIPT_57_IMAGE:-code-challenge-ide-runner-typescript-57:local}
+      RUNNER_RUST_184_IMAGE: ${RUNNER_RUST_184_IMAGE:-code-challenge-ide-runner-rust-184:local}
+      RUNNER_CPP_20_IMAGE: ${RUNNER_CPP_20_IMAGE:-code-challenge-ide-runner-cpp-20:local}
+      RUNNER_REACT_19_IMAGE: ${RUNNER_REACT_19_IMAGE:-code-challenge-ide-runner-react-19:local}
+      RUNNER_VUE_35_IMAGE: ${RUNNER_VUE_35_IMAGE:-code-challenge-ide-runner-vue-35:local}
+      RUNNER_ANGULAR_19_IMAGE: ${RUNNER_ANGULAR_19_IMAGE:-code-challenge-ide-runner-angular-19:local}
+      RUNNER_POSTGRES_17_IMAGE: ${RUNNER_POSTGRES_17_IMAGE:-code-challenge-ide-runner-postgres-17:local}
+      RUNNER_MAVEN_CACHE_VOLUME: ${RUNNER_MAVEN_CACHE_VOLUME:-ctl-runner-m2-cache}
       RUNNER_POOL_ENABLED: ${RUNNER_POOL_ENABLED:-true}
       RUNNER_POOL_WARM_ON_STARTUP: ${RUNNER_POOL_WARM_ON_STARTUP:-true}
-      CTL_OPS_DATA_DIR: /data/code-challenge-ide-pro-ops
-      LSP_JAVA_IMAGE: ${LSP_JAVA_IMAGE:-code-challenge-ide-pro-lsp-java:local}
+      CTL_OPS_DATA_DIR: /data/ctl-ops
+      LSP_JAVA_IMAGE: ${LSP_JAVA_IMAGE:-code-challenge-ide-lsp-java:local}
       CTL_LSP_ENABLED: ${CTL_LSP_ENABLED:-true}
       AI_PROVIDER: ${AI_PROVIDER:-openrouter}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
@@ -103,7 +103,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./challenges:/challenges:ro
-      - code-challenge-ide-pro-ops-data:/data/code-challenge-ide-pro-ops
+      - ctl-ops-data:/data/ctl-ops
     group_add:
       - "${DOCKER_GID:-0}"
     depends_on:
@@ -149,11 +149,11 @@ services:
       - "host.docker.internal:host-gateway"
 
   fe:
-    container_name: code-challenge-ide-pro-fe
+    container_name: ctl-fe
     build:
       context: ./fe
       dockerfile: Dockerfile
-    image: ${CTL_FE_IMAGE:-code-challenge-ide-pro-fe:local}
+    image: ${CTL_FE_IMAGE:-code-challenge-ide-fe:local}
     restart: unless-stopped
     ports:
       - "${FE_PORT:-3000}:80"
@@ -162,5 +162,5 @@ services:
         condition: service_healthy
 
 volumes:
-  code-challenge-ide-pro-postgres-data:
-  code-challenge-ide-pro-ops-data:
+  ctl-postgres-data:
+  ctl-ops-data:

@@ -88,14 +88,14 @@ public record CtlProperties(
 
   private static String defaultLspImage(String language) {
     return switch (language) {
-      case "java" -> "code-challenge-ide-pro-lsp-java:local";
-      case "python" -> "code-challenge-ide-pro-lsp-python:local";
-      case "go" -> "code-challenge-ide-pro-lsp-go:local";
+      case "java" -> "code-challenge-ide-lsp-java:local";
+      case "python" -> "code-challenge-ide-lsp-python:local";
+      case "go" -> "code-challenge-ide-lsp-go:local";
       case "node", "typescript", "react", "vue", "angular" ->
-          "code-challenge-ide-pro-lsp-typescript:local";
-      case "csharp" -> "code-challenge-ide-pro-lsp-dotnet:local";
-      case "rust" -> "code-challenge-ide-pro-lsp-rust:local";
-      case "cpp" -> "code-challenge-ide-pro-lsp-cpp:local";
+          "code-challenge-ide-lsp-typescript:local";
+      case "csharp" -> "code-challenge-ide-lsp-dotnet:local";
+      case "rust" -> "code-challenge-ide-lsp-rust:local";
+      case "cpp" -> "code-challenge-ide-lsp-cpp:local";
       default -> null;
     };
   }

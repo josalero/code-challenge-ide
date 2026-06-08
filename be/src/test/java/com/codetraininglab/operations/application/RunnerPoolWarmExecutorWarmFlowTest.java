@@ -39,7 +39,7 @@ import tools.jackson.databind.json.JsonMapper;
 @ExtendWith(MockitoExtension.class)
 class RunnerPoolWarmExecutorWarmFlowTest {
 
-  private static final String JAVA_IMAGE = "code-challenge-ide-pro-runner-java-26:local";
+  private static final String JAVA_IMAGE = "code-challenge-ide-runner-java-26:local";
   private static final String STAMP = "sha256:warm-stamp";
 
   @TempDir Path tempDir;

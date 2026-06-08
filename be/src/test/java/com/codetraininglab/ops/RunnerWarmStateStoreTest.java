@@ -56,10 +56,10 @@ class RunnerWarmStateStoreTest {
 
   @Test
   void parseLspScopeKeySplitsLabelAndImage() {
-    assertThat(RunnerWarmStateStore.parseLspScopeKey("java:code-challenge-ide-pro-lsp-java:local"))
+    assertThat(RunnerWarmStateStore.parseLspScopeKey("java:code-challenge-ide-lsp-java:local"))
         .isEqualTo(
             new RunnerWarmStateStore.LspScope(
-                "java", "code-challenge-ide-pro-lsp-java:local"));
+                "java", "code-challenge-ide-lsp-java:local"));
   }
 
   @Test
@@ -71,17 +71,17 @@ class RunnerWarmStateStoreTest {
 
   @Test
   void syncRunnerPoolFromStatusesPersistsColdRows() {
-    when(runnerPoolRepository.findById("code-challenge-ide-pro-runner-python:local"))
+    when(runnerPoolRepository.findById("code-challenge-ide-runner-python:local"))
         .thenReturn(Optional.empty());
 
     store.syncRunnerPoolFromStatuses(
         List.of(
             new RunnerImageStatusResponse(
-                "python 3.12", "code-challenge-ide-pro-runner-python:local", true, "sha256:cold", false)));
+                "python 3.12", "code-challenge-ide-runner-python:local", true, "sha256:cold", false)));
 
     ArgumentCaptor<RunnerPoolWarmStateEntity> saved = ArgumentCaptor.forClass(RunnerPoolWarmStateEntity.class);
     verify(runnerPoolRepository).save(saved.capture());
-    assertThat(saved.getValue().getDockerImage()).isEqualTo("code-challenge-ide-pro-runner-python:local");
+    assertThat(saved.getValue().getDockerImage()).isEqualTo("code-challenge-ide-runner-python:local");
     assertThat(saved.getValue().isWarmed()).isFalse();
     assertThat(saved.getValue().getImageId()).isEqualTo("sha256:cold");
     assertThat(saved.getValue().getWarmedAt()).isEqualTo(FIXED_NOW);

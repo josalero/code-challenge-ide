@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CHALLENGES = ROOT / "challenges"
-MAVEN_CACHE = os.environ.get("RUNNER_MAVEN_CACHE_VOLUME", "code-challenge-ide-pro-runner-m2-cache")
+MAVEN_CACHE = os.environ.get("RUNNER_MAVEN_CACHE_VOLUME", "ctl-runner-m2-cache")
 
 LIMITS = {
     "memory_mb": 1024,
@@ -155,19 +155,19 @@ WHERE department_id = 2;
 # label, image_env, default_image, smoke_slug, workspace_layout
 # Slugs align with scripts/smoke-runners.sh (not Admin Ops RunnerSmokeChallenges).
 RUNNER_TARGETS: tuple[tuple[str, str, str, str, str], ...] = (
-    ("Java 26", "RUNNER_JAVA_26_IMAGE", "code-challenge-ide-pro-runner-java-26:local", "reverse-string", "maven"),
-    ("Java 25", "RUNNER_JAVA_25_IMAGE", "code-challenge-ide-pro-runner-java-25:local", "reverse-string", "maven"),
-    ("Python", "RUNNER_PYTHON_312_IMAGE", "code-challenge-ide-pro-runner-python-312:local", "fizzbuzz-python", "pytest"),
-    ("Go", "RUNNER_GO_123_IMAGE", "code-challenge-ide-pro-runner-go-123:local", "gcd-go", "go-test"),
-    ("Node.js", "RUNNER_NODE_22_IMAGE", "code-challenge-ide-pro-runner-node-22:local", "gcd-node", "node-test"),
-    ("C#", "RUNNER_DOTNET_8_IMAGE", "code-challenge-ide-pro-runner-dotnet-8:local", "gcd-csharp", "dotnet"),
-    ("TypeScript", "RUNNER_TYPESCRIPT_57_IMAGE", "code-challenge-ide-pro-runner-typescript-57:local", "gcd-typescript", "typescript-test"),
-    ("Rust", "RUNNER_RUST_184_IMAGE", "code-challenge-ide-pro-runner-rust-184:local", "gcd-rust", "cargo-test"),
-    ("C++", "RUNNER_CPP_20_IMAGE", "code-challenge-ide-pro-runner-cpp-20:local", "gcd-cpp", "cmake-test"),
-    ("React", "RUNNER_REACT_19_IMAGE", "code-challenge-ide-pro-runner-react-19:local", "greeting-react", "vitest-react"),
-    ("Vue", "RUNNER_VUE_35_IMAGE", "code-challenge-ide-pro-runner-vue-35:local", "counter-vue", "vitest-vue"),
-    ("Angular", "RUNNER_ANGULAR_19_IMAGE", "code-challenge-ide-pro-runner-angular-19:local", "reverse-pipe-angular", "vitest-angular"),
-    ("SQL", "RUNNER_POSTGRES_17_IMAGE", "code-challenge-ide-pro-runner-postgres-17:local", "sql-count-engineering", "postgres-sql"),
+    ("Java 26", "RUNNER_JAVA_26_IMAGE", "code-challenge-ide-runner-java-26:local", "reverse-string", "maven"),
+    ("Java 25", "RUNNER_JAVA_25_IMAGE", "code-challenge-ide-runner-java-25:local", "reverse-string", "maven"),
+    ("Python", "RUNNER_PYTHON_312_IMAGE", "code-challenge-ide-runner-python-312:local", "fizzbuzz-python", "pytest"),
+    ("Go", "RUNNER_GO_123_IMAGE", "code-challenge-ide-runner-go-123:local", "gcd-go", "go-test"),
+    ("Node.js", "RUNNER_NODE_22_IMAGE", "code-challenge-ide-runner-node-22:local", "gcd-node", "node-test"),
+    ("C#", "RUNNER_DOTNET_8_IMAGE", "code-challenge-ide-runner-dotnet-8:local", "gcd-csharp", "dotnet"),
+    ("TypeScript", "RUNNER_TYPESCRIPT_57_IMAGE", "code-challenge-ide-runner-typescript-57:local", "gcd-typescript", "typescript-test"),
+    ("Rust", "RUNNER_RUST_184_IMAGE", "code-challenge-ide-runner-rust-184:local", "gcd-rust", "cargo-test"),
+    ("C++", "RUNNER_CPP_20_IMAGE", "code-challenge-ide-runner-cpp-20:local", "gcd-cpp", "cmake-test"),
+    ("React", "RUNNER_REACT_19_IMAGE", "code-challenge-ide-runner-react-19:local", "greeting-react", "vitest-react"),
+    ("Vue", "RUNNER_VUE_35_IMAGE", "code-challenge-ide-runner-vue-35:local", "counter-vue", "vitest-vue"),
+    ("Angular", "RUNNER_ANGULAR_19_IMAGE", "code-challenge-ide-runner-angular-19:local", "reverse-pipe-angular", "vitest-angular"),
+    ("SQL", "RUNNER_POSTGRES_17_IMAGE", "code-challenge-ide-runner-postgres-17:local", "sql-count-engineering", "postgres-sql"),
 )
 
 

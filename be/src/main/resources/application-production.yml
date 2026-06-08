@@ -1,6 +1,6 @@
 # Docker / production — Phase 1a contract: health + info only (no prometheus on the wire).
 server:
-  # Coolify / Traefik (and code-challenge-ide-pro-fe nginx): trust X-Forwarded-* for redirects and absolute URLs
+  # Coolify / Traefik (and code-lab-fe nginx): trust X-Forwarded-* for redirects and absolute URLs
   forward-headers-strategy: framework
 
 management:

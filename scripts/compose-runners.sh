@@ -20,7 +20,7 @@ echo "Building runner images (all languages + LSP)…"
 docker compose "${COMPOSE_FILES[@]}" build
 
 echo "Removing orphaned runner compose containers (dropped services, e.g. old Java tracks)…"
-for project in code-challenge-ide-pro-local code-challenge-ide-pro; do
+for project in code-training-lab-local code-training-lab; do
   docker compose -p "${project}" -f docker-compose.runners.yml down --remove-orphans 2>/dev/null || true
 done
 

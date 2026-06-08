@@ -9,7 +9,7 @@ RUN npm run build
 
 FROM caddy:2-alpine
 
-LABEL org.opencontainers.image.title="code-challenge-ide-pro-fe"
+LABEL org.opencontainers.image.title="code-challenge-ide-fe"
 LABEL org.opencontainers.image.description="Code Training Lab frontend"
 
 COPY Caddyfile /etc/caddy/Caddyfile

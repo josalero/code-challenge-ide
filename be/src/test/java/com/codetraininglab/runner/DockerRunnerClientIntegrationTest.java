@@ -38,7 +38,7 @@ class DockerRunnerClientIntegrationTest {
   @Mock private LanguageRuntimeRepository runtimeRepository;
   @Mock private LanguageRepository languageRepository;
 
-  private static final String IMAGE = "code-challenge-ide-pro-runner-java-26:itest";
+  private static final String IMAGE = "code-challenge-ide-runner-java-26:itest";
   private static boolean dockerAvailable;
   private static boolean imageBuilt;
 
@@ -139,7 +139,7 @@ class DockerRunnerClientIntegrationTest {
             "reverse-string",
             hidden,
             challengeDir,
-            "code-challenge-ide-pro-runner-java-26:itest");
+            "code-challenge-ide-runner-java-26:itest");
 
     assertThat(result.status()).isEqualTo("COMPLETED");
     assertThat(result.tests()).isNotEmpty();
