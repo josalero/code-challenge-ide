@@ -9,6 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
+import ScrollToTop from "./components/ScrollToTop";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -17,6 +18,10 @@ const queryClient = new QueryClient({
   },
 });
 
+if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+  window.history.scrollRestoration = "manual";
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider>
@@ -24,6 +29,7 @@ createRoot(document.getElementById("root")!).render(
         <TooltipProvider>
           <AntApp>
             <BrowserRouter>
+              <ScrollToTop />
               <AuthProvider>
                 <App />
               </AuthProvider>
