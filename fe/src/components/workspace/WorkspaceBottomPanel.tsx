@@ -205,7 +205,7 @@ export default function WorkspaceBottomPanel({
   const tabBadge = useMemo(
     () => ({
       tests: failedTests > 0 ? failedTests : undefined,
-      compiler: runnerLogs?.stderrTruncated ? "!" : undefined,
+      compiler: runnerLogs?.stderrTruncated || runnerLogs?.stdoutTruncated ? "!" : undefined,
       "static-analysis": staticIssues > 0 ? staticIssues : undefined,
       feedback: report ? (report.blocked ? "!" : "✓") : undefined,
       history: attempts.length > 0 ? attempts.length : undefined,

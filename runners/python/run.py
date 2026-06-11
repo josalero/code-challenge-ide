@@ -116,7 +116,7 @@ def run_pytest(wall_seconds: int, *, collect_coverage: bool) -> tuple[int, str, 
         "pytest",
         "tests",
         "-q",
-        "--tb=line",
+        "--tb=short",
         "--junitxml=/tmp/workspace/junit.xml",
     ]
     env = os.environ.copy()

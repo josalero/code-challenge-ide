@@ -289,6 +289,47 @@ class SubmissionProcessingStateWriterTest {
                         && map.get(SsePayloadKeys.MESSAGE).toString().contains("2 test result(s)")));
   }
 
+  @Test
+  void finalizeRunPublishesRunnerLogsOnDone() {
+    SubmissionEntity submission =
+        new SubmissionEntity(
+            submissionId,
+            userId,
+            challengeId,
+            runtimeId,
+            SubmissionStatus.RUNNING,
+            SubmissionKind.RUN,
+            "code",
+            null,
+            null,
+            Instant.EPOCH,
+            Instant.EPOCH);
+    when(submissionRepository.findById(submissionId)).thenReturn(Optional.of(submission));
+    when(submissionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    writer.finalizeRun(
+        submissionId,
+        new RunnerResult(
+            "COMPLETED",
+            List.of(new RunnerResult.TestOutcome("t1", "FAIL", "AssertionError", 1)),
+            new RunnerResult.CoverageOutcome(0, 0),
+            new RunnerResult.CompileOutcome(0, List.of()),
+            null,
+            new RunnerResult.LogsOutcome("printed debug\n", "warning line")));
+
+    verify(eventHub)
+        .publish(
+            eq(submissionId),
+            eq(SubmissionEventType.DONE.eventName()),
+            argThat(
+                payload ->
+                    payload instanceof java.util.Map<?, ?> map
+                        && SubmissionKind.RUN.name().equals(map.get(SsePayloadKeys.KIND))
+                        && Boolean.FALSE.equals(map.get(SsePayloadKeys.PASSED))
+                        && "printed debug\n".equals(map.get(SsePayloadKeys.STDOUT))
+                        && "warning line".equals(map.get(SsePayloadKeys.STDERR))));
+  }
+
   private SubmissionEntity submission(SubmissionStatus status) {
     return new SubmissionEntity(
         submissionId,

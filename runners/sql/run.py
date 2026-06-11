@@ -168,7 +168,7 @@ def truncate(text: str, limit: int = MAX_LOG_BYTES) -> str:
 
 
 def run_pytest(wall_seconds: int) -> tuple[int, str, str]:
-    cmd = ["python3", "-m", "pytest", "tests", "-q", "--tb=line", "--junitxml=/tmp/workspace/junit.xml"]
+    cmd = ["python3", "-m", "pytest", "tests", "-q", "--tb=short", "--junitxml=/tmp/workspace/junit.xml"]
     proc = subprocess.run(
         cmd,
         cwd=WORKSPACE,

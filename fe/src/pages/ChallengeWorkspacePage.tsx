@@ -26,7 +26,6 @@ import { activityEntryFromTestResult } from "../utils/activityLog";
 import {
   ApiPaths,
   JavaRuntimeVersion,
-  SsePayloadKeys,
   SubmissionKind,
   SubmissionStatus,
 } from "../domain/constants";
@@ -45,7 +44,7 @@ import {
 import { useServerChallengeSession } from "../hooks/useServerChallengeSession";
 import { useRunTestsShortcut } from "../hooks/useRunTestsShortcut";
 import type { IntegrityEventPayload } from "../utils/monacoClipboardGuard";
-import { useSubmissionEvents } from "../hooks/useSubmissionEvents";
+import { useSubmissionEvents, type SubmissionDonePayload } from "../hooks/useSubmissionEvents";
 import {
   applyTestResult,
   buildInitialTrackedTests,
@@ -464,20 +463,27 @@ export default function ChallengeWorkspacePage() {
       setTrackedTests((prev) => applyTestResult(prev, test));
       setActivityLog((prev) => [...prev, activityEntryFromTestResult(test)]);
     },
-    onDone: async (payload) => {
+    onDone: async (payload: SubmissionDonePayload) => {
       setStreamConnected(false);
       setSubmissionStatus((prev) =>
         prev === SubmissionStatus.FAILED ? prev : SubmissionStatus.COMPLETED);
       setTrackedTests((prev) => finalizeTrackedTestsOnComplete(prev));
       const kind =
-        (payload[SsePayloadKeys.KIND] as SubmissionKindValue | undefined)
+        (payload.kind as SubmissionKindValue | undefined)
         ?? activeSubmissionKind
         ?? SubmissionKind.SUBMIT;
       if (kind === SubmissionKind.RUN) {
-        const passed = payload[SsePayloadKeys.PASSED] === "true";
+        const passed = payload.passed === true || payload.passed === "true";
         setLastRunPassed(passed);
+        const logs = payload.runnerLogs ?? null;
+        if (logs) {
+          setRunnerLogs(logs);
+          if (!passed || logs.stdoutTruncated || logs.stderrTruncated) {
+            setBottomTab("compiler");
+          }
+        }
         appendActivity(
-          payload[SsePayloadKeys.MESSAGE]
+          payload.message
             ?? (passed ? "All tests passed — keep editing or submit when ready" : "Some tests failed — fix your solution and run again"),
           passed ? "success" : "warning",
         );
@@ -492,8 +498,7 @@ export default function ChallengeWorkspacePage() {
         return;
       }
       appendActivity("Submit finished — loading coach report…");
-      const rawReportId =
-        payload[SsePayloadKeys.REPORT_ID] ?? payload.reportId;
+      const rawReportId = payload.report_id ?? payload.reportId;
       const reportId =
         rawReportId != null && String(rawReportId).length > 0
           ? String(rawReportId)

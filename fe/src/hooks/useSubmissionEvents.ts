@@ -2,11 +2,24 @@ import { useEffect, useRef } from "react";
 import { getAccessToken } from "../auth/authStorage";
 import type { RunnerLogs, TestResultEvent } from "../api/types";
 import { ApiPaths, SubmissionEventType } from "../domain/constants";
+import { runnerLogsFromSsePayload } from "../utils/runnerLogs";
+
+export type SubmissionDonePayload = {
+  submission_id?: string;
+  report_id?: string;
+  reportId?: string;
+  kind?: string;
+  passed?: string | boolean;
+  message?: string;
+  stdout?: string;
+  stderr?: string;
+  runnerLogs?: RunnerLogs | null;
+};
 
 export type SubmissionEventsHandlers = {
   onStatus?: (status: string, message?: string) => void;
   onTestResult?: (test: TestResultEvent) => void;
-  onDone?: (payload: Record<string, string | undefined>) => void;
+  onDone?: (payload: SubmissionDonePayload) => void;
   onError?: (message: string, logs?: RunnerLogs | null) => void;
   onStreamOpen?: () => void;
   onStreamReconnecting?: () => void;
@@ -54,11 +67,27 @@ export function useSubmissionEvents(
 
       es.addEventListener(SubmissionEventType.DONE, (event) => {
         terminal = true;
-        handlersRef.current.onDone?.(
-          parse<{ submission_id?: string; report_id?: string; reportId?: string }>(
-            event,
-          ),
-        );
+        const data = parse<{
+          submission_id?: string;
+          report_id?: string;
+          reportId?: string;
+          kind?: string;
+          passed?: string | boolean;
+          message?: string;
+          stdout?: string;
+          stderr?: string;
+        }>(event);
+        handlersRef.current.onDone?.({
+          submission_id: data.submission_id,
+          report_id: data.report_id,
+          reportId: data.reportId,
+          kind: data.kind,
+          passed: data.passed,
+          message: data.message,
+          stdout: data.stdout,
+          stderr: data.stderr,
+          runnerLogs: runnerLogsFromSsePayload(data),
+        });
       });
 
       es.addEventListener(SubmissionEventType.ERROR, (event) => {
@@ -69,16 +98,10 @@ export function useSubmissionEvents(
             stdout?: string;
             stderr?: string;
           }>(event);
-          const stdout = data.stdout;
-          const stderr = data.stderr;
-          const logs =
-            stdout || stderr
-              ? {
-                  stdoutTruncated: stdout ?? "",
-                  stderrTruncated: stderr ?? "",
-                }
-              : null;
-          handlersRef.current.onError?.(data.message ?? "Submission failed", logs);
+          handlersRef.current.onError?.(
+            data.message ?? "Submission failed",
+            runnerLogsFromSsePayload(data),
+          );
         }
       });
     };

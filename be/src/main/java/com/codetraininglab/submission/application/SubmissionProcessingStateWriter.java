@@ -172,6 +172,7 @@ public class SubmissionProcessingStateWriter {
         allTestsPassed
             ? "All tests passed — you can keep editing or submit when ready."
             : "Some tests failed — fix your solution and run again, or submit for full feedback.");
+    putLogsIfPresent(done, result.logs());
     eventHub.publish(submissionId, SubmissionEventType.DONE.eventName(), done);
   }
 
@@ -191,14 +192,7 @@ public class SubmissionProcessingStateWriter {
 
     HashMap<String, Object> errorPayload = new HashMap<>();
     errorPayload.put(SsePayloadKeys.MESSAGE, safeMessage);
-    if (logs != null) {
-      if (!logs.stdoutTruncated().isBlank()) {
-        errorPayload.put(SsePayloadKeys.STDOUT, logs.stdoutTruncated());
-      }
-      if (!logs.stderrTruncated().isBlank()) {
-        errorPayload.put(SsePayloadKeys.STDERR, logs.stderrTruncated());
-      }
-    }
+    putLogsIfPresent(errorPayload, logs);
     eventHub.publish(submissionId, SubmissionEventType.ERROR.eventName(), errorPayload);
     eventHub.publish(
         submissionId,
@@ -229,6 +223,19 @@ public class SubmissionProcessingStateWriter {
         payload.put(SsePayloadKeys.MESSAGE, test.message());
       }
       eventHub.publish(submissionId, SubmissionEventType.TEST_RESULT.eventName(), payload);
+    }
+  }
+
+  private static void putLogsIfPresent(
+      HashMap<String, Object> payload, RunnerResult.LogsOutcome logs) {
+    if (logs == null) {
+      return;
+    }
+    if (!logs.stdoutTruncated().isBlank()) {
+      payload.put(SsePayloadKeys.STDOUT, logs.stdoutTruncated());
+    }
+    if (!logs.stderrTruncated().isBlank()) {
+      payload.put(SsePayloadKeys.STDERR, logs.stderrTruncated());
     }
   }
 

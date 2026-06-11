@@ -299,9 +299,9 @@ export default function RunProgressPanel({
                     )}
                   </div>
                   {test.message && test.status !== "pending" && (
-                    <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+                    <pre className="mt-0.5 whitespace-pre-wrap text-xs leading-relaxed text-slate-500">
                       {test.message}
-                    </p>
+                    </pre>
                   )}
                   {test.message && test.status === "pending" && !test.name.startsWith("hidden:") && (
                     <p className="mt-0.5 text-xs text-slate-600">{test.message}</p>
