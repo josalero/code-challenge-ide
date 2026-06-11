@@ -18,6 +18,7 @@ import type { ReportResponse, RunnerLogs } from "@/api/types";
 import type { SubmissionStatusValue } from "@/domain/constants";
 import type { TrackedTest } from "@/domain/runProgressTypes";
 import RunProgressPanel from "../RunProgressPanel";
+import RunnerLogOutput from "./RunnerLogOutput";
 import AiCoachPanel from "../AiCoachPanel";
 import FeedbackActionsPanel from "../FeedbackActionsPanel";
 import RunResultBanner from "../RunResultBanner";
@@ -276,16 +277,7 @@ export default function WorkspaceBottomPanel({
         {runnerLogs?.stderrTruncated || runnerLogs?.stdoutTruncated ? (
           <PanelScroll sidebar={sidebar}>
             <div className="ctl-workspace-terminal p-3">
-              {runnerLogs.stderrTruncated && (
-                <pre className="mb-3 whitespace-pre-wrap text-red-300">
-                  {runnerLogs.stderrTruncated}
-                </pre>
-              )}
-              {runnerLogs.stdoutTruncated && (
-                <pre className="whitespace-pre-wrap text-slate-400">
-                  {runnerLogs.stdoutTruncated}
-                </pre>
-              )}
+              <RunnerLogOutput logs={runnerLogs} />
             </div>
           </PanelScroll>
         ) : (

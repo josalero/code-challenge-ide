@@ -10,6 +10,7 @@ import UserIdentityCell, { PassRateCell } from "../components/admin/AdminTableCe
 import AppLayout from "../components/AppLayout";
 import CoachMarkdown from "../components/CoachMarkdown";
 import CtlCard from "../components/ui/CtlCard";
+import RunnerLogOutput from "../components/workspace/RunnerLogOutput";
 import { Button } from "@/components/ui/button";
 import { ApiPaths } from "../domain/constants";
 import { formatDurationMs } from "../utils/formatDuration";
@@ -93,23 +94,8 @@ function SubmissionDetailPanel({ submission }: { submission: AdminUserChallengeD
           </div>
 
           {submission.report.runnerLogs && (
-            <div className="mb-3 grid gap-3 lg:grid-cols-2">
-              {submission.report.runnerLogs.stdoutTruncated && (
-                <div>
-                  <p className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">Stdout</p>
-                  <pre className="max-h-32 overflow-auto rounded border border-border bg-muted/20 p-2 text-xs">
-                    {submission.report.runnerLogs.stdoutTruncated}
-                  </pre>
-                </div>
-              )}
-              {submission.report.runnerLogs.stderrTruncated && (
-                <div>
-                  <p className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">Stderr</p>
-                  <pre className="max-h-32 overflow-auto rounded border border-border bg-muted/20 p-2 text-xs">
-                    {submission.report.runnerLogs.stderrTruncated}
-                  </pre>
-                </div>
-              )}
+            <div className="mb-3">
+              <RunnerLogOutput logs={submission.report.runnerLogs} />
             </div>
           )}
 

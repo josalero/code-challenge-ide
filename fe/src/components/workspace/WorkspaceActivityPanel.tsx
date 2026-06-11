@@ -59,7 +59,7 @@ function ActivityLine({
       ref={scrollRef}
       className={cn(
         "rounded-md px-1.5 py-1 text-xs leading-relaxed",
-        kind === "info" && "text-slate-300",
+        kind === "info" && "text-sky-200",
         kind === "success" && "text-emerald-300",
         kind === "warning" && "text-amber-200",
         kind === "error" && "text-red-300",
