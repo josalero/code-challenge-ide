@@ -10,13 +10,13 @@ public final class RunnerSmokeChallenges {
           Map.entry("java", "reverse-string"),
           Map.entry("python", "armstrong-number"),
           Map.entry("go", "anagram-check-go"),
-          Map.entry("node", "anagram-check-node"),
-          Map.entry("typescript", "anagram-check-typescript"),
+          Map.entry("node", "gcd-node"),
+          Map.entry("typescript", "gcd-typescript"),
           Map.entry("csharp", "anagram-check-csharp"),
           Map.entry("rust", "anagram-check-rust"),
           Map.entry("cpp", "anagram-check-cpp"),
           Map.entry("react", "accordion-react"),
-          Map.entry("vue", "computed-filter-vue"),
+          Map.entry("vue", "counter-vue"),
           Map.entry("angular", "double-service-angular"),
           Map.entry("sql", "sql-count-engineering"));
 

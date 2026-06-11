@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   BookOpen,
   Bot,
@@ -15,7 +15,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ReportResponse, RunnerLogs } from "@/api/types";
-import type { WorkspaceRunPhase } from "@/domain/workspaceRunState";
 import type { SubmissionStatusValue } from "@/domain/constants";
 import type { TrackedTest } from "@/domain/runProgressTypes";
 import RunProgressPanel from "../RunProgressPanel";
@@ -41,7 +40,6 @@ type Props = {
   variant?: PanelVariant;
   activeTab: BottomPanelTab;
   onTabChange: (tab: BottomPanelTab) => void;
-  runPhase: WorkspaceRunPhase;
   challengeSlug: string;
   submissionStatus: SubmissionStatusValue | null;
   isSubmitting: boolean;
@@ -78,25 +76,6 @@ const OUTPUT_TAB_ITEMS = [
   { value: "feedback", label: "Feedback", icon: Bot },
   { value: "history", label: "History", icon: History },
 ] as const;
-
-function tabForPhase(phase: WorkspaceRunPhase): BottomPanelTab | null {
-  switch (phase) {
-    case "compilation-error":
-      return "compiler";
-    case "failed-test":
-    case "run-failed":
-      return "tests";
-    case "run-passed":
-      return "tests";
-    case "successful-submission":
-      return "feedback";
-    case "timeout":
-    case "service-unavailable":
-      return "compiler";
-    default:
-      return null;
-  }
-}
 
 function EmptyHint({
   icon,
@@ -143,7 +122,6 @@ export default function WorkspaceBottomPanel({
   variant = "dock",
   activeTab,
   onTabChange,
-  runPhase,
   challengeSlug,
   submissionStatus,
   isSubmitting,
@@ -182,13 +160,6 @@ export default function WorkspaceBottomPanel({
         : OUTPUT_TAB_ITEMS,
     [showGuideTab],
   );
-
-  useEffect(() => {
-    const suggested = tabForPhase(runPhase);
-    if (suggested) {
-      onTabChange(suggested);
-    }
-  }, [runPhase, onTabChange]);
 
   const staticAnalysisItems =
     report?.feedback.filter(

@@ -61,13 +61,13 @@ class RunnerPoolWarmExecutorLanguageTest {
         Arguments.of("java", "reverse-string", "maven"),
         Arguments.of("python", "armstrong-number", "pytest"),
         Arguments.of("go", "anagram-check-go", "go-test"),
-        Arguments.of("node", "anagram-check-node", "node-test"),
-        Arguments.of("typescript", "anagram-check-typescript", "typescript-test"),
+        Arguments.of("node", "gcd-node", "node-test"),
+        Arguments.of("typescript", "gcd-typescript", "typescript-test"),
         Arguments.of("csharp", "anagram-check-csharp", "dotnet"),
         Arguments.of("rust", "anagram-check-rust", "cargo-test"),
         Arguments.of("cpp", "anagram-check-cpp", "cmake-test"),
         Arguments.of("react", "accordion-react", "vitest-react"),
-        Arguments.of("vue", "computed-filter-vue", "vitest-vue"),
+        Arguments.of("vue", "counter-vue", "vitest-vue"),
         Arguments.of("angular", "double-service-angular", "vitest-angular"),
         Arguments.of("sql", "sql-count-engineering", "postgres-sql"));
   }

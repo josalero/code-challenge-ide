@@ -73,9 +73,31 @@ def _write_all_sources(job: dict) -> None:
             write_file(TESTS_DIR / name, source)
 
 
+def _invalidate_test_outputs() -> None:
+    for path in (WORKSPACE / "junit.xml", WORKSPACE / "coverage"):
+        if path.is_file():
+            path.unlink(missing_ok=True)
+        elif path.is_dir():
+            shutil.rmtree(path, ignore_errors=True)
+
+
+def _is_warm_smoke(job: dict) -> bool:
+    return (job.get("submission_id") or "").startswith("warm-")
+
+
 def setup_workspace(job: dict) -> None:
     slug = (job.get("challenge_slug") or "").strip()
     pooled = os.environ.get("CTL_RUNNER_POOLED") == "1"
+    warm_smoke = _is_warm_smoke(job)
+
+    if warm_smoke:
+        if WORKSPACE.exists():
+            shutil.rmtree(WORKSPACE)
+        WORKSPACE.mkdir(parents=True)
+        _write_all_sources(job)
+        if pooled and slug:
+            STAMP.write_text(slug, encoding="utf-8")
+        return
 
     if (
         pooled
@@ -86,6 +108,7 @@ def setup_workspace(job: dict) -> None:
         and (WORKSPACE / "package.json").is_file()
     ):
         _write_solution(job)
+        _invalidate_test_outputs()
         return
 
     if WORKSPACE.exists():
@@ -111,10 +134,13 @@ def safe_float(value: object, default: float = 0.0) -> float:
         return default
 
 
-def run_vitest(wall_seconds: int) -> tuple[int, str, str]:
+def run_vitest(wall_seconds: int, *, collect_coverage: bool = True) -> tuple[int, str, str]:
     junit = WORKSPACE / "junit.xml"
+    cmd = ["npx", "vitest", "run", "--reporter=junit", f"--outputFile={junit}"]
+    if collect_coverage:
+        cmd.append("--coverage")
     proc = subprocess.run(
-        ["npx", "vitest", "run", "--reporter=junit", f"--outputFile={junit}", "--coverage"],
+        cmd,
         cwd=WORKSPACE,
         capture_output=True,
         text=True,
@@ -195,8 +221,9 @@ def main() -> int:
             emit(failed("Unsupported workspace layout: " + str(job.get("workspace_layout"))))
             return 0
         wall_seconds = int((job.get("limits") or {}).get("wall_seconds", 180))
+        warm_smoke = _is_warm_smoke(job)
         setup_workspace(job)
-        code, stdout_log, stderr_log = run_vitest(wall_seconds)
+        code, stdout_log, stderr_log = run_vitest(wall_seconds, collect_coverage=not warm_smoke)
         tests = parse_junit()
         if not tests and code != 0:
             emit(

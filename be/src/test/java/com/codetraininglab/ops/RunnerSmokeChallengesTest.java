@@ -20,13 +20,13 @@ class RunnerSmokeChallengesTest {
         Arguments.of("java", "reverse-string"),
         Arguments.of("python", "armstrong-number"),
         Arguments.of("go", "anagram-check-go"),
-        Arguments.of("node", "anagram-check-node"),
-        Arguments.of("typescript", "anagram-check-typescript"),
+        Arguments.of("node", "gcd-node"),
+        Arguments.of("typescript", "gcd-typescript"),
         Arguments.of("csharp", "anagram-check-csharp"),
         Arguments.of("rust", "anagram-check-rust"),
         Arguments.of("cpp", "anagram-check-cpp"),
         Arguments.of("react", "accordion-react"),
-        Arguments.of("vue", "computed-filter-vue"),
+        Arguments.of("vue", "counter-vue"),
         Arguments.of("angular", "double-service-angular"),
         Arguments.of("sql", "sql-count-engineering"));
   }

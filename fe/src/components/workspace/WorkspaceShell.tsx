@@ -76,6 +76,11 @@ type Props = {
   onStartTest?: () => void;
   showStartTest?: boolean;
   showStartGate?: boolean;
+  /** Increment to reveal and briefly highlight the Output panel. */
+  outputFocusTick?: number;
+  onFocusOutput?: () => void;
+  /** Show a dot on the mobile Output tab when results are ready off-screen. */
+  outputResultsReady?: boolean;
   /** Silent admin-only integrity signals — never surfaced in learner UI */
   monitorIntegrity?: boolean;
   onIntegrityEvent?: (payload: import("@/utils/monacoClipboardGuard").IntegrityEventPayload) => void;
@@ -162,11 +167,15 @@ export default function WorkspaceShell({
   onStartTest,
   showStartTest = false,
   showStartGate = false,
+  outputFocusTick = 0,
+  onFocusOutput,
+  outputResultsReady = false,
   monitorIntegrity = false,
   onIntegrityEvent,
 }: Props) {
   const [mobilePane, setMobilePane] = useState<MobilePane>("editor");
   const [instructionsOpen, setInstructionsOpen] = useState(false);
+  const [outputPulse, setOutputPulse] = useState(false);
   const isDesktopWorkspace = useMediaQuery("(min-width: 1024px)");
 
   useEffect(() => {
@@ -174,6 +183,16 @@ export default function WorkspaceShell({
       setMobilePane("output");
     }
   }, [showLiveRun]);
+
+  useEffect(() => {
+    if (outputFocusTick <= 0) {
+      return;
+    }
+    setMobilePane("output");
+    setOutputPulse(true);
+    const timer = window.setTimeout(() => setOutputPulse(false), 2500);
+    return () => window.clearTimeout(timer);
+  }, [outputFocusTick]);
 
   const header = (
     <WorkspaceHeader
@@ -249,7 +268,6 @@ export default function WorkspaceShell({
       variant="sidebar"
       activeTab={bottomTab}
       onTabChange={onBottomTabChange}
-      runPhase={runPhase}
       challengeSlug={slug}
       submissionStatus={submissionStatus}
       isSubmitting={isSubmitting}
@@ -296,7 +314,11 @@ export default function WorkspaceShell({
         || runPhase === "session-expired"
         || (runPhase !== "idle" && runPhase !== "loading" && runPhase !== "running")) && (
         <div className="shrink-0 border-b border-slate-800/80 px-4 py-2">
-          <RunStateBanner phase={runPhase} message={submitError} />
+          <RunStateBanner
+            phase={runPhase}
+            message={submitError}
+            onViewOutput={onFocusOutput}
+          />
         </div>
       )}
 
@@ -312,10 +334,11 @@ export default function WorkspaceShell({
             variant={mobilePane === id ? "secondary" : "outline"}
             size="sm"
             className={cn(
-              "min-h-10 min-w-[4.5rem] flex-1 gap-1.5 text-xs sm:min-w-0 sm:flex-none",
+              "relative min-h-10 min-w-[4.5rem] flex-1 gap-1.5 text-xs sm:min-w-0 sm:flex-none",
               mobilePane === id
                 ? "border-slate-600/60 bg-slate-800 text-slate-100"
                 : "border-slate-700/60 bg-transparent text-slate-400",
+              id === "output" && outputPulse && "ring-2 ring-sky-400/70",
             )}
             role="tab"
             aria-selected={mobilePane === id}
@@ -323,6 +346,12 @@ export default function WorkspaceShell({
           >
             <Icon className="size-3.5" aria-hidden />
             {label}
+            {id === "output" && outputResultsReady && mobilePane !== "output" && (
+              <span
+                className="absolute right-1 top-1 size-2 rounded-full bg-sky-400"
+                aria-hidden
+              />
+            )}
           </Button>
         ))}
         <Sheet open={instructionsOpen} onOpenChange={setInstructionsOpen}>
@@ -376,6 +405,7 @@ export default function WorkspaceShell({
           className={cn(
             "ctl-workspace-ide-column border-slate-700/70 bg-slate-900/40",
             paneClass("output", mobilePane),
+            outputPulse && mobilePane === "output" && "ring-2 ring-inset ring-sky-400/50",
           )}
         >
           <WorkspacePanelFrame>{outputPanel}</WorkspacePanelFrame>
@@ -398,6 +428,7 @@ export default function WorkspaceShell({
             />
           }
           output={outputPanel}
+          outputFocusTick={outputFocusTick}
         />
       </div>
       )}

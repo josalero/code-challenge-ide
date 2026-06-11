@@ -50,6 +50,7 @@ import {
   buildInitialTrackedTests,
   finalizeTrackedTestsOnComplete,
 } from "../utils/submissionProgress";
+import { suggestOutputTab } from "../utils/suggestOutputTab";
 
 export default function ChallengeWorkspacePage() {
   const { slug = "" } = useParams();
@@ -85,6 +86,7 @@ export default function ChallengeWorkspacePage() {
   const [activeSubmissionKind, setActiveSubmissionKind] =
     useState<SubmissionKindValue | null>(null);
   const [lastRunPassed, setLastRunPassed] = useState<boolean | null>(null);
+  const [outputFocusTick, setOutputFocusTick] = useState(0);
 
   const appendActivity = useCallback((msg: string, kind: ActivityKind = "info") => {
     setActivityLog((prev) => [
@@ -245,6 +247,13 @@ export default function ChallengeWorkspacePage() {
     message,
   ]);
 
+  const focusOutputPanel = useCallback((tab?: BottomPanelTab) => {
+    if (tab) {
+      setBottomTab(tab);
+    }
+    setOutputFocusTick((tick) => tick + 1);
+  }, []);
+
   const beginExecution = useCallback(
     (kind: SubmissionKindValue) => {
       setActiveSubmissionKind(kind);
@@ -256,7 +265,7 @@ export default function ChallengeWorkspacePage() {
       setStreamConnected(false);
       setStreamReconnecting(false);
       setRunStartedAt(Date.now());
-      setBottomTab("tests");
+      focusOutputPanel(kind === SubmissionKind.SUBMIT ? "feedback" : "tests");
       if (kind === SubmissionKind.RUN) {
         setLastRunPassed(null);
       }
@@ -270,7 +279,7 @@ export default function ChallengeWorkspacePage() {
           : "Submitting final solution…",
       );
     },
-    [appendActivity, challengeQuery.data],
+    [appendActivity, challengeQuery.data, focusOutputPanel],
   );
 
   const submitMutation = useMutation({
@@ -478,10 +487,15 @@ export default function ChallengeWorkspacePage() {
         const logs = payload.runnerLogs ?? null;
         if (logs) {
           setRunnerLogs(logs);
-          if (!passed || logs.stdoutTruncated || logs.stderrTruncated) {
-            setBottomTab("compiler");
-          }
         }
+        focusOutputPanel(
+          suggestOutputTab({
+            kind: "RUN",
+            passed,
+            runnerLogs: logs,
+            hasFailedTests: !passed,
+          }),
+        );
         appendActivity(
           payload.message
             ?? (passed ? "All tests passed — keep editing or submit when ready" : "Some tests failed — fix your solution and run again"),
@@ -510,7 +524,7 @@ export default function ChallengeWorkspacePage() {
           await pollSubmission(activeSubmissionId);
         }
         void queryClient.invalidateQueries({ queryKey: ["me", "progress"] });
-        setBottomTab("feedback");
+        focusOutputPanel("feedback");
       } catch {
         // loadReport / pollSubmission already surface errors
       }
@@ -528,6 +542,14 @@ export default function ChallengeWorkspacePage() {
       if (logs) {
         setRunnerLogs(logs);
       }
+      focusOutputPanel(
+        suggestOutputTab({
+          kind: activeSubmissionKind === SubmissionKind.RUN ? "RUN" : "SUBMIT",
+          passed: false,
+          runnerLogs: logs ?? null,
+          hasFailedTests: true,
+        }),
+      );
       if (activeSubmissionId) {
         void pollSubmission(activeSubmissionId);
       }
@@ -550,6 +572,28 @@ export default function ChallengeWorkspacePage() {
       setRunnerLogs(report.runnerLogs);
     }
   }, [report]);
+
+  const handleFocusOutput = useCallback(() => {
+    focusOutputPanel(
+      suggestOutputTab({
+        kind:
+          report || activeSubmissionKind === SubmissionKind.SUBMIT
+            ? "SUBMIT"
+            : "RUN",
+        passed: lastRunPassed,
+        runnerLogs,
+        hasFailedTests: trackedTests.some((test) => test.status === "fail"),
+        hasReport: Boolean(report),
+      }),
+    );
+  }, [
+    activeSubmissionKind,
+    focusOutputPanel,
+    lastRunPassed,
+    report,
+    runnerLogs,
+    trackedTests,
+  ]);
 
   const cancelMutation = useMutation({
     mutationFn: (submissionId: string) =>
@@ -642,6 +686,12 @@ export default function ChallengeWorkspacePage() {
     submissionStatus === SubmissionStatus.COMPLETED
     || submissionStatus === SubmissionStatus.FAILED
     || submissionStatus === SubmissionStatus.CANCELLED;
+
+  const outputResultsReady =
+    isTerminal
+    && (trackedTests.some((test) => test.status !== "pending")
+      || Boolean(runnerLogs?.stdoutTruncated?.trim() || runnerLogs?.stderrTruncated?.trim())
+      || Boolean(report));
 
   const runPhase = deriveWorkspaceRunPhase({
     challengeLoading: challengeQuery.isLoading,
@@ -744,6 +794,9 @@ export default function ChallengeWorkspacePage() {
             sessionDurationMinutes={challenge.sessionDurationMinutes}
             monitorIntegrity={monitorIntegrity}
             onIntegrityEvent={handleIntegrityEvent}
+            outputFocusTick={outputFocusTick}
+            onFocusOutput={handleFocusOutput}
+            outputResultsReady={outputResultsReady}
           />
         </div>
       )}

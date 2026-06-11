@@ -127,24 +127,36 @@ def safe_float(value: object, default: float = 0.0) -> float:
         return default
 
 
-def run_tests(wall_seconds: int) -> tuple[int, str, str]:
+def run_tests(wall_seconds: int, *, collect_coverage: bool = True) -> tuple[int, str, str]:
     junit = WORKSPACE / "junit.xml"
     test_files = sorted(TESTS_DIR.glob("*.test.js"))
     if not test_files:
         return 1, "", "no test files under tests/"
-    cmd = [
-        "c8",
-        "--reporter=json-summary",
-        "--temp-directory",
-        str(WORKSPACE / ".c8_tmp"),
-        "node",
-        "--test",
-        "--test-reporter",
-        "junit",
-        "--test-reporter-destination",
-        str(junit),
-        *[str(path.relative_to(WORKSPACE)) for path in test_files],
-    ]
+    test_args = [str(path.relative_to(WORKSPACE)) for path in test_files]
+    if collect_coverage:
+        cmd = [
+            "c8",
+            "--reporter=json-summary",
+            "--temp-directory",
+            str(WORKSPACE / ".c8_tmp"),
+            "node",
+            "--test",
+            "--test-reporter",
+            "junit",
+            "--test-reporter-destination",
+            str(junit),
+            *test_args,
+        ]
+    else:
+        cmd = [
+            "node",
+            "--test",
+            "--test-reporter",
+            "junit",
+            "--test-reporter-destination",
+            str(junit),
+            *test_args,
+        ]
     proc = subprocess.run(
         cmd,
         cwd=WORKSPACE,
@@ -253,8 +265,11 @@ def main() -> int:
             return 0
         limits = job.get("limits") or {}
         wall_seconds = int(limits.get("wall_seconds", 120))
+        warm_smoke = _is_warm_smoke(job)
         setup_workspace(job)
-        code, stdout_log, stderr_log = run_tests(wall_seconds)
+        code, stdout_log, stderr_log = run_tests(
+            wall_seconds, collect_coverage=not warm_smoke
+        )
         tests = parse_junit()
         if not tests and code != 0:
             emit(

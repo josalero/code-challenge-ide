@@ -58,6 +58,31 @@ public final class RunnerWarmSolutions {
               }
               """),
           Map.entry(
+              "gcd-node",
+              """
+              function gcd(a, b) {
+                a = Math.abs(a);
+                b = Math.abs(b);
+                while (b) {
+                  [a, b] = [b, a % b];
+                }
+                return a;
+              }
+              module.exports = { gcd };
+              """),
+          Map.entry(
+              "gcd-typescript",
+              """
+              export function gcd(a: number, b: number): number {
+                a = Math.abs(a);
+                b = Math.abs(b);
+                while (b) {
+                  [a, b] = [b, a % b];
+                }
+                return a;
+              }
+              """),
+          Map.entry(
               "anagram-check-node",
               """
               function isAnagram(s, t) {
@@ -147,6 +172,24 @@ public final class RunnerWarmSolutions {
                   </div>
                 );
               }
+              """),
+          Map.entry(
+              "counter-vue",
+              """
+              <script setup lang="ts">
+              import { ref } from "vue";
+
+              const props = withDefaults(defineProps<{ initial?: number }>(), { initial: 0 });
+              const count = ref(props.initial);
+
+              function increment() {
+                count.value += 1;
+              }
+              </script>
+
+              <template>
+                <button type="button" @click="increment">{{ count }}</button>
+              </template>
               """),
           Map.entry(
               "computed-filter-vue",

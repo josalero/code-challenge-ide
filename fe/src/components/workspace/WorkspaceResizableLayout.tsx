@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Group,
   Panel,
@@ -9,6 +9,7 @@ import {
 import PanelCollapseButton from "./PanelCollapseButton";
 import WorkspacePanelFrame from "./WorkspacePanelFrame";
 import { usePanelCollapsed } from "@/hooks/usePanelCollapsed";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_HORIZONTAL = { problem: 24, center: 48, output: 28 };
 const DEFAULT_VERTICAL = { editor: 76, activity: 24 };
@@ -20,6 +21,8 @@ type Props = {
   editor: ReactNode;
   activity: ReactNode;
   output: ReactNode;
+  /** Bumped when the page wants the output column revealed (expand if collapsed). */
+  outputFocusTick?: number;
 };
 
 export default function WorkspaceResizableLayout({
@@ -27,6 +30,7 @@ export default function WorkspaceResizableLayout({
   editor,
   activity,
   output,
+  outputFocusTick = 0,
 }: Props) {
   const problemRef = usePanelRef();
   const outputRef = usePanelRef();
@@ -35,9 +39,20 @@ export default function WorkspaceResizableLayout({
   const problemCollapsed = usePanelCollapsed();
   const outputCollapsed = usePanelCollapsed();
   const activityCollapsed = usePanelCollapsed();
+  const [outputPulse, setOutputPulse] = useState(false);
 
   const horizontalDefault = useMemo(() => DEFAULT_HORIZONTAL, []);
   const verticalDefault = useMemo(() => DEFAULT_VERTICAL, []);
+
+  useEffect(() => {
+    if (outputFocusTick <= 0) {
+      return;
+    }
+    outputRef.current?.expand();
+    setOutputPulse(true);
+    const timer = window.setTimeout(() => setOutputPulse(false), 2500);
+    return () => window.clearTimeout(timer);
+  }, [outputFocusTick, outputRef]);
 
   return (
     <Group
@@ -153,7 +168,10 @@ export default function WorkspaceResizableLayout({
         collapsible
         collapsedSize="0"
         onResize={outputCollapsed.onResize}
-        className="ctl-workspace-panel border-slate-600/50 bg-slate-800/30"
+        className={cn(
+          "ctl-workspace-panel border-slate-600/50 bg-slate-800/30 transition-shadow duration-500",
+          outputPulse && "ring-2 ring-sky-400/70 ring-offset-2 ring-offset-slate-900",
+        )}
       >
         <WorkspacePanelFrame>
           <div className="relative flex h-full min-h-0 flex-col">

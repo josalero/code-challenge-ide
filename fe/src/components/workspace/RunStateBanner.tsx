@@ -1,10 +1,12 @@
-import { AlertCircle, CheckCircle2, Clock, ServerCrash, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, PanelRight, ServerCrash, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { WorkspaceRunPhase } from "@/domain/workspaceRunState";
 import { RUN_PHASE_LABELS } from "@/domain/workspaceRunState";
 
 type Props = {
   phase: WorkspaceRunPhase;
   message?: string | null;
+  onViewOutput?: () => void;
 };
 
 const CONFIG: Record<
@@ -25,13 +27,13 @@ const CONFIG: Record<
   "compilation-error": {
     icon: XCircle,
     title: RUN_PHASE_LABELS["compilation-error"],
-    description: "Fix syntax or compile errors in the Compiler tab, then run again.",
+    description: "Open the Output panel → Compiler tab for build errors, then run again.",
     className: "border-red-500/35 bg-red-500/10 text-red-100",
   },
   "failed-test": {
     icon: AlertCircle,
     title: RUN_PHASE_LABELS["failed-test"],
-    description: "One or more tests did not pass. Review Tests and Feedback tabs.",
+    description: "Open the Output panel → Tests tab for failure details and stack traces.",
     className: "border-amber-500/35 bg-amber-500/10 text-amber-50",
   },
   timeout: {
@@ -62,7 +64,7 @@ const CONFIG: Record<
   "run-failed": {
     icon: AlertCircle,
     title: RUN_PHASE_LABELS["run-failed"],
-    description: "Some tests failed. Fix your solution and run again, or submit for full feedback.",
+    description: "Check the Output panel for test failures and runner logs, then run again.",
     className: "border-amber-500/35 bg-amber-500/10 text-amber-50",
   },
   "successful-submission": {
@@ -73,7 +75,17 @@ const CONFIG: Record<
   },
 };
 
-export default function RunStateBanner({ phase, message }: Props) {
+const SHOW_OUTPUT_CTA: WorkspaceRunPhase[] = [
+  "compilation-error",
+  "failed-test",
+  "run-failed",
+  "run-passed",
+  "timeout",
+  "service-unavailable",
+  "successful-submission",
+];
+
+export default function RunStateBanner({ phase, message, onViewOutput }: Props) {
   if (phase === "idle" || phase === "loading") {
     return null;
   }
@@ -88,10 +100,22 @@ export default function RunStateBanner({ phase, message }: Props) {
       aria-live="polite"
     >
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
-      <div>
+      <div className="min-w-0 flex-1">
         <p className="font-medium">{cfg.title}</p>
         <p className="mt-0.5 text-xs opacity-90">{message ?? cfg.description}</p>
       </div>
+      {onViewOutput && SHOW_OUTPUT_CTA.includes(phase) && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="shrink-0 border-current/25 bg-black/10 text-xs hover:bg-black/20"
+          onClick={onViewOutput}
+        >
+          <PanelRight className="size-3.5" aria-hidden />
+          View output
+        </Button>
+      )}
     </div>
   );
 }
