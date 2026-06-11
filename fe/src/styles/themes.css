@@ -41,6 +41,10 @@ html.light {
   --ctl-prose-pre-bg: 15 23 42;
   --ctl-prose-pre-fg: 226 232 240;
   --ctl-terminal-bg: 15 23 42;
+  --ctl-terminal-fg: 226 232 240;
+  --ctl-ops-log-bg: 241 245 249;
+  --ctl-ops-log-fg: 30 41 59;
+  --ctl-ops-log-border: 203 213 225;
 }
 
 html.dark {
@@ -80,6 +84,10 @@ html.dark {
   --ctl-prose-pre-bg: 13 17 23;
   --ctl-prose-pre-fg: 226 232 240;
   --ctl-terminal-bg: 13 17 23;
+  --ctl-terminal-fg: 226 232 240;
+  --ctl-ops-log-bg: 15 23 42;
+  --ctl-ops-log-fg: 226 232 240;
+  --ctl-ops-log-border: 51 65 85;
 }
 
 /* shadcn semantic tokens — light defaults on :root; dark overrides on .dark */

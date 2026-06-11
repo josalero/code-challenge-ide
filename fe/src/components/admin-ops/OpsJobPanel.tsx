@@ -81,7 +81,7 @@ export default function OpsJobPanel({ job, busy }: Props) {
           {job.logTail ? (
             <pre
               className={cn(
-                "ctl-workspace-terminal max-h-[min(28rem,55vh)] overflow-auto p-3 font-mono text-[11px] leading-relaxed",
+                "ctl-ops-log max-h-[min(28rem,55vh)] overflow-auto p-3",
               )}
             >
               {job.logTail}

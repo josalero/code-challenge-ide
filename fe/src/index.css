@@ -486,9 +486,22 @@ html.dark .challenge-brief-collapse .ant-collapse-header {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.8125rem;
   line-height: 1.55;
+  color: rgb(var(--ctl-terminal-fg));
   background: rgb(var(--ctl-terminal-bg));
   border-radius: 0.5rem;
   border: 1px solid var(--ctl-border);
+}
+
+.ctl-ops-log {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6875rem;
+  line-height: 1.55;
+  color: rgb(var(--ctl-ops-log-fg));
+  background: rgb(var(--ctl-ops-log-bg));
+  border-radius: 0.5rem;
+  border: 1px solid rgb(var(--ctl-ops-log-border) / 0.85);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .ctl-workspace-test-card {
