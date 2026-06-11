@@ -82,7 +82,8 @@ class RunnerPoolWarmExecutorWarmTest {
             true,
             false,
             false,
-                    0);    when(warmStateStore.runnerPoolStampByImage()).thenReturn(new java.util.LinkedHashMap<>());
+            0);
+    when(warmStateStore.runnerPoolStampByImage()).thenReturn(new java.util.LinkedHashMap<>());
     executor =
         new RunnerPoolWarmExecutor(
             properties,

@@ -17,6 +17,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
+from docker_image_utils import resolve_docker_image
+
 HEADER_END = b"\r\n\r\n"
 ROOT = Path(__file__).resolve().parent.parent
 STAMP_NAME = ".ctl-lsp-warm-stamp"
@@ -279,8 +285,12 @@ def log(message: str) -> None:
     print(message, flush=True)
 
 
-def resolve_image(target: WarmTarget) -> str:
-    return os.environ.get(target.image_env, target.default_image)
+def resolve_image(target: WarmTarget) -> str | None:
+    image = resolve_docker_image(target.image_env, target.default_image)
+    explicit = os.environ.get(target.image_env, "").strip()
+    if image and explicit and image != explicit:
+        log(f"  Note: {target.image_env}={explicit} unavailable locally; using {image}")
+    return image
 
 
 def image_id(image: str) -> str:
@@ -297,6 +307,8 @@ def current_stamp(targets: tuple[WarmTarget, ...]) -> dict[str, str]:
     stamp: dict[str, str] = {}
     for target in targets:
         image = resolve_image(target)
+        if not image:
+            continue
         stamp[f"{target.label}:{image}"] = image_id(image)
     return stamp
 
@@ -578,6 +590,9 @@ def warm_targets(
     if parallel <= 1 or dry_run:
         for target in targets:
             image = resolve_image(target)
+            if not image:
+                log(f"SKIP {target.label}: no local image for {target.image_env} or {target.default_image}")
+                continue
             log(f"Warming LSP {target.label} ({image})…")
             try:
                 label, elapsed = warm_one(target, image, dry_run)
@@ -588,11 +603,19 @@ def warm_targets(
                 log(f"  FAIL: {target.label}: {exc}")
         return failures
 
-    log(f"Warming {len(targets)} LSP images in parallel (workers={parallel})…")
+    runnable = [(target, resolve_image(target)) for target in targets]
+    skipped = [target.label for target, image in runnable if not image]
+    for label in skipped:
+        log(f"SKIP {label}: no local image available")
+    runnable = [(target, image) for target, image in runnable if image]
+    if not runnable:
+        return failures
+
+    log(f"Warming {len(runnable)} LSP images in parallel (workers={parallel})…")
     with ThreadPoolExecutor(max_workers=parallel) as pool:
         futures = {
-            pool.submit(warm_one, target, resolve_image(target), dry_run): target
-            for target in targets
+            pool.submit(warm_one, target, image, dry_run): target
+            for target, image in runnable
         }
         for future in as_completed(futures):
             target = futures[future]

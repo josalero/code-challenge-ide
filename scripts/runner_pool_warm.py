@@ -10,6 +10,12 @@ import sys
 import time
 from pathlib import Path
 
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
+from docker_image_utils import resolve_docker_image
+
 ROOT = Path(__file__).resolve().parent.parent
 CHALLENGES = ROOT / "challenges"
 MAVEN_CACHE = os.environ.get("RUNNER_MAVEN_CACHE_VOLUME", "ctl-runner-m2-cache")
@@ -355,12 +361,14 @@ def main() -> int:
     passed = 0
     print(f"Runner pool warm ({len(RUNNER_TARGETS)} targets)…")
     for label, env_key, default_image, slug, layout in RUNNER_TARGETS:
-        image = os.environ.get(env_key, default_image)
-        try:
-            subprocess.run(["docker", "image", "inspect", image], capture_output=True, check=True, timeout=10)
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-            print(f"SKIP {label}: image {image} not found")
+        image = resolve_docker_image(env_key, default_image)
+        if not image:
+            explicit = os.environ.get(env_key, "").strip()
+            print(f"SKIP {label}: image not found ({explicit or default_image})")
             continue
+        explicit = os.environ.get(env_key, "").strip()
+        if explicit and image != explicit:
+            print(f"  Note: {env_key}={explicit} unavailable locally; using {image}")
 
         ok, detail, elapsed = warm_one(label, image, slug, layout)
         if ok:

@@ -39,6 +39,10 @@ def normalize_call_args(raw: str) -> str:
     parts: list[str] = []
     for segment in _split_top_level_args(text):
         segment = segment.strip()
+        bare_braced = re.fullmatch(r"\{[^}]*\}", segment)
+        if bare_braced:
+            parts.append(_java_string_array_braced_to_json(segment))
+            continue
         int_arr = re.fullmatch(r"new int\[\]\s*(\{[^}]*\})", segment)
         if int_arr:
             parts.append(_java_int_array_braced_to_json(int_arr.group(1)))
