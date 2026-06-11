@@ -6,6 +6,7 @@ import { monaco } from "../../monacoSetup";
 import { monacoEditorAfterMount, monacoEditorBeforeMount } from "../../monacoEditorServices";
 import { EDITOR_THEME } from "../../monacoTheme";
 import { useTheme } from "../../theme/useTheme";
+import { createChallengeModelUri } from "../../lsp/lspLanguageConfig";
 import { monacoLanguageFor } from "../../utils/monacoLanguage";
 import MonacoServicesGate from "../MonacoServicesGate";
 
@@ -29,41 +30,6 @@ const MARKER_ERROR = 8;
 const MARKER_WARNING = 4;
 const LIGHT_EDITOR_THEME = "vs";
 
-function extensionFor(language: string): string {
-  switch (language.toLowerCase()) {
-    case "java":
-      return "java";
-    case "python":
-      return "py";
-    case "go":
-      return "go";
-    case "node":
-      return "js";
-    case "csharp":
-      return "cs";
-    case "typescript":
-    case "angular":
-      return "ts";
-    case "react":
-      return "tsx";
-    case "vue":
-      return "vue";
-    case "rust":
-      return "rs";
-    case "cpp":
-      return "cpp";
-    case "sql":
-      return "sql";
-    default:
-      return "txt";
-  }
-}
-
-function modelPath(language: string, modelId: string): string {
-  const safeId = modelId.replace(/[^a-zA-Z0-9_.-]/g, "-");
-  return `file:///challenge-create/${language || "plain"}/${safeId}.${extensionFor(language)}`;
-}
-
 export default function ChallengeCodeEditor({
   ariaLabel,
   language,
@@ -78,7 +44,10 @@ export default function ChallengeCodeEditor({
   const editorLanguage = monacoLanguageFor(language);
   const editorTheme = mode === "light" ? LIGHT_EDITOR_THEME : EDITOR_THEME;
   const monacoRef = useRef<typeof monaco | null>(null);
-  const path = useMemo(() => modelPath(language, modelId), [language, modelId]);
+  const path = useMemo(
+    () => createChallengeModelUri(language, modelId),
+    [language, modelId],
+  );
 
   useEffect(() => {
     monacoRef.current?.editor.setTheme(editorTheme);

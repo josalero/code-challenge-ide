@@ -16,6 +16,8 @@ if [[ ! -d "${CONFIG_DIR}" || -z "${LAUNCHER}" ]]; then
   exit 1
 fi
 mkdir -p /workspace /tmp/jdt-data
+JDT_DATA_DIR="/tmp/jdt-data/session-$$"
+mkdir -p "${JDT_DATA_DIR}"
 exec java \
   -Declipse.application=org.eclipse.jdt.ls.core.id1 \
   -Dosgi.bundles.defaultStartLevel=4 \
@@ -23,4 +25,4 @@ exec java \
   -Dlog.level=WARN \
   -jar "${LAUNCHER}" \
   -configuration "${CONFIG_DIR}" \
-  -data /tmp/jdt-data
+  -data "${JDT_DATA_DIR}"

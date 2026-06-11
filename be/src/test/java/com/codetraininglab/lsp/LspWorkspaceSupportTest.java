@@ -53,6 +53,8 @@ class LspWorkspaceSupportTest {
         LspWorkspaceSupport.create(
             "java", "package com.challenge; public class Solution {}");
     assertThat(Files.exists(root.resolve("pom.xml"))).isTrue();
+    assertThat(Files.exists(root.resolve(".project"))).isTrue();
+    assertThat(Files.exists(root.resolve(".classpath"))).isTrue();
     assertThat(Files.exists(root.resolve("src/main/java/com/challenge/Solution.java")))
         .isTrue();
     deleteRecursively(root);

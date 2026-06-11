@@ -169,3 +169,65 @@ export function customTestsModelUri(language: string | undefined): string {
 }
 
 export const LSP_WORKSPACE_URI = WORKSPACE_ROOT;
+
+function sanitizeJavaIdentifier(value: string): string {
+  const cleaned = value.replace(/[^a-zA-Z0-9_]/g, "");
+  return cleaned || "Test";
+}
+
+function createChallengeExtension(language: string): string {
+  switch (language) {
+    case "java":
+      return "java";
+    case "python":
+      return "py";
+    case "go":
+      return "go";
+    case "node":
+      return "js";
+    case "csharp":
+      return "cs";
+    case "typescript":
+    case "angular":
+      return "ts";
+    case "react":
+      return "tsx";
+    case "vue":
+      return "vue";
+    case "rust":
+      return "rs";
+    case "cpp":
+      return "cpp";
+    case "sql":
+      return "sql";
+    default:
+      return "txt";
+  }
+}
+
+/**
+ * Monaco model URI for create-challenge editors.
+ * Java sources must live under Maven paths so package declarations validate correctly.
+ */
+export function createChallengeModelUri(language: string | undefined, modelId: string): string {
+  const lang = language?.trim().toLowerCase() ?? "";
+  const safeId = modelId.replace(/[^a-zA-Z0-9_.-]/g, "-");
+
+  if (lang === "java") {
+    if (modelId === "starterCode") {
+      return workspaceFile("src/main/java/com/challenge/Solution.java");
+    }
+    const publicMatch = /^publicTests\.(.+)\.source$/.exec(modelId);
+    if (publicMatch) {
+      const testName = sanitizeJavaIdentifier(publicMatch[1]);
+      return workspaceFile(`src/test/java/com/challenge/tests/${testName}.java`);
+    }
+    const hiddenMatch = /^hiddenTests\.(.+)\.source$/.exec(modelId);
+    if (hiddenMatch) {
+      const testName = sanitizeJavaIdentifier(hiddenMatch[1]);
+      return workspaceFile(`src/test/java/com/challenge/hidden/${testName}.java`);
+    }
+  }
+
+  return `file:///challenge-create/${lang || "plain"}/${safeId}.${createChallengeExtension(lang)}`;
+}

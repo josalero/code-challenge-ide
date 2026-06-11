@@ -22,6 +22,23 @@ export async function attachMonacoLanguageClient(
         name: "workspace",
         uri: monaco.Uri.parse(LSP_WORKSPACE_URI),
       },
+      initializationOptions:
+        config.challengeLanguage === "java"
+          ? {
+              settings: {
+                java: {
+                  configuration: {
+                    updateBuildConfiguration: "automatic",
+                  },
+                  import: {
+                    maven: {
+                      enabled: true,
+                    },
+                  },
+                },
+              },
+            }
+          : undefined,
     },
     connectionProvider: {
       get: async () => {
