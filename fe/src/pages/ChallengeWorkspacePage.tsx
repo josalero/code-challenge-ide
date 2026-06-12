@@ -51,6 +51,8 @@ import {
   finalizeTrackedTestsOnComplete,
 } from "../utils/submissionProgress";
 import { suggestOutputTab } from "../utils/suggestOutputTab";
+import { restartLearnerTour } from "../components/learner-tour/learnerTourActions";
+import { useOptionalLearnerTourReady } from "../components/learner-tour/useLearnerTourReady";
 
 export default function ChallengeWorkspacePage() {
   const { slug = "" } = useParams();
@@ -58,6 +60,7 @@ export default function ChallengeWorkspacePage() {
   const { message } = App.useApp();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
+  const tourReady = useOptionalLearnerTourReady();
 
   const quotaQuery = useChallengeQuota(Boolean(user) && !isAdmin);
 
@@ -706,6 +709,17 @@ export default function ChallengeWorkspacePage() {
     exerciseLocked,
   });
 
+  useEffect(() => {
+    if (!tourReady) {
+      return;
+    }
+    const ready = Boolean(challenge) && !challengeQuery.isLoading && !challengeQuery.error;
+    tourReady.setWorkspaceReady(ready, {
+      hasTimedSession: (challenge?.sessionDurationMinutes ?? 0) > 0,
+    });
+    return () => tourReady.setWorkspaceReady(false);
+  }, [challenge, challengeQuery.error, challengeQuery.isLoading, tourReady]);
+
   return (
     <AppLayout variant="workspace" focused={sessionActive}>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
@@ -797,6 +811,10 @@ export default function ChallengeWorkspacePage() {
             outputFocusTick={outputFocusTick}
             onFocusOutput={handleFocusOutput}
             outputResultsReady={outputResultsReady}
+            showGuidedTour={!isAdmin && Boolean(user?.id)}
+            onGuidedTour={
+              user?.id ? () => restartLearnerTour(user.id) : undefined
+            }
           />
         </div>
       )}

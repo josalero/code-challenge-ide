@@ -164,6 +164,73 @@ html.light .ant-collapse .ant-collapse-content {
   border-top-color: var(--border);
 }
 
+/* Guided tours — card surfaces and typography follow active theme */
+.ctl-guided-tour.ant-tour .ant-tour-inner {
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border);
+  box-shadow: var(--ctl-tour-panel-shadow);
+}
+
+.ctl-guided-tour.ant-tour .ant-tour-title {
+  color: var(--foreground) !important;
+  font-weight: 600;
+}
+
+.ctl-guided-tour.ant-tour .ant-tour-description {
+  color: var(--muted-foreground) !important;
+}
+
+.ctl-guided-tour.ant-tour .ant-tour-close {
+  color: var(--muted-foreground) !important;
+}
+
+.ctl-guided-tour.ant-tour .ant-tour-close:hover {
+  color: var(--foreground) !important;
+}
+
+.ctl-guided-tour.ant-tour .ant-tour-footer {
+  border-top: 1px solid var(--border);
+}
+
+.ctl-guided-tour.ant-tour .ant-tour-indicators,
+.ctl-guided-tour.ant-tour .ant-tour-indicator {
+  color: var(--muted-foreground);
+}
+
+.ctl-guided-tour.ant-tour .ant-tour-indicator-active {
+  background: var(--primary) !important;
+}
+
+.ctl-guided-tour.ant-tour .ant-tour-arrow::before,
+.ctl-guided-tour.ant-tour .ant-tour-arrow::after {
+  background: var(--card) !important;
+}
+
+html.light .ctl-guided-tour.ant-tour .ant-tour-inner .ant-btn-primary {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+html.dark .ctl-guided-tour.ant-tour .ant-tour-inner .ant-btn-primary {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+html.light .ctl-guided-tour.ant-tour .ant-tour-inner .ant-btn-default {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+html.dark .ctl-guided-tour.ant-tour .ant-tour-inner .ant-btn-default {
+  background: var(--muted) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
 .ctl-challenges-filters {
   scrollbar-gutter: stable;
   scrollbar-width: thin;

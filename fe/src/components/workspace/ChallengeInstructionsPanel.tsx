@@ -83,6 +83,7 @@ export default function ChallengeInstructionsPanel({
     <aside
       className="flex h-full min-h-0 w-full flex-1 flex-col bg-slate-900/40"
       aria-label="Problem instructions"
+      data-learner-tour="problem-panel"
     >
       <WorkspacePanelHeader
         icon={<BookOpen className="size-3.5" aria-hidden />}

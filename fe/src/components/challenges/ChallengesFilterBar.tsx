@@ -47,6 +47,7 @@ export default function ChallengesFilterBar({
       className="ctl-challenges-filters lg:sticky lg:top-[4.5rem] lg:max-h-[calc(100dvh-5rem)] lg:self-start lg:overflow-y-auto"
       role="search"
       aria-label="Filter challenges"
+      data-learner-tour="challenge-filters"
     >
       <div className="rounded-xl border border-border bg-card p-4 shadow-sm dark:border-slate-600/40 dark:bg-slate-800/35 dark:shadow-none">
         <div className="mb-4 flex items-center justify-between gap-2">

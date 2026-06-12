@@ -1,6 +1,6 @@
-import { Plus } from "lucide-react";
+import { Compass, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Alert } from "antd";
 import { apiFetch } from "../api/client";
@@ -27,9 +27,12 @@ import {
   matchesProgressFilter,
   type ProgressFilter,
 } from "../utils/challengeProgress";
+import { restartLearnerTour } from "../components/learner-tour/learnerTourActions";
+import { useOptionalLearnerTourReady } from "../components/learner-tour/useLearnerTourReady";
 
 export default function ChallengesPage() {
   const { isAdmin, user } = useAuth();
+  const tourReady = useOptionalLearnerTourReady();
   const [filter, setFilter] = useState<ProgressFilter>("all");
   const [languageFilter, setLanguageFilter] = useState<LanguageFilter>("all");
   const [search, setSearch] = useState("");
@@ -117,14 +120,37 @@ export default function ChallengesPage() {
     setSearch("");
   };
 
-  const adminAction = isAdmin ? (
-    <Link to="/challenges/new" className="no-underline">
-      <Button className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500">
-        <Plus className="size-4" aria-hidden />
-        Create challenge
-      </Button>
-    </Link>
-  ) : null;
+  useEffect(() => {
+    if (!tourReady) {
+      return;
+    }
+    tourReady.setCatalogReady(!isLoading && !error);
+    return () => tourReady.setCatalogReady(false);
+  }, [error, isLoading, tourReady]);
+
+  const heroActions = (
+    <div className="flex flex-wrap items-center gap-2">
+      {!isAdmin && user?.id && (
+        <Button
+          type="button"
+          variant="outline"
+          className="gap-2"
+          onClick={() => restartLearnerTour(user.id)}
+        >
+          <Compass className="size-4" aria-hidden />
+          Guided tour
+        </Button>
+      )}
+      {isAdmin && (
+        <Link to="/challenges/new" className="no-underline">
+          <Button className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500">
+            <Plus className="size-4" aria-hidden />
+            Create challenge
+          </Button>
+        </Link>
+      )}
+    </div>
+  );
 
   return (
     <AppLayout contentLayout="wide">
@@ -151,7 +177,7 @@ export default function ChallengesPage() {
               />
             )}
 
-            <ChallengesHero stats={progressStats} extra={adminAction} />
+            <ChallengesHero stats={progressStats} extra={heroActions} />
 
             {(isLoading || challenges.length > 0) && (
               <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)] lg:items-start">

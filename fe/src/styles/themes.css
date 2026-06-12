@@ -45,6 +45,8 @@ html.light {
   --ctl-ops-log-bg: 241 245 249;
   --ctl-ops-log-fg: 30 41 59;
   --ctl-ops-log-border: 203 213 225;
+  --ctl-tour-mask: rgb(15 23 42 / 0.42);
+  --ctl-tour-panel-shadow: 0 12px 40px rgb(15 23 42 / 0.14), 0 0 0 1px rgb(181 193 206 / 0.55);
 }
 
 html.dark {
@@ -88,6 +90,8 @@ html.dark {
   --ctl-ops-log-bg: 15 23 42;
   --ctl-ops-log-fg: 226 232 240;
   --ctl-ops-log-border: 51 65 85;
+  --ctl-tour-mask: rgb(2 6 23 / 0.62);
+  --ctl-tour-panel-shadow: 0 16px 48px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(71 85 105 / 0.45);
 }
 
 /* shadcn semantic tokens — light defaults on :root; dark overrides on .dark */

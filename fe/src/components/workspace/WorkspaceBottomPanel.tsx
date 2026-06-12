@@ -402,6 +402,7 @@ export default function WorkspaceBottomPanel({
     <section
       className="flex h-full min-h-0 w-full flex-1 flex-col bg-slate-900/50"
       aria-label="Run output and feedback"
+      data-learner-tour="output-panel"
     >
       <WorkspacePanelHeader
         icon={<Terminal className="size-3.5" aria-hidden />}

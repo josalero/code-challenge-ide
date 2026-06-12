@@ -27,7 +27,11 @@ export default function ChallengesResultsPanel({
   onResetFilters,
 }: Props) {
   return (
-    <main className="min-w-0" aria-labelledby="challenges-results-heading">
+    <main
+      className="min-w-0"
+      aria-labelledby="challenges-results-heading"
+      data-learner-tour="challenge-list"
+    >
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h2

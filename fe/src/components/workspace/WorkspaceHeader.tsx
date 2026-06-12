@@ -3,6 +3,7 @@ import type { MenuProps } from "antd";
 import {
   ArrowLeft,
   Clock,
+  Compass,
   Ellipsis,
   FlaskConical,
   Loader2,
@@ -73,6 +74,8 @@ type Props = {
   showAbandonAttempt?: boolean;
   onStartTest?: () => void;
   showStartTest?: boolean;
+  showGuidedTour?: boolean;
+  onGuidedTour?: () => void;
 };
 
 function autosaveLabel(status: AutosaveStatus): string {
@@ -115,6 +118,8 @@ export default function WorkspaceHeader({
   showAbandonAttempt = false,
   onStartTest,
   showStartTest = false,
+  showGuidedTour = false,
+  onGuidedTour,
 }: Props) {
   const autosaveText = autosaveLabel(autosaveStatus);
   const canEdit = sessionActive && !isRunning && !exerciseLocked && !sessionExpired;
@@ -194,6 +199,18 @@ export default function WorkspaceHeader({
               <ArrowLeft className="size-3.5" aria-hidden />
               <span className="hidden sm:inline">Challenges</span>
             </Link>
+            {showGuidedTour && onGuidedTour && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onGuidedTour}
+                className="h-8 gap-1 px-2 text-xs text-slate-400 hover:text-emerald-400"
+              >
+                <Compass className="size-3.5" aria-hidden />
+                <span className="hidden sm:inline">Tour</span>
+              </Button>
+            )}
             <div className="hidden h-4 w-px bg-slate-700/80 sm:block" aria-hidden />
           </>
         )}
@@ -295,6 +312,7 @@ export default function WorkspaceHeader({
             <Button
               size="sm"
               onClick={onStartTest}
+              data-learner-tour="start-test"
               className="min-h-10 gap-1.5 bg-emerald-600 font-semibold text-white hover:bg-emerald-500 lg:min-h-8"
             >
               <Play className="size-3.5" aria-hidden />
@@ -375,6 +393,7 @@ export default function WorkspaceHeader({
                   size="sm"
                   disabled={actionsDisabled}
                   onClick={onRunTests}
+                  data-learner-tour="run-action"
                   className={`min-h-10 border border-slate-600/50 bg-slate-800/80 text-slate-100 lg:min-h-8 ${compactToolbar ? "flex-1 sm:flex-none" : ""}`}
                 />
               }
@@ -401,6 +420,7 @@ export default function WorkspaceHeader({
             size="sm"
             disabled={actionsDisabled}
             onClick={onSubmit}
+            data-learner-tour="submit-action"
             className={`min-h-10 bg-emerald-600 font-medium text-white hover:bg-emerald-500 lg:min-h-8 ${compactToolbar ? "flex-1 sm:flex-none" : ""}`}
           >
             {isRunning ? (

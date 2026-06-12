@@ -9,6 +9,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
+import LearnerGuidedTour from "./components/learner-tour/LearnerGuidedTour";
+import { LearnerTourReadyProvider } from "./components/learner-tour/LearnerTourReadyProvider";
 import ScrollToTop from "./components/ScrollToTop";
 import "./index.css";
 
@@ -31,7 +33,10 @@ createRoot(document.getElementById("root")!).render(
             <BrowserRouter>
               <ScrollToTop />
               <AuthProvider>
-                <App />
+                <LearnerTourReadyProvider>
+                  <App />
+                  <LearnerGuidedTour />
+                </LearnerTourReadyProvider>
               </AuthProvider>
             </BrowserRouter>
           </AntApp>

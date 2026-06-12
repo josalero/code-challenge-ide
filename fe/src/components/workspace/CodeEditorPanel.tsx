@@ -124,6 +124,7 @@ export default function CodeEditorPanel({
     <section
       className="flex h-full min-h-0 w-full flex-1 flex-col bg-[#1e1e1e]"
       aria-label="Code editor"
+      data-learner-tour="editor"
     >
       <Tabs
         value={workspaceTab}
