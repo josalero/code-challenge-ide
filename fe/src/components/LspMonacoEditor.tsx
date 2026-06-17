@@ -72,7 +72,7 @@ export default function LspMonacoEditor({
   const socketRef = useRef<WebSocket | null>(null);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const modelRef = useRef<monaco.editor.ITextModel | null>(null);
-  const initialCodeRef = useRef(value);
+  const latestCodeRef = useRef(value);
   const connectGenRef = useRef(0);
   const lspReadyRef = useRef(false);
   const clipboardGuardRef = useRef<{ dispose: () => void } | null>(null);
@@ -143,6 +143,7 @@ export default function LspMonacoEditor({
   }, [readOnly]);
 
   useEffect(() => {
+    latestCodeRef.current = value;
     const model = modelRef.current;
     if (!model || model.getValue() === value) {
       return;
@@ -151,7 +152,9 @@ export default function LspMonacoEditor({
   }, [value]);
 
   useEffect(() => {
-    if (!lspEnabled || readOnly || !editorMounted || !lspConfig) {
+    if (!lspEnabled || !editorMounted || !lspConfig) {
+      setLspStatus("off");
+      setLspMessage(null);
       return;
     }
 
@@ -187,7 +190,7 @@ export default function LspMonacoEditor({
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const params = new URLSearchParams({
         access_token: token,
-        solution: encodeSolutionForLsp(initialCodeRef.current),
+        solution: encodeSolutionForLsp(latestCodeRef.current),
       });
       const url = `${protocol}//${window.location.host}${lspConfig.lspPath}?${params.toString()}`;
       const socket = new WebSocket(url);
@@ -293,8 +296,8 @@ export default function LspMonacoEditor({
       socketRef.current?.close();
       socketRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- connect once per mount
-  }, [lspEnabled, readOnly, editorMounted, language]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- connect once per mount/language, keep latest code via ref
+  }, [lspEnabled, editorMounted, language]);
 
   const showStatus = lspEnabled && lspStatus !== "off" && lspStatus !== "ready";
 

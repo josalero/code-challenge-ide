@@ -128,6 +128,11 @@ export default function WorkspaceHeader({
     sessionDurationMinutes > 0 ? sessionDurationMinutes : 60;
   const showTimer = limitMinutes > 0 && !exerciseLocked;
   const compactToolbar = useMediaQuery("(max-width: 1023px)");
+  const showRunPhaseBadge =
+    runPhase === "running"
+    || runPhase === "run-passed"
+    || runPhase === "successful-submission"
+    || runPhase === "session-expired";
 
   const overflowMenuItems: MenuProps["items"] = [
     activeTab === "custom" && onSaveCustomTests
@@ -320,7 +325,7 @@ export default function WorkspaceHeader({
             </Button>
           )}
 
-          {runPhase !== "idle" && runPhase !== "loading" && (
+          {showRunPhaseBadge && (
             <Badge
               variant="outline"
               className={

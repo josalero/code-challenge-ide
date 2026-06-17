@@ -292,6 +292,7 @@ export default function WorkspaceShell({
       attempts={attempts}
       showLiveRun={showLiveRun}
       isTerminal={isTerminal}
+      submitError={submitError}
       exerciseLocked={exerciseLocked}
       sessionDurationMinutes={sessionDurationMinutes}
       sessionActive={sessionActive}
@@ -316,13 +317,11 @@ export default function WorkspaceShell({
     <div className="ctl-workspace-shell flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       {header}
 
-      {(submitError
-        || runPhase === "session-expired"
-        || (runPhase !== "idle" && runPhase !== "loading" && runPhase !== "running")) && (
+      {runPhase === "session-expired" && (
         <div className="shrink-0 border-b border-slate-800/80 px-4 py-2">
           <RunStateBanner
             phase={runPhase}
-            message={submitError}
+            message={null}
             onViewOutput={onFocusOutput}
           />
         </div>

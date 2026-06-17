@@ -322,7 +322,8 @@ export default function ChallengeWorkspacePage() {
       setSubmissionStatus(null);
       setActiveSubmissionId(null);
       setActiveSubmissionKind(null);
-      message.error(msg);
+      appendActivity(msg, "error");
+      focusOutputPanel("tests");
     },
   });
 
@@ -396,12 +397,13 @@ export default function ChallengeWorkspacePage() {
         const msg =
           e instanceof ApiError ? e.message : "Could not load coach report";
         setSubmitError(msg);
-        message.error(msg);
+        appendActivity(msg, "error");
+        focusOutputPanel("feedback");
       } finally {
         setReportLoading(false);
       }
     },
-    [message],
+    [appendActivity, focusOutputPanel],
   );
 
   useEffect(() => {
@@ -414,7 +416,6 @@ export default function ChallengeWorkspacePage() {
         "Challenge not passed — one or more tests failed; feedback is ready.",
         "warning",
       );
-      message.warning("Submission complete — review feedback for next steps");
     } else {
       appendActivity(
         "Challenge passed — all tests passed and progress was saved.",
@@ -506,8 +507,6 @@ export default function ChallengeWorkspacePage() {
         );
         if (passed) {
           message.success("All tests passed — keep editing or submit when ready");
-        } else {
-          message.warning("Some tests failed — fix and run again, or submit for full feedback");
         }
         setActiveSubmissionId(null);
         setActiveSubmissionKind(null);
@@ -540,8 +539,7 @@ export default function ChallengeWorkspacePage() {
       setSubmissionStatus(SubmissionStatus.FAILED);
       setTrackedTests((prev) => finalizeTrackedTestsOnComplete(prev));
       setSubmitError(errorMessage);
-      appendActivity(errorMessage);
-      message.error(errorMessage);
+      appendActivity(errorMessage, "error");
       if (logs) {
         setRunnerLogs(logs);
       }
@@ -607,10 +605,12 @@ export default function ChallengeWorkspacePage() {
       setSubmitError(null);
       message.info("Run cancelled");
     },
-    onError: (e) =>
-      message.error(
-        e instanceof ApiError ? e.message : "Could not cancel submission",
-      ),
+    onError: (e) => {
+      const msg = e instanceof ApiError ? e.message : "Could not cancel submission";
+      setSubmitError(msg);
+      appendActivity(msg, "error");
+      focusOutputPanel("tests");
+    },
   });
 
   const challenge = challengeQuery.data;

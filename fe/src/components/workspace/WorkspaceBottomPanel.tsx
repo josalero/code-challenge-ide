@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from "react";
 import {
+  AlertCircle,
   BookOpen,
   Bot,
   Clock3,
@@ -59,6 +60,7 @@ type Props = {
   attempts: AttemptRecord[];
   showLiveRun: boolean;
   isTerminal: boolean;
+  submitError?: string | null;
   exerciseLocked?: boolean;
   sessionDurationMinutes?: number;
   sessionActive?: boolean;
@@ -119,6 +121,34 @@ function PanelScroll({
   );
 }
 
+function ExecutionErrorNotice({
+  message,
+  compact,
+}: {
+  message: string | null | undefined;
+  compact: boolean;
+}) {
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <div
+      className={cn(
+        "flex items-start gap-2 rounded-md border border-red-500/30 bg-red-500/10 text-red-100",
+        compact ? "px-2.5 py-2 text-xs" : "px-3 py-2 text-sm",
+      )}
+      role="alert"
+    >
+      <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <div className="min-w-0">
+        <p className="font-medium">Execution issue</p>
+        <p className="mt-0.5 whitespace-pre-wrap text-red-100/85">{message}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function WorkspaceBottomPanel({
   variant = "dock",
   activeTab,
@@ -141,6 +171,7 @@ export default function WorkspaceBottomPanel({
   attempts,
   showLiveRun,
   isTerminal,
+  submitError = null,
   exerciseLocked = false,
   sessionDurationMinutes = 0,
   sessionActive = false,
@@ -176,13 +207,13 @@ export default function WorkspaceBottomPanel({
 
   const tabBadge = useMemo(
     () => ({
-      tests: failedTests > 0 ? failedTests : undefined,
+      tests: failedTests > 0 ? failedTests : submitError ? "!" : undefined,
       compiler: runnerLogs?.stderrTruncated || runnerLogs?.stdoutTruncated ? "!" : undefined,
       "static-analysis": staticIssues > 0 ? staticIssues : undefined,
       feedback: report ? (report.blocked ? "!" : "✓") : undefined,
       history: attempts.length > 0 ? attempts.length : undefined,
     }),
-    [failedTests, runnerLogs, staticIssues, report, attempts.length],
+    [failedTests, submitError, runnerLogs, staticIssues, report, attempts.length],
   );
 
   const activeLabel = tabItems.find((t) => t.value === activeTab)?.label ?? "Output";
@@ -247,33 +278,40 @@ export default function WorkspaceBottomPanel({
 
       <TabsContent
         value="tests"
-        className="mt-0 flex h-full min-h-0 flex-col data-[state=inactive]:hidden"
+        className="mt-0 flex h-full min-h-0 flex-col gap-3 data-[state=inactive]:hidden"
       >
-        {showLiveRun || trackedTests.length > 0 ? (
-          <RunProgressPanel
-            submissionStatus={submissionStatus}
-            isSubmitting={isSubmitting}
-            streamConnected={streamConnected}
-            streamReconnecting={streamReconnecting}
-            trackedTests={trackedTests}
-            hiddenTestCount={hiddenTestCount}
-            runtimeVersion={runtimeVersion}
-            challengeLanguage={challengeLanguage}
-            runStartedAt={runStartedAt}
-          />
-        ) : (
-          <EmptyHint
-            compact={sidebar}
-            icon={<FlaskConical className="size-5" aria-hidden />}
-            title="Ready to run"
-          >
-            Press <strong className="text-emerald-400">Run</strong> or{" "}
-            <strong className="text-emerald-400">Submit</strong> to execute your solution.
-          </EmptyHint>
-        )}
+        <ExecutionErrorNotice message={submitError} compact={sidebar} />
+        <div className="min-h-0 flex-1">
+          {showLiveRun || trackedTests.length > 0 ? (
+            <RunProgressPanel
+              submissionStatus={submissionStatus}
+              isSubmitting={isSubmitting}
+              streamConnected={streamConnected}
+              streamReconnecting={streamReconnecting}
+              trackedTests={trackedTests}
+              hiddenTestCount={hiddenTestCount}
+              runtimeVersion={runtimeVersion}
+              challengeLanguage={challengeLanguage}
+              runStartedAt={runStartedAt}
+            />
+          ) : (
+            <EmptyHint
+              compact={sidebar}
+              icon={<FlaskConical className="size-5" aria-hidden />}
+              title="Ready to run"
+            >
+              Press <strong className="text-emerald-400">Run</strong> or{" "}
+              <strong className="text-emerald-400">Submit</strong> to execute your solution.
+            </EmptyHint>
+          )}
+        </div>
       </TabsContent>
 
-      <TabsContent value="compiler" className="mt-0 h-full min-h-0 data-[state=inactive]:hidden">
+      <TabsContent
+        value="compiler"
+        className="mt-0 flex h-full min-h-0 flex-col gap-3 data-[state=inactive]:hidden"
+      >
+        <ExecutionErrorNotice message={submitError} compact={sidebar} />
         {runnerLogs?.stderrTruncated || runnerLogs?.stdoutTruncated ? (
           <PanelScroll sidebar={sidebar}>
             <div className="ctl-workspace-terminal p-3">
@@ -345,7 +383,11 @@ export default function WorkspaceBottomPanel({
         )}
       </TabsContent>
 
-      <TabsContent value="feedback" className="mt-0 h-full min-h-0 data-[state=inactive]:hidden">
+      <TabsContent
+        value="feedback"
+        className="mt-0 flex h-full min-h-0 flex-col gap-3 data-[state=inactive]:hidden"
+      >
+        <ExecutionErrorNotice message={submitError} compact={sidebar} />
         {reportLoading && !report && (
           <div className="flex items-center gap-3 py-4" role="status">
             <Skeleton className="size-5 rounded-full bg-slate-800" />
