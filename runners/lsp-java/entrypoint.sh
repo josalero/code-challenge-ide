@@ -19,6 +19,23 @@ mkdir -p /workspace /tmp/jdt-data
 JDT_DATA_DIR="/tmp/jdt-data/session-$$"
 mkdir -p "${JDT_DATA_DIR}"
 
+# Two distinct JDKs in this image (see Dockerfile):
+#   - JDT_HOST_JAVA   : JDK 21 LTS, the validated runtime that *runs* JDT itself
+#   - JAVA_HOME       : JDK 26, the runtime JDT uses for project compilation
+# Without JAVA_HOME pointing at a real JDK, JDT's default/anonymous project has
+# no JRE on classpath, so completions on standard library types like `System.`
+# come back empty even though the LSP handshake succeeds.
+JDT_HOST_JAVA="${JDT_HOST_JAVA:-/opt/java/openjdk/bin/java}"
+export JAVA_HOME="${JAVA_HOME:-/opt/java-26}"
+if [[ ! -x "${JDT_HOST_JAVA}" ]]; then
+  echo "JDT host JVM not found at ${JDT_HOST_JAVA}" >&2
+  exit 1
+fi
+if [[ ! -d "${JAVA_HOME}" ]]; then
+  echo "Project JDK not found at ${JAVA_HOME} (set JAVA_HOME or install JDK at this path)" >&2
+  exit 1
+fi
+
 # JDT LS on JDK 17+ requires --add-modules / --add-opens for reflective access. Without
 # them, completion/hover requests can hang silently because JDT cannot inspect java.util
 # and java.lang. Heap defaults are also too low for first-time workspace indexing, which
@@ -27,7 +44,7 @@ JDT_LOG_LEVEL="${JDT_LOG_LEVEL:-INFO}"
 JDT_HEAP_MIN="${JDT_HEAP_MIN:-256m}"
 JDT_HEAP_MAX="${JDT_HEAP_MAX:-1g}"
 
-exec java \
+exec "${JDT_HOST_JAVA}" \
   -Declipse.application=org.eclipse.jdt.ls.core.id1 \
   -Dosgi.bundles.defaultStartLevel=4 \
   -Declipse.product=org.eclipse.jdt.ls.core.product \
