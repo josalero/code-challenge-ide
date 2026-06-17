@@ -2,6 +2,9 @@ import { ApiPaths } from "../domain/constants";
 import { monacoLanguageFor } from "../utils/monacoLanguage";
 
 const WORKSPACE_ROOT = "file:///workspace";
+const JAVA_DEFAULT_SOLUTION_PATH = "src/main/java/com/challenge/Solution.java";
+const JAVA_DEFAULT_PACKAGE_SOLUTION_PATH = "src/main/java/Solution.java";
+const JAVA_PACKAGE_PATTERN = /^\s*package\s+([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*;/m;
 
 export type LspLanguageConfig = {
   challengeLanguage: string;
@@ -20,7 +23,7 @@ function workspaceFile(relativePath: string): string {
 const CONFIGS: Record<string, Omit<LspLanguageConfig, "challengeLanguage">> = {
   java: {
     lspPath: ApiPaths.lsp("java"),
-    modelUri: workspaceFile("src/main/java/com/challenge/Solution.java"),
+    modelUri: workspaceFile(JAVA_DEFAULT_SOLUTION_PATH),
     monacoLanguage: "java",
     documentSelector: [{ language: "java" }],
     clientName: "Java Language Client",
@@ -116,6 +119,17 @@ export function lspConfigFor(language: string | undefined): LspLanguageConfig | 
   return { challengeLanguage: key, ...CONFIGS[key] };
 }
 
+export function javaSolutionRelativePath(source: string | undefined): string {
+  if (source && source.trim()) {
+    const packageMatch = source.match(JAVA_PACKAGE_PATTERN);
+    if (!packageMatch) {
+      return JAVA_DEFAULT_PACKAGE_SOLUTION_PATH;
+    }
+    return `src/main/java/${packageMatch[1].split(".").join("/")}/Solution.java`;
+  }
+  return JAVA_DEFAULT_SOLUTION_PATH;
+}
+
 export function usesLsp(language: string | undefined): boolean {
   return lspConfigFor(language) !== null;
 }
@@ -125,15 +139,30 @@ export function editorLanguageFor(language: string | undefined): string {
   return lspConfigFor(language)?.monacoLanguage ?? monacoLanguageFor(language);
 }
 
-export function solutionModelUri(language: string | undefined): string {
-  return lspConfigFor(language)?.modelUri ?? "file:///workspace/solution";
+export function solutionModelUri(language: string | undefined, source?: string): string {
+  const config = lspConfigFor(language);
+  if (!config) {
+    return "file:///workspace/solution";
+  }
+  if (config.challengeLanguage === "java") {
+    return workspaceFile(javaSolutionRelativePath(source));
+  }
+  return config.modelUri;
 }
 
 /** Model URI for the custom-tests tab (extension must match language grammar). */
-export function customTestsModelUri(language: string | undefined): string {
-  const solution = solutionModelUri(language);
-  if (solution.endsWith("Solution.java")) {
-    return workspaceFile("src/test/java/com/challenge/CustomTests.java");
+export function customTestsModelUri(language: string | undefined, solutionSource?: string): string {
+  const solution = solutionModelUri(language, solutionSource);
+  if (lspConfigFor(language)?.challengeLanguage === "java") {
+    const solutionPath = javaSolutionRelativePath(solutionSource);
+    if (solutionPath === JAVA_DEFAULT_PACKAGE_SOLUTION_PATH) {
+      return workspaceFile("src/test/java/CustomTests.java");
+    }
+    return workspaceFile(
+      solutionPath
+        .replace("src/main/java/", "src/test/java/")
+        .replace(/Solution\.java$/, "CustomTests.java"),
+    );
   }
   if (solution.endsWith(".py")) {
     return workspaceFile("custom_tests.py");

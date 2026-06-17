@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 import Editor from "@monaco-editor/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getAccessToken } from "../auth/authStorage";
 import { monaco } from "../monacoSetup";
 import { attachMonacoClipboardGuard, attachMonacoLargeEditGuard, type IntegrityEventPayload } from "../utils/monacoClipboardGuard";
@@ -65,9 +65,10 @@ export default function LspMonacoEditor({
   onIntegrityEvent,
 }: Props) {
   const lspConfig = lspConfigFor(language);
-  const modelUri = solutionModelUri(language);
   const monacoLanguage = editorLanguageFor(language);
 
+  const initialModelUriRef = useRef(solutionModelUri(language, value));
+  const modelUri = initialModelUriRef.current;
   const clientRef = useRef<MonacoLanguageClient | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
@@ -77,9 +78,50 @@ export default function LspMonacoEditor({
   const lspReadyRef = useRef(false);
   const clipboardGuardRef = useRef<{ dispose: () => void } | null>(null);
   const largeEditGuardRef = useRef<{ dispose: () => void } | null>(null);
+  const completionSuggestRef = useRef<{ dispose: () => void } | null>(null);
+  const suggestTimerRef = useRef<number[]>([]);
   const [editorMounted, setEditorMounted] = useState(false);
   const [lspStatus, setLspStatus] = useState<LspStatus>("off");
   const [lspMessage, setLspMessage] = useState<string | null>(null);
+
+  const clearSuggestTimers = useCallback(() => {
+    for (const timer of suggestTimerRef.current) {
+      window.clearTimeout(timer);
+    }
+    suggestTimerRef.current = [];
+  }, []);
+
+  const shouldTriggerMemberSuggest = (editor: monaco.editor.IStandaloneCodeEditor) => {
+    if (lspConfig?.challengeLanguage !== "java") {
+      return false;
+    }
+    const model = editor.getModel();
+    const position = editor.getPosition();
+    if (!model || !position) {
+      return false;
+    }
+    const prefix = model.getLineContent(position.lineNumber).slice(0, position.column - 1);
+    return /\.[A-Za-z0-9_$]*$/.test(prefix);
+  };
+
+  const triggerMemberSuggest = (source: string) => {
+    const editor = editorRef.current;
+    if (!editor || !lspReadyRef.current || !shouldTriggerMemberSuggest(editor)) {
+      return;
+    }
+    editor.trigger(source, "editor.action.triggerSuggest", {});
+  };
+
+  const scheduleMemberSuggest = (source: string) => {
+    if (lspConfig?.challengeLanguage !== "java") {
+      return;
+    }
+    clearSuggestTimers();
+    for (const delayMs of [0, 250, 1_000, 2_500, 5_000]) {
+      const timer = window.setTimeout(() => triggerMemberSuggest(source), delayMs);
+      suggestTimerRef.current.push(timer);
+    }
+  };
 
   const handleMount = (
     editor: monaco.editor.IStandaloneCodeEditor,
@@ -98,6 +140,13 @@ export default function LspMonacoEditor({
     }
     editor.updateOptions({ readOnly });
     monacoEditorAfterMount(editor, editorMonaco);
+    completionSuggestRef.current?.dispose();
+    completionSuggestRef.current = editor.onDidChangeModelContent((event) => {
+      const typed = event.changes.some((change) => change.text.length > 0);
+      if (typed && shouldTriggerMemberSuggest(editor)) {
+        scheduleMemberSuggest("java-lsp-member-completion");
+      }
+    });
     clipboardGuardRef.current?.dispose();
     largeEditGuardRef.current?.dispose();
     if (onIntegrityEvent) {
@@ -114,6 +163,14 @@ export default function LspMonacoEditor({
     }
     setEditorMounted(true);
   };
+
+  useEffect(() => {
+    return () => {
+      completionSuggestRef.current?.dispose();
+      completionSuggestRef.current = null;
+      clearSuggestTimers();
+    };
+  }, [clearSuggestTimers]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -228,6 +285,7 @@ export default function LspMonacoEditor({
               lspReadyRef.current = true;
               setLspStatus("ready");
               setLspMessage(null);
+              scheduleMemberSuggest("java-lsp-ready-completion");
             }
           } catch (error) {
             clearTimeout(connectTimeoutId);
@@ -290,6 +348,7 @@ export default function LspMonacoEditor({
     return () => {
       cancelled = true;
       clearTimeout(connectTimeoutId);
+      clearSuggestTimers();
       lspReadyRef.current = false;
       clientRef.current?.stop();
       clientRef.current = null;

@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /** Creates temp workspaces on disk for language-server Docker mounts. */
 public final class LspWorkspaceSupport {
@@ -86,6 +87,13 @@ public final class LspWorkspaceSupport {
         <classpathentry kind="output" path="target/classes"/>
       </classpath>
       """;
+  private static final String JAVA_DEFAULT_SOLUTION_PATH =
+      "src/main/java/com/challenge/Solution.java";
+  private static final String JAVA_DEFAULT_PACKAGE_SOLUTION_PATH = "src/main/java/Solution.java";
+  private static final Pattern JAVA_PACKAGE_PATTERN =
+      Pattern.compile(
+          "^\\s*package\\s+([A-Za-z_$][\\w$]*(?:\\.[A-Za-z_$][\\w$]*)*)\\s*;",
+          Pattern.MULTILINE);
 
   private static final String NODE_PACKAGE_JSON =
       """
@@ -157,7 +165,7 @@ public final class LspWorkspaceSupport {
   /** Document path relative to {@code /workspace} — must match Monaco model URI on the client. */
   public static String mainDocumentPath(String language) {
     return switch (language.trim().toLowerCase()) {
-      case "java" -> "src/main/java/com/challenge/Solution.java";
+      case "java" -> JAVA_DEFAULT_SOLUTION_PATH;
       case "python" -> "solution.py";
       case "go" -> "solution.go";
       case "node" -> "solution.js";
@@ -172,9 +180,15 @@ public final class LspWorkspaceSupport {
     };
   }
 
+  /** Document path relative to {@code /workspace}, derived from source when Java is packaged. */
+  public static String mainDocumentPath(String language, String solutionSource) {
+    if ("java".equals(language.trim().toLowerCase())) {
+      return javaSolutionPath(solutionSource);
+    }
+    return mainDocumentPath(language);
+  }
+
   private static void populateJava(Path root, String solutionSource) throws IOException {
-    Path mainDir = root.resolve("src/main/java/com/challenge");
-    Files.createDirectories(mainDir);
     Files.writeString(root.resolve("pom.xml"), JAVA_POM, StandardCharsets.UTF_8);
     Files.writeString(root.resolve(".project"), JAVA_ECLIPSE_PROJECT, StandardCharsets.UTF_8);
     Files.writeString(root.resolve(".classpath"), JAVA_ECLIPSE_CLASSPATH, StandardCharsets.UTF_8);
@@ -187,7 +201,35 @@ public final class LspWorkspaceSupport {
             }
             """
             : solutionSource;
-    Files.writeString(mainDir.resolve("Solution.java"), source, StandardCharsets.UTF_8);
+    Path solutionPath = root.resolve(javaSolutionPath(source));
+    clearJavaSolutionFiles(root);
+    Files.createDirectories(solutionPath.getParent());
+    Files.writeString(solutionPath, source, StandardCharsets.UTF_8);
+  }
+
+  private static String javaSolutionPath(String source) {
+    if (source != null && !source.isBlank()) {
+      var packageMatch = JAVA_PACKAGE_PATTERN.matcher(source);
+      if (!packageMatch.find()) {
+        return JAVA_DEFAULT_PACKAGE_SOLUTION_PATH;
+      }
+      return "src/main/java/" + packageMatch.group(1).replace('.', '/') + "/Solution.java";
+    }
+    return JAVA_DEFAULT_SOLUTION_PATH;
+  }
+
+  private static void clearJavaSolutionFiles(Path root) throws IOException {
+    Path sourceRoot = root.resolve("src/main/java");
+    if (!Files.isDirectory(sourceRoot)) {
+      return;
+    }
+    try (var paths = Files.walk(sourceRoot)) {
+      for (Path path : paths.filter(Files::isRegularFile).toList()) {
+        if (path.getFileName().toString().equals("Solution.java")) {
+          Files.deleteIfExists(path);
+        }
+      }
+    }
   }
 
   private static void populateSingleFile(Path root, String fileName, String content)

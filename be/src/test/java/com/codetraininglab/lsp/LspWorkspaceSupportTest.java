@@ -60,6 +60,17 @@ class LspWorkspaceSupportTest {
     deleteRecursively(root);
   }
 
+  @Test
+  void createsDefaultPackageJavaWorkspaceWithMatchingDocumentPath() throws Exception {
+    var source = "public class Solution {}";
+    var root = LspWorkspaceSupport.create("java", source);
+    var mainPath = LspWorkspaceSupport.mainDocumentPath("java", source);
+    assertThat(mainPath).isEqualTo("src/main/java/Solution.java");
+    assertThat(Files.exists(root.resolve(mainPath))).isTrue();
+    assertThat(Files.exists(root.resolve("src/main/java/com/challenge/Solution.java"))).isFalse();
+    deleteRecursively(root);
+  }
+
   private static void deleteRecursively(java.nio.file.Path root) throws Exception {
     try (var walk = Files.walk(root)) {
       walk.sorted(java.util.Comparator.reverseOrder())

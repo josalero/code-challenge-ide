@@ -103,9 +103,9 @@ export default function CodeEditorPanel({
   }, [monitorIntegrity, onIntegrityEvent, syncGuards]);
 
   const editorLanguage = editorLanguageFor(language);
-  const lspEnabled = usesLsp(language) && !previewStarter;
-  const solutionPath = solutionModelUri(language);
-  const customTestsPath = customTestsModelUri(language);
+  const lspEnabled = usesLsp(language);
+  const solutionPath = solutionModelUri(language, solutionCode);
+  const customTestsPath = customTestsModelUri(language, solutionCode);
 
   const editorOptions = {
     minimap: { enabled: false },
@@ -118,6 +118,10 @@ export default function CodeEditorPanel({
     scrollBeyondLastLine: false,
     renderLineHighlight: "line" as const,
     contextmenu: true,
+    quickSuggestions: { other: true, comments: false, strings: false },
+    suggestOnTriggerCharacters: true,
+    tabCompletion: "on" as const,
+    wordBasedSuggestions: "off" as const,
   };
 
   return (
@@ -164,7 +168,7 @@ export default function CodeEditorPanel({
             <MonacoServicesGate>
               {lspEnabled ? (
                 <LspMonacoEditor
-                  key={`${slug}-${language}`}
+                  key={`${slug}-${language}-${solutionPath}`}
                   language={language}
                   value={solutionCode}
                   onChange={onSolutionChange}
