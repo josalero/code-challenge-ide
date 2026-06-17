@@ -29,6 +29,18 @@ export async function attachMonacoLanguageClient(
                 java: {
                   configuration: {
                     updateBuildConfiguration: "automatic",
+                    // JDT runs on JDK 21 (the validated host) but compiles user
+                    // code against JavaSE-26 via this path. The LSP image bundles
+                    // JDK 26 at /opt/java-26 (see runners/lsp-java/Dockerfile);
+                    // changing the path here without updating the image breaks
+                    // Java IntelliSense.
+                    runtimes: [
+                      {
+                        name: "JavaSE-26",
+                        path: "/opt/java-26",
+                        default: true,
+                      },
+                    ],
                   },
                   import: {
                     maven: {
