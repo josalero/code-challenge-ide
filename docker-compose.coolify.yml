@@ -37,6 +37,43 @@ services:
       timeout: 5s
       retries: 10
 
+  code-lab-postgres-backup:
+    # Background pg_dump worker. Coolify: add exclude_from_hc: true if deploy status waits on this service.
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      PGHOST: code-lab-postgres
+      PGUSER: ${PG_USER:-postgres}
+      PGPASSWORD: ${PG_PASSWORD:?Set PG_PASSWORD}
+      PGDATABASE: ${PG_DB:-code_training_lab}
+      BACKUP_INTERVAL_SECONDS: ${PG_BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${PG_BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ctl-postgres-backups:/backups
+    depends_on:
+      code-lab-postgres:
+        condition: service_healthy
+    entrypoint:
+      - /bin/bash
+      - -ec
+      - |
+        set -euo pipefail
+        interval="$${BACKUP_INTERVAL_SECONDS:-86400}"
+        retention="$${BACKUP_RETENTION_DAYS:-14}"
+        run_backup() {
+          ts="$$(date -u +%Y%m%dT%H%M%SZ)"
+          file="/backups/$${PGDATABASE}_$${ts}.sql.gz"
+          echo "Starting backup to $${file}"
+          pg_dump --no-owner --no-acl "$$PGDATABASE" | gzip > "$$file"
+          echo "Backup complete: $$(du -h "$$file" | cut -f1)"
+          find /backups -name "$${PGDATABASE}_*.sql.gz" -mtime +"$${retention}" -delete
+        }
+        run_backup
+        while true; do
+          sleep "$$interval"
+          run_backup
+        done
+
   code-lab-rabbitmq:
     image: rabbitmq:3-management-alpine
     restart: unless-stopped
@@ -362,6 +399,7 @@ services:
 
 volumes:
   ctl-postgres-data:
+  ctl-postgres-backups:
   ctl-ops-data:
   ctl-runner-m2-cache:
     name: ctl-runner-m2-cache
