@@ -18,6 +18,7 @@ import type { MonacoLanguageClient } from "monaco-languageclient";
 type LspStatus =
   | "off"
   | "connecting"
+  | "indexing"
   | "ready"
   | "unavailable";
 
@@ -47,6 +48,10 @@ const EDITOR_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
 };
 
 const LSP_CONNECT_TIMEOUT_MS = 90_000;
+// Java LSP keeps building the workspace classpath after `initialize` returns. Hold the
+// "indexing" status until JDT signals `Started`/`ServiceReady` (or this fallback fires)
+// so users see a clear "Indexing…" banner instead of a stuck Monaco "Loading…" widget.
+const LSP_INDEXING_FALLBACK_MS = 60_000;
 
 function formatStartError(error: unknown): string {
   if (import.meta.env.DEV && error instanceof Error && error.message) {
@@ -225,6 +230,7 @@ export default function LspMonacoEditor({
     const generation = ++connectGenRef.current;
     let cancelled = false;
     let connectTimeoutId: ReturnType<typeof setTimeout> | undefined;
+    let indexingFallbackId: ReturnType<typeof setTimeout> | undefined;
 
     const failConnect = (message: string) => {
       if (cancelled || generation !== connectGenRef.current || lspReadyRef.current) {
@@ -283,8 +289,38 @@ export default function LspMonacoEditor({
             if (!cancelled && generation === connectGenRef.current) {
               clearTimeout(connectTimeoutId);
               lspReadyRef.current = true;
-              setLspStatus("ready");
-              setLspMessage(null);
+              if (lspConfig.challengeLanguage === "java") {
+                setLspStatus("indexing");
+                setLspMessage(null);
+                indexingFallbackId = setTimeout(() => {
+                  if (!cancelled && generation === connectGenRef.current) {
+                    setLspStatus("ready");
+                    setLspMessage(null);
+                  }
+                }, LSP_INDEXING_FALLBACK_MS);
+                clientRef.current.onNotification(
+                  "language/status",
+                  (params: { type?: string }) => {
+                    if (cancelled || generation !== connectGenRef.current) {
+                      return;
+                    }
+                    if (
+                      params.type === "Started" ||
+                      params.type === "ServiceReady"
+                    ) {
+                      if (indexingFallbackId !== undefined) {
+                        clearTimeout(indexingFallbackId);
+                        indexingFallbackId = undefined;
+                      }
+                      setLspStatus("ready");
+                      setLspMessage(null);
+                    }
+                  },
+                );
+              } else {
+                setLspStatus("ready");
+                setLspMessage(null);
+              }
               scheduleMemberSuggest("java-lsp-ready-completion");
             }
           } catch (error) {
@@ -348,6 +384,9 @@ export default function LspMonacoEditor({
     return () => {
       cancelled = true;
       clearTimeout(connectTimeoutId);
+      if (indexingFallbackId !== undefined) {
+        clearTimeout(indexingFallbackId);
+      }
       clearSuggestTimers();
       lspReadyRef.current = false;
       clientRef.current?.stop();
@@ -371,13 +410,15 @@ export default function LspMonacoEditor({
           }`}
           role="status"
         >
-          {lspStatus === "connecting" && (
+          {(lspStatus === "connecting" || lspStatus === "indexing") && (
             <Loader2 className="size-3 shrink-0 animate-spin" aria-hidden />
           )}
           <span className="truncate">
             {lspStatus === "connecting"
               ? `Connecting ${lspConfig?.displayName ?? "language"} language server…`
-              : (lspMessage ?? "IntelliSense unavailable")}
+              : lspStatus === "indexing"
+                ? `Indexing ${lspConfig?.displayName ?? "Java"} workspace — IntelliSense will be ready in a few seconds…`
+                : (lspMessage ?? "IntelliSense unavailable")}
           </span>
         </div>
       )}
