@@ -59,7 +59,7 @@ services:
       - |
         set -euo pipefail
         interval="$${BACKUP_INTERVAL_SECONDS:-86400}"
-        retention="$${BACKUP_RETENTION_DAYS:-14}"
+        retention="$${BACKUP_RETENTION_DAYS:-5}"
         run_backup() {
           ts="$$(date -u +%Y%m%dT%H%M%SZ)"
           file="/backups/$${PGDATABASE}_$${ts}.sql.gz"
