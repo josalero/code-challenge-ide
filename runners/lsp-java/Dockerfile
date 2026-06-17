@@ -5,7 +5,7 @@
 # during `initialize` on non-LTS JDKs (24/25/26) Eclipse has not validated.
 FROM eclipse-temurin:26-jdk-jammy AS jdk26
 
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:21-jdk-jammy
 
 # Validated host JVM for JDT Language Server. JDT itself runs on JDK 21 LTS;
 # user code is analyzed against JavaSE-26 via the runtime path below, so Java 26

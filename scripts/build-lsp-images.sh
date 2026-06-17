@@ -7,7 +7,13 @@ build_one() {
   local image="$2"
   local context="${ROOT}/runners/lsp-${name}"
   docker build -t "${image}" -f "${context}/Dockerfile" "${context}"
-  echo "Built LSP image: ${image}"
+  
+  # Auto-tag as :latest and ghcr.io/josalero/...:latest so the API finds it locally
+  local base_name="${image%:*}"
+  docker tag "${image}" "${base_name}:latest"
+  docker tag "${image}" "ghcr.io/josalero/${base_name}:latest"
+  
+  echo "Built LSP image: ${image} (also tagged as :latest and ghcr.io/josalero/${base_name}:latest)"
 }
 
 build_one java "${LSP_JAVA_IMAGE:-code-challenge-ide-lsp-java:local}"
