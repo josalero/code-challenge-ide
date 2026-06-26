@@ -52,12 +52,27 @@ const LSP_CONNECT_TIMEOUT_MS = 90_000;
 // "indexing" status until JDT signals `Started`/`ServiceReady` (or this fallback fires)
 // so users see a clear "Indexing…" banner instead of a stuck Monaco "Loading…" widget.
 const LSP_INDEXING_FALLBACK_MS = 60_000;
+const LSP_RECONNECT_DELAY_MS = 2_000;
+const LSP_MAX_START_ATTEMPTS = 4;
 
 function formatStartError(error: unknown): string {
   if (import.meta.env.DEV && error instanceof Error && error.message) {
-    return `Language client failed: ${error.message}`;
+    return `IntelliSense unavailable (${error.message}). You can still edit and run tests.`;
   }
-  return "Language client failed to start.";
+  return "IntelliSense unavailable. You can still edit and run tests.";
+}
+
+async function stopLanguageClient(client: MonacoLanguageClient | null): Promise<void> {
+  if (!client) {
+    return;
+  }
+  try {
+    await client.stop();
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn("Language client stop failed", error);
+    }
+  }
 }
 
 export default function LspMonacoEditor({
@@ -231,6 +246,8 @@ export default function LspMonacoEditor({
     let cancelled = false;
     let connectTimeoutId: ReturnType<typeof setTimeout> | undefined;
     let indexingFallbackId: ReturnType<typeof setTimeout> | undefined;
+    let reconnectTimeoutId: ReturnType<typeof setTimeout> | undefined;
+    let startAttempt = 0;
 
     const failConnect = (message: string) => {
       if (cancelled || generation !== connectGenRef.current || lspReadyRef.current) {
@@ -241,12 +258,31 @@ export default function LspMonacoEditor({
       socketRef.current?.close();
     };
 
-    const connect = () => {
+    const scheduleReconnect = (message: string) => {
+      if (cancelled || generation !== connectGenRef.current || lspReadyRef.current) {
+        return;
+      }
+      startAttempt += 1;
+      if (startAttempt >= LSP_MAX_START_ATTEMPTS) {
+        setLspStatus("unavailable");
+        setLspMessage(message);
+        return;
+      }
       setLspStatus("connecting");
-      setLspMessage(null);
+      setLspMessage("IntelliSense reconnecting…");
+      reconnectTimeoutId = setTimeout(() => {
+        if (!cancelled && generation === connectGenRef.current) {
+          void connect();
+        }
+      }, LSP_RECONNECT_DELAY_MS);
+    };
+
+    const connect = async () => {
+      setLspStatus("connecting");
+      setLspMessage(startAttempt > 0 ? "IntelliSense reconnecting…" : null);
       lspReadyRef.current = false;
 
-      clientRef.current?.stop();
+      await stopLanguageClient(clientRef.current);
       clientRef.current = null;
       socketRef.current?.close();
 
@@ -288,6 +324,7 @@ export default function LspMonacoEditor({
             clientRef.current = await attachMonacoLanguageClient(socket, lspConfig);
             if (!cancelled && generation === connectGenRef.current) {
               clearTimeout(connectTimeoutId);
+              startAttempt = 0;
               lspReadyRef.current = true;
               if (lspConfig.challengeLanguage === "java") {
                 setLspStatus("indexing");
@@ -326,11 +363,13 @@ export default function LspMonacoEditor({
           } catch (error) {
             clearTimeout(connectTimeoutId);
             if (!cancelled && generation === connectGenRef.current) {
-              setLspStatus("unavailable");
-              setLspMessage(formatStartError(error));
               if (import.meta.env.DEV) {
                 console.error(`${lspConfig.displayName} LSP client start failed`, error);
               }
+              await stopLanguageClient(clientRef.current);
+              clientRef.current = null;
+              socket.close();
+              scheduleReconnect(formatStartError(error));
             }
           }
         })();
@@ -350,8 +389,9 @@ export default function LspMonacoEditor({
         clearTimeout(connectTimeoutId);
         const wasReady = lspReadyRef.current;
         lspReadyRef.current = false;
-        clientRef.current?.stop();
+        const client = clientRef.current;
         clientRef.current = null;
+        void stopLanguageClient(client);
 
         if (cancelled || generation !== connectGenRef.current) {
           return;
@@ -370,27 +410,31 @@ export default function LspMonacoEditor({
         );
 
         if (wasReady || event.code !== 1000) {
-          window.setTimeout(() => {
+          reconnectTimeoutId = setTimeout(() => {
             if (!cancelled && generation === connectGenRef.current) {
-              connect();
+              void connect();
             }
-          }, 2_000);
+          }, LSP_RECONNECT_DELAY_MS);
         }
       };
     };
 
-    connect();
+    void connect();
 
     return () => {
       cancelled = true;
       clearTimeout(connectTimeoutId);
+      if (reconnectTimeoutId !== undefined) {
+        clearTimeout(reconnectTimeoutId);
+      }
       if (indexingFallbackId !== undefined) {
         clearTimeout(indexingFallbackId);
       }
       clearSuggestTimers();
       lspReadyRef.current = false;
-      clientRef.current?.stop();
+      const client = clientRef.current;
       clientRef.current = null;
+      void stopLanguageClient(client);
       socketRef.current?.close();
       socketRef.current = null;
     };
